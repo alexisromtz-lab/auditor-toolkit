@@ -49,10 +49,10 @@ El aparato de manifiesto prueba que un `.json` parsea y que un `.md` tiene líne
 - **Comando.**
 
 ```bash
-python3 verify_claims.py REPO [REPO ...]
-python3 verify_claims.py --sonda-digitos REPO [REPO ...] [--presupuesto N|todo]
-python3 verify_claims.py --falsador-dato REPO [REPO ...]
-python3 verify_claims.py --json
+python3 verify_claims/verify_claims.py REPO [REPO ...]
+python3 verify_claims/verify_claims.py --sonda-digitos REPO [REPO ...] [--presupuesto N|todo]
+python3 verify_claims/verify_claims.py --falsador-dato REPO [REPO ...]
+python3 verify_claims/verify_claims.py --json
 ```
 
 ---
@@ -63,13 +63,15 @@ Mide el coste real de un hook de contenido en función del tamaño del archivo i
 
 - **Pieza.** Cada punto se mide en **dos regímenes sobre el mismo archivo**: `TOPE` (el hook real, que **no escanea** por encima del límite) y `RSS`/pases (el escaneo efectivo). Tamaños por defecto: `0.5 · 1 · 2 · 4 · 6 · 12` MiB, mínimo de `--reps` repeticiones.
 - **Control negativo.** El régimen `TOPE` **es** el control: cronometrar solo el hook real mide la rama de rechazo (constante, ~1 s) y concluiría "el coste es plano, el tope es superstición" — *el instrumento mediría su propia excepción*. `--solo-pases` y `--solo-rss` aíslan cada mitad para que la diferencia sea visible.
-- **Límite declarado.** Mide el **hook**, no el sistema de archivos. Toma el **mínimo** de las repeticiones (declarado con `--declaro-reps`), no la media: el mínimo es el coste reproducible, la media incluye el ruido de la máquina. Los forzados (`--force-sello`, `--force-ventana`, `--force-curva`, `--force-regimen`) existen para **romper** la curva a propósito, no para publicar un número más bonito.
+- **Límite declarado.** Mide el **hook**, no el sistema de archivos. Toma el **mínimo** de las repeticiones (declarado con `--declaro-reps`), no la media: el mínimo es el coste reproducible, la media incluye el ruido de la máquina. Los forzados (`--force-sello`, `--force-ventana`, `--force-curva`, `--force-regimen`) existen para **romper** la curva a propósito, no para publicar un número más bonito. **No adivina el hook**: si falta, o no declara `LIMITE_BYTES=<cap>` exactamente una vez, falla cerrado (`RC 5`) en vez de medir otra cosa. Aquí el hook vive en `tools/hooks/pre-commit`; `--hook` existe para medir una **copia** sin tocar el real.
 - **Comando.**
 
 ```bash
-python3 barrido_limite_bytes_20261021.py --repo . --sizes 0.5,1,2,4,6,12 --reps 2 --json puntos.json
-python3 barrido_limite_bytes_20261021.py --solo-pases   # solo la mitad que escanea
+python3 barrido_limite_bytes/barrido_limite_bytes_20261021.py --repo . --solo-pases
+python3 barrido_limite_bytes/barrido_limite_bytes_20261021.py --repo . \
+  --sizes 0.5,1,2,4,6,12 --reps 2 --json puntos.json
 ```
+<!-- HUELLA-EXTRACCION-HOOK-DEFAULT-20261021 -->
 
 ---
 
