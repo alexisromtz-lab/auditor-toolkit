@@ -123,7 +123,8 @@ Measured on 2026-10-19T05:42Z over `tenstorrent/tt-metal`. Full evidence, with o
 What **does not exist yet** is said here instead of appearing as a "piece" in the tables above:
 
 - **Atomic checkpoint / object guardian.** No published implementation. The requirement is clear: `os.replace` write, negative control with `kill -9` mid-process, and the resulting file must hold the partial items (**not 0 bytes**). Until the script and its `kill -9` exist, there is no piece.
-- **Packaged CI sweep.** The tt-metal sweep was run ad hoc; packaging it (log download, independence criterion *blamed file absent from the diff*) is pending work. The criterion is already written above; the binary is not.
+- **Full historical CI reproduction.** `ci_sweep.py` measures current checks and applies the absent-file criterion, but it does not download logs or regenerate the historical 2026-10-19 evidence.
+<!-- HUELLA-CI-SWEEP-ROADMAP-EN-20261021 -->
 - **D4B driver packaging.** It exists as a research driver with its seeds and declared blobs, **not** as a command-line instrument. Flags are not invented for it.
 
 ---
