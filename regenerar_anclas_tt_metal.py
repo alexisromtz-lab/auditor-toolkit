@@ -134,8 +134,10 @@ def inspect_anchor(pr_number: int, comment_id: int) -> dict[str, Any]:
         entry["status"] = "ANCLA_CADUCA"
     elif entry["errors"]:
         entry["status"] = "NO_VERIFICABLE"
-    elif entry["shards"]["status"] != "ROJO":
+    elif entry["shards"]["status"] == "VERDE":
         entry["status"] = "SHARD_NO_ROJO_ACTUAL"
+    elif entry["shards"]["status"] != "ROJO":
+        entry["status"] = "SHARD_NO_VERIFICABLE"
     else:
         entry["status"] = "ANCLA_VIGENTE"
     return entry
@@ -153,6 +155,8 @@ def main() -> int:
         status = "ANCLA_CADUCA"
     elif any(item["status"] == "NO_VERIFICABLE" for item in results):
         status = "NO_VERIFICABLE"
+    elif any(item["status"] == "SHARD_NO_VERIFICABLE" for item in results):
+        status = "SHARD_NO_VERIFICABLE"
     elif any(item["status"] == "SHARD_NO_ROJO_ACTUAL" for item in results):
         status = "SHARD_NO_ROJO_ACTUAL"
     else:
