@@ -1,0 +1,15 @@
+# HUELLA-FRONTERA-ARCHIVO-BASELINE-20261021
+# ---------------------------------------------------------------------------
+# DEUDA DECLARADA, NO PERMISO.
+# Rutas que YA estan en el indice bajo un prefijo ignorado (aqui: /archivo/,
+# .gitignore:6). El guardian las tolera para no romper el historial; ninguna
+# ruta NUEVA entra. Esta lista solo puede ENCOGER: se edita para borrar una
+# fila cuando la ruta sale del indice, nunca para añadir una que acaba de
+# entrar por `git add -f` (esa es justo la fuga que el guardian mide).
+#
+# Medido en HEAD 2512b29: `git ls-files -- archivo/` = 3.
+# Si la cifra de abajo no cuadra con el indice, el guardian sale RC 4.
+# ---------------------------------------------------------------------------
+archivo/lab-g-test-20261019/crudo_g_test_03Z44Z.txt
+archivo/lab-g-test-20261019/crudo_ne_oov_03Z52Z.txt
+archivo/lab-g-test-20261019/crudo_piso_ne_05Z10Z.txt

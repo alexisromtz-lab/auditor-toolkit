@@ -1,0 +1,29 @@
+# HUELLA-PRE-COMMIT-LIMITE-MB-20261021
+# ---------------------------------------------------------------------------
+# DEUDA DECLARADA, NO PERMISO.
+# Rutas que el INDICE YA trae por encima de LIMITE_BYTES (2097152 B) del hook
+# `tools/hooks/pre-commit`. Por encima de ese tope el contenido no se escanea
+# (un barrido de 66 MB en cada commit no es un instrumento, es una espera), y
+# desde el 21-Oct-2026 un archivo que no se puede escanear NO firma verde: el
+# hook lo RECHAZA. Pasa unicamente lo que esta lista declara — y lo declara
+# pineado a sus BYTES EXACTOS: la ruta declarada que crece o mengua ya no es el
+# objeto declarado y vuelve a caer.
+#
+# Esta lista solo ENCOGE: se borra la fila cuando la ruta sale del indice. Una
+# ruta NUEVA no se añade aqui por comodidad; se añade solo en el mismo acto
+# (orden del dueno + tupla A2.1) que la stagea, con sus bytes medidos.
+#
+# Medido en HEAD 40609b6 con `git ls-tree -r -l HEAD` (bytes del blob, no
+# prosa): 7 rutas por encima del limite. Doble sonda: el mismo conteo por
+# `git cat-file -s` del blob indexado da 7. Si la linea FILAS del final no
+# cuadra con el numero de filas, el hook sale por LIMITE_MB con baseline roto
+# (fail-closed): una lista que no cuadra consigo misma no declara nada.
+# ---------------------------------------------------------------------------
+sim/crudos_t08/t08_multihop_20261018.jsonl	66334586
+sim/crudos_t06/t06_n10_r4_postcredito_20261017.jsonl	30148470
+sim/BANCO_DOCUMENTOS_REALES_20261020.json	13124233
+sim/crudos_t06/t07_n50_r4_20261018.jsonl.gz	6898022
+sim/crudos_t06/t06_n50_r4_status_20261018.jsonl.gz	6895824
+sim/crudos_t06/t06_n50_r4_usagefix_20261017.jsonl.gz	6894692
+sim/BANCO_ESCALA_PARIDAD_20261020.json	6183624
+FILAS: 7
