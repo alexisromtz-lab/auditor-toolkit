@@ -75,3 +75,11 @@ Declared absences, so nobody has to audit the silence:
 ## 6 · Reproducing it
 
 The sweep was run ad hoc; the packaged binary does not exist yet (see *Roadmap* in the [README](../README.md)). What **is** reproducible today is the criterion of §2, step 4: given a PR and its diff, "is the blamed file absent from the diff?" is a closed question with a yes/no answer that does not depend on who wrote the code.
+
+To re-check the 12 comment anchors, current PR states, and current shard checks (requires the `gh` CLI and API access), run from the repository root:
+
+```bash
+python3 regenerar_anclas_tt_metal.py > tt-metal-anchors.json
+```
+
+The JSON reports current state only; it does not regenerate the historical sweep. It marks `ANCLA_CADUCA` when a PR's recorded open state changed or its diagnostic comment is missing, and distinguishes a green shard from unavailable checks.
