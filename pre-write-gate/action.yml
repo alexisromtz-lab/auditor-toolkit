@@ -1,0 +1,163 @@
+name: "Pre-Write Gate (A2.1)"
+description: >-
+  Puerta de PRE-VUELO bloqueante, read-only: mide la tupla de destino
+  (TARGET · BLOB_PRE · HUELLA · LINEAS_PRE) ANTES de escribir. No escribe nada.
+  FAIL-CLOSED: cuando no puede medir, falla.
+author: "Jose Alexis Roman Martinez"
+
+branding:
+  icon: "shield"
+  color: "purple"
+
+# HUELLA-PRE-WRITE-GATE-ACTION-YML-20261015
+# Accion COMPUESTA de subdirectorio: se usa como <owner>/<repo>/pre-write-gate@<ref>
+# (un repo tiene UN solo action.yml en la raiz; el de este repo ya esta ocupado).
+# UNIVERSO DECLARADO: la tupla de destino (TARGET absoluto), no un directorio.
+# INVARIANTE: el gate no autoriza; REPORTA. La escritura la ejecuta el llamante
+#             y solo con RC 0 (edicion sobre tracked limpio) o RC 10 (creacion).
+# RC 11 = cumplimiento PASIVO: la huella ya habita el destino => CERO escrituras.
+
+inputs:
+  target:
+    description: "Ruta ABSOLUTA del archivo a mutar. Relativa => RC 20 (el gate re-basa con git -C)."
+    required: false
+    default: ""
+  blob-pre:
+    description: "git hash-object declarado. Creacion => e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    required: false
+    default: ""
+  huella:
+    description: "Fragmento LITERAL exclusivo del texto a insertar (se busca con grep -F)."
+    required: false
+    default: ""
+  lineas-pre:
+    description: "Lineas declaradas del destino. '-' o vacio => RC 15 NO evaluado => verde PARCIAL."
+    required: false
+    default: "-"
+  plan:
+    description: >-
+      Si se declara, corre el lote: archivo con una tupla por linea
+      (TARGET BLOB_PRE HUELLA LINEAS_PRE). Ignora target/blob-pre/huella.
+    required: false
+    default: ""
+  python-bin:
+    description: "Interprete python3 a usar. Sin dependencias externas (stdlib + git)."
+    required: false
+    default: "python3"
+  json:
+    description: "'true' => imprime el crudo JSON en vez de la cabecera humana."
+    required: false
+    default: "false"
+  fail-on-red:
+    description: >-
+      'true' (defecto): RC bloqueante => el paso falla. 'false': el paso NO falla,
+      pero el veredicto se imprime igual y el output bloqueante=true. No hay
+      override del veredicto: solo cambia quien paga el rojo.
+    required: false
+    default: "true"
+
+outputs:
+  rc:
+    description: "Codigo de salida del gate (0/10/11/12/13/14/15/20/30/31)."
+    value: ${{ steps.gate.outputs.rc }}
+  causa:
+    description: "Causa tipada del RC (PRE_VUELO_OK, OBJETO_INEXISTENTE, ...)."
+    value: ${{ steps.gate.outputs.causa }}
+  bloqueante:
+    description: "'true' si el RC prohibe la escritura encadenada (12/13/14/15/20/30/31)."
+    value: ${{ steps.gate.outputs.bloqueante }}
+  veredicto:
+    description: "PRE_VUELO_OK | FALLO_CERRADO."
+    value: ${{ steps.gate.outputs.veredicto }}
+
+runs:
+  using: "composite"
+  steps:
+    - id: gate
+      shell: bash
+      env:
+        ACTION_DIR: ${{ github.action_path }}
+        IN_TARGET: ${{ inputs.target }}
+        IN_BLOB_PRE: ${{ inputs.blob-pre }}
+        IN_HUELLA: ${{ inputs.huella }}
+        IN_LINEAS_PRE: ${{ inputs.lineas-pre }}
+        IN_PLAN: ${{ inputs.plan }}
+        IN_PY: ${{ inputs.python-bin }}
+        IN_JSON: ${{ inputs.json }}
+        IN_FAIL: ${{ inputs.fail-on-red }}
+      run: |
+        set -uo pipefail
+
+        rc_out() { printf '%s\n' "$1" >> "$GITHUB_OUTPUT"; }
+
+        GATE="$ACTION_DIR/gate_pre_escritura.py"
+        if [ ! -f "$GATE" ]; then
+          echo "::error title=Pre-Write Gate::MOTOR INCOMPLETO: $GATE ausente. Fail-closed."
+          rc_out "rc=30"
+          rc_out "causa=MOTOR_INCOMPLETO"
+          rc_out "bloqueante=true"
+          rc_out "veredicto=FALLO_CERRADO"
+          exit 30
+        fi
+
+        if ! command -v "$IN_PY" >/dev/null 2>&1; then
+          echo "::error title=Pre-Write Gate::MOTOR INCOMPLETO: '$IN_PY' no esta en PATH. Fail-closed."
+          rc_out "rc=31"
+          rc_out "causa=UNIVERSO_VACIO"
+          rc_out "bloqueante=true"
+          rc_out "veredicto=FALLO_CERRADO"
+          exit 31
+        fi
+
+        # Argumentos: se arman por ramas, sin sustituir cadenas vacias.
+        args=()
+        if [ -n "${IN_PLAN:-}" ]; then
+          echo "MODO: plan (lote de tuplas) — target/blob/huella ignorados."
+          args+=(--plan "$IN_PLAN")
+        else
+          args+=("$IN_TARGET" "$IN_BLOB_PRE" "$IN_HUELLA" "$IN_LINEAS_PRE")
+        fi
+        if [ "$IN_JSON" = "true" ]; then
+          args+=(--json)
+        fi
+
+        # SIN TUBERIA: se captura la salida completa y el RC del gate mismo.
+        set +e
+        salida="$("$IN_PY" "$GATE" "${args[@]}" 2>&1)"
+        rc=$?
+        set -e
+        printf '%s\n' "$salida"
+
+        causa="$(printf '%s\n' "$salida" | sed -n \
+          -e 's/^CAUSAS PRESENTES: *{rc:[0-9]*|\([A-Z_]*\)}.*/\1/p' \
+          -e 's/.*"causa": *"\([A-Z_]*\)".*/\1/p' | sed -n '1p')"
+        [ -n "$causa" ] || causa="CAUSA_NO_IMPRESA"
+
+        case "$rc" in
+          0|10|11|17) bloqueante="false" ;;
+          *)          bloqueante="true" ;;
+        esac
+        veredicto="FALLO_CERRADO"
+        [ "$rc" = "0" ] && veredicto="PRE_VUELO_OK"
+
+        rc_out "rc=$rc"
+        rc_out "causa=$causa"
+        rc_out "bloqueante=$bloqueante"
+        rc_out "veredicto=$veredicto"
+
+        if [ "$bloqueante" = "false" ]; then
+          case "$rc" in
+            0)  echo "::notice title=Pre-Write Gate::RC=0 PRE-VUELO OK — edicion autorizada (tracked limpio)." ;;
+            10) echo "::notice title=Pre-Write Gate::RC=10 OBJETO_INEXISTENTE — creacion autorizada (acto declarado)." ;;
+            11) echo "::notice title=Pre-Write Gate::RC=11 HUELLA YA HABITA — cumplimiento PASIVO, CERO escrituras." ;;
+            17) echo "::notice title=Pre-Write Gate::RC=17 OBJETO NUEVO — existe en disco sin historia en el indice (divergencia declarada del referente bash); NO bloquea." ;;
+          esac
+          exit 0
+        fi
+
+        echo "::error title=Pre-Write Gate::FALLO CERRADO RC=$rc causa=$causa — escritura NO autorizada."
+        if [ "$IN_FAIL" = "true" ]; then
+          exit "$rc"
+        fi
+        echo "::warning title=Pre-Write Gate::rojo NO pagado por el paso (fail-on-red=false); veredicto NO adjudicado."
+        exit 0

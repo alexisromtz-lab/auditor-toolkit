@@ -1,0 +1,154 @@
+#!/usr/bin/env sh
+# HUELLA-PRE-WRITE-GATE-HOOK-20261015
+#
+# MITAD DE COMMIT DE LA PUERTA (la otra mitad es el gate de pre-vuelo A2.1).
+# El gate responde: "¿puedo escribir?"  Este hook responde: "¿escribi lo que declare?"
+#
+# QUE VERIFICA (contra el manifiesto de tuplas declaradas):
+#   1. cada path STAGED tiene tupla declarada en el manifiesto
+#   2. el BLOB_PRE declarado == blob del PADRE (HEAD:path)  -> el escritor conocia su base
+#   3. la HUELLA declarada NO habitaba el padre             -> habia algo que escribir
+#   4. la HUELLA declarada SI habita lo escrito (indice)    -> el acto escribio lo declarado
+#   5. LINEAS_PRE declaradas == lineas del padre (saltos 0x0A)
+#   6. el manifiesto NO viaja en el mismo commit que lo que declara (si no, no es testigo)
+#
+# FAIL-CLOSED: si no puede medir, NO deja commitear. Escape declarado: git commit --no-verify
+#
+# UNIVERSO DECLARADO: el INDICE staged (git diff --cached), no el arbol de trabajo.
+# MOTOR: sh + binario `git`. CERO dependencias.
+#
+# TABLA DE CAUSAS (RC) — numeros del gate, causas del hook donde el objeto cambia:
+#   0  PRE_COMMIT_OK                todas las tuplas declaradas se sostienen
+#   10 ESCRITURA_NO_DECLARADA       path staged sin tupla en el manifiesto   [causa PROPIA del hook]
+#   11 HUELLA_YA_EN_EL_PADRE        la huella ya habitaba el padre: no habia nada que escribir
+#   12 BASE_CADUCA                  BLOB_PRE declarado != blob del padre
+#   13 MANIFIESTO_EN_MISMO_COMMIT   la declaracion se reescribe junto a lo declarado
+#   14 SIN_REPO                     no hay arbol git (fail-closed)
+#   15 LINEAS_DISTINTAS             lineas declaradas != lineas del padre
+#   16 HUELLA_AUSENTE_EN_ESCRITO    lo escrito no contiene la huella declarada [causa PROPIA del hook]
+#   20 CONTRATO_INCOMPLETO          manifiesto ausente o tupla de != 4 campos
+#   30 MOTOR_INCOMPLETO             no se hallo gate_pre_escritura.py junto al hook (fail-closed)
+#
+# RESIDUO DECLARADO (plano ciego FUERA del hook):
+#   - contenido binario: la busqueda de huella no es fiable -> no se audita (se declara)
+#   - reescritura en varios commits: cada commit se audita contra SU padre, no contra el origen
+#   - paths exentos: pre-write-gate/** (la herramienta escribe su propio codigo)
+
+set -u
+
+RC=0
+marca() { if [ "$1" -gt "$RC" ]; then RC="$1"; fi; }
+
+ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || ROOT=""
+if [ -z "$ROOT" ]; then
+  echo "SIN REPO: el hook no corre dentro de un arbol git. Fail-closed." >&2
+  echo "VEREDICTO HOOK: FALLO CERRADO RC=14" >&2
+  exit 14
+fi
+cd "$ROOT" || exit 14
+
+# Origen derivado de $0 (el hook pregunta donde esta EL, no donde esta el shell).
+SELF_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd)" || SELF_DIR=""
+TOOL_DIR=""
+for cand in "$SELF_DIR/.." "$SELF_DIR/../pre-write-gate" "$ROOT/pre-write-gate"; do
+  if [ -n "$cand" ] && [ -f "$cand/gate_pre_escritura.py" ]; then TOOL_DIR="$(cd "$cand" && pwd)"; break; fi
+done
+if [ -z "$TOOL_DIR" ]; then
+  echo "MOTOR INCOMPLETO: no se hallo gate_pre_escritura.py junto al hook ($SELF_DIR). Fail-closed." >&2
+  echo "VEREDICTO HOOK: FALLO CERRADO RC=30" >&2
+  exit 30
+fi
+MANIFEST="$TOOL_DIR/tuplas.declaradas.tsv"
+
+STAGED="$(git diff --cached --name-only --diff-filter=ACMR -- . 2>/dev/null)"
+
+echo "UNIVERSO DECLARADO: el indice staged (git diff --cached), no el arbol de trabajo."
+echo "MANIFIESTO: $MANIFEST"
+
+if [ -z "$STAGED" ]; then
+  echo "PATHS STAGED MEDIDOS: 0"
+  echo "VEREDICTO HOOK: PRE-COMMIT OK (nada staged) RC=0"
+  exit 0
+fi
+
+if [ ! -f "$MANIFEST" ]; then
+  echo "CONTRATO INCOMPLETO: manifiesto ausente y hay paths staged. Fail-closed." >&2
+  echo "  Declarar las tuplas en $MANIFEST (TARGET BLOB_PRE HUELLA LINEAS_PRE) o usar: git commit --no-verify" >&2
+  echo "PATHS STAGED MEDIDOS: $(printf '%s\n' "$STAGED" | wc -l | tr -d ' ')"
+  echo "VEREDICTO HOOK: FALLO CERRADO RC=20" >&2
+  exit 20
+fi
+
+# El manifiesto no puede viajar en el mismo commit que lo que declara.
+if [ -n "$(git diff --cached --name-only -- "$MANIFEST" 2>/dev/null)" ]; then
+  echo "MANIFIESTO EN MISMO COMMIT: $MANIFEST esta staged junto a lo que declara: no es testigo." >&2
+  marca 13
+fi
+
+n_paths=0
+while IFS= read -r p; do
+  [ -n "$p" ] || continue
+  case "$p" in
+    pre-write-gate/*) continue ;;
+  esac
+  n_paths=$((n_paths + 1))
+
+  linea="$(awk -v t="$p" '$1==t {print; exit}' "$MANIFEST")"
+  if [ -z "$linea" ]; then
+    echo "  ESCRITURA NO DECLARADA  rc=10  $p"
+    marca 10
+    continue
+  fi
+
+  # shellcheck disable=SC2086
+  set -- $linea
+  if [ "$#" -ne 4 ]; then
+    echo "  CONTRATO INCOMPLETO  rc=20  $p (tupla de $# campos, se exigen 4)"
+    marca 20
+    continue
+  fi
+  blob_pre="$2"; huella="$3"; lp="$4"
+
+  blob_padre="$(git rev-parse -q --verify "HEAD:$p" 2>/dev/null)" || blob_padre=""
+  [ -n "$blob_padre" ] || blob_padre="e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+
+  if [ "$blob_padre" != "$blob_pre" ]; then
+    echo "  BASE CADUCA  rc=12  $p  declarado=$blob_pre  padre=$blob_padre"
+    marca 12
+    continue
+  fi
+
+  if git cat-file -p "$blob_padre" 2>/dev/null | grep -Fq -- "$huella"; then
+    echo "  HUELLA YA EN EL PADRE  rc=11  $p  (cumplimiento pasivo: no habia nada que escribir)"
+    marca 11
+    continue
+  fi
+
+  if ! git show ":$p" 2>/dev/null | grep -Fq -- "$huella"; then
+    echo "  HUELLA AUSENTE EN ESCRITO  rc=16  $p  huella='$huella'"
+    marca 16
+    continue
+  fi
+
+  if [ "$lp" != "-" ]; then
+    n_padre="$(git cat-file -p "$blob_padre" 2>/dev/null | wc -l | tr -d ' ')"
+    if [ "$lp" != "$n_padre" ]; then
+      echo "  LINEAS DISTINTAS  rc=15  $p  declaradas=$lp  padre=$n_padre"
+      marca 15
+      continue
+    fi
+  fi
+
+  echo "  OK  rc=0  $p  (blob=$blob_pre, huella presente, lineas=$lp)"
+done <<EOF
+$STAGED
+EOF
+
+echo "PATHS STAGED MEDIDOS: $n_paths (exentos: pre-write-gate/**)"
+if [ "$RC" -eq 0 ]; then
+  echo "VEREDICTO HOOK: PRE-COMMIT OK RC=0"
+  exit 0
+fi
+echo "VEREDICTO HOOK: ESCRITURA NO ADJUDICADA RC=$RC" >&2
+echo "  Escape declarado (y auditado en el commit): git commit --no-verify" >&2
+exit "$RC"

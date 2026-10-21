@@ -1,0 +1,31 @@
+# TARGET	BLOB_PRE	HUELLA	LINEAS_PRE
+# TARGET relativos a la raiz del repo (medido 18-Oct-2026: absolutos de este Mac dan RC 10 en el runner).
+# RETIRADA 2026-10-18: la fila del manifiesto se retira (Quine: el manifiesto no puede medirse a si mismo). HUELLA-TUPLA-DECLARADA-MANIFIESTO-RETIRADA-20261018
+sim/banco_lineal.py	f6b113ee5b96377f144068822f709062dbc1ef25	HUELLA-TUPLA-DECLARADA-BANCO-20261018	219
+sim/analizador_dominadores_ci.py	d5842170e08959db9d3354471d2a412567c20412	HUELLA-TUPLA-DECLARADA-ARNES-DOMINADORES-20261018	182
+sim/ejemplo_vulnerable_wrapper.yml	5e0ec271ae7fe2db4af677d23a391b1eb4bae5af	HUELLA-TUPLA-DECLARADA-YAML-VULNERABLE-20261018	25
+# RESELLADA 2026-10-20 (HUELLA-TUPLA-MOTOR-RESELLADA-20261020): la fila del motor
+#   se movio en el MISMO acto que el fix del fail-open de RC 10 (HUELLA-GATE-FAIL-CLOSED-
+#   TREE-20261020 / -PY-20261020). El custodio hizo su trabajo: CI run 39529782755 paso
+#   a rojo con RC=12 en esta fila (esperado 9eaf7705, medido a3a8bd4f) — el EDITOR no
+#   puede mover el INSTRUMENTO sin declararlo. Nuevo blob a3a8bd4f, 908 lineas.
+# RESELLADA 2026-10-20 (HUELLA-TUPLA-MOTOR-RESELLADA-2-20261020): la palabra del veredicto
+#   se ata a NO_BLOQUEANTES (HUELLA-GATE-FIX-MENSAJE-RC10-20261020): RC 10/11/17 ya no se
+#   imprimen FALLO CERRADO. Nuevo blob 70d40b2c, 937 lineas.
+# RESELLADA 2026-10-20 (HUELLA-TUPLA-MOTOR-RESELLADA-3-20261020): LINEAS_PRE vacio deja
+#   de separar a los gemelos (HUELLA-B20-PARIDAD-LINEAS-20261020): el port ya no devuelve
+#   RC 20 ante "" — el banco corre AMBOS gemelos (B20). Nuevo blob 8cea6bb2, 1002 lineas.
+pre-write-gate/gate_pre_escritura.py	8cea6bb2c8208d8848215c695dc56e9242ad8d09	HUELLA-TUPLA-DECLARADA-MOTOR-20261018	1002
+# DECLARADO 2026-10-18: validador_lineal.py es instrumento central del corpus (293 l) y no se retira. HUELLA-DECLARAR-VALIDADOR-LINEAL-20261018
+sim/validador_lineal.py	1dc9d21fb3ddd7adb3d0a33e92a0aaec660fe176	HUELLA-VALIDADOR-LINEAL-DECLARADO-20261018	293
+PREREGISTRO_HASH_CANONICO_20261018.md	043270d1dfd649850d28d0667326288bb0382149	HUELLA-PREREGISTRO-HASH-CANONICO-20261018	20
+pre-write-gate/README.md	db2587ea553b61d2ca249778fba0c37b0b34acf8	HUELLA-README-INMUTABLE-DECLARADO-20261018	183
+sim/PREREGISTRO_JSON_SCHEMA_TOPLEVEL_20261018.md	06193ffc92cfde6b0ce280bab68188683e704924	HUELLA-PREREGISTRO-JSON-TOPLEVEL-20261018	41
+sim/PREREGISTRO_DYNAMICS_VERLET_RATTLE_20261018.md	e69de29bb2d1d6434b8b29ae775ad8c2e48c5391	HUELLA-PREREGISTRO-VERLET-RATTLE-20261018	0
+# DECLARADA 2026-10-20 (HUELLA-TUPLA-DECLARADA-GATE-SH-20261020): el gemelo bash del gate
+#   (fix del fail-open de RC 10 fuera de arbol git) no tenia fila: podia moverse sin que
+#   el custodio de CI lo viera. Se declara el instrumento que autoriza toda escritura A2.1.
+# RESELLADA 2026-10-21 (HUELLA-TUPLA-DECLARADA-GATE-SH-RESELLADA-20261021): `b7d955e` (RC 20 con
+#   HUELLA numerica o minima) sumo 21 l. al gemelo bash y no resello su fila: CI daba RC 12
+#   DESFASE_DE_OBJETO (esperado 16c73fe7, medido e5d14744). Se resella al blob medido, 239 l.
+tools/gate_pre_escritura.sh	e5d14744769bac415d7721e231b16f88d6a0c6cd	HUELLA-TUPLA-DECLARADA-GATE-SH-RESELLADA-20261021	239

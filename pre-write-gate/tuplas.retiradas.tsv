@@ -1,0 +1,5 @@
+# TARGET	BLOB_PRE	MOTIVO	HUELLA
+# HUELLA-TUPLAS-RETIRADAS-20261018
+# SONDA RETIRADA 2026-10-18: sim/validador_lineal.py (1dc9d21f...) se declaro como retiro huerfano para probar RC 18 con el objeto vivo (medido: RC 18, huerfano 1).
+# Una declaracion de retiro cuyo objeto vive es una declaracion falsa y deja el lote en RC 18 en cada corrida. El caso queda como prueba permanente en el banco (B15/B16). HUELLA-RETIRO-SONDA-LIMPIADA-20261018
+# HUELLA-FIX-HEADER-RETIRADAS-20261018: linea 1 comentada; era encabezado sin '#', y el parser la ingeria como fila de dato ('TARGET' fantasma). Cero filas de dato tras el fix.

@@ -1,0 +1,60 @@
+# HUELLA-PRE-WRITE-GATE-EXAMPLE-YML-20261015
+#
+# COPIA: este archivo se copia a .github/workflows/ del repo destino.
+# NO vive en .github/workflows/ del repo de la herramienta: si viviera ahi,
+# correria sobre el repo que la construye y sustituiria la evidencia propia.
+#
+# UNIVERSO DECLARADO: workflows del repo destino (no de este repo).
+# MOTOR: la action compuesta ./pre-write-gate (o <owner>/<repo>/pre-write-gate@<sha>).
+# El manifiesto puede faltar: en ese caso el lote se declara SIN ARMAR y no corre.
+# Este ejemplo conserva los dos jobs del workflow vivo: banco y manifiesto opcional.
+#
+# DOS PUERTAS, DOS MOMENTOS:
+#   A) PRE-VUELO  -> antes de escribir (RC 10 creacion / RC 0 edicion / RC 11 ya escrito)
+#   B) LOTE       -> sobre el manifiesto de tuplas declaradas (--plan)
+#
+# SHA-1 de 40 hex para `uses:` (no tags flotantes): el mismo pin que el repo de la
+# herramienta ya usa como correcto. Un tag flotante mueve el gate bajo tus pies.
+
+name: pre-write-gate
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  banco:
+    name: banco must-fail (determinista, sin escribir)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Banco del instrumento (12 casos, cada uno por su causa)
+        run: python3 pre-write-gate/gate_pre_escritura.py --self-test
+
+  manifiesto:
+    name: pre-vuelo del manifiesto declarado
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+      - name: Anunciar si el manifiesto esta armado
+        run: |
+          set -uo pipefail
+          if [ -f pre-write-gate/tuplas.declaradas.tsv ]; then
+            echo "MANIFIESTO: presente"
+            wc -l pre-write-gate/tuplas.declaradas.tsv
+          else
+            echo "MANIFIESTO: ausente -> la puerta de lote queda SIN ARMAR (declarado, no silencioso)"
+            echo "::notice title=pre-write-gate::manifiesto ausente (pre-write-gate/tuplas.declaradas.tsv); lote NO auditado"
+          fi
+      - name: Pre-vuelo del lote (solo si el manifiesto existe)
+        if: ${{ hashFiles('pre-write-gate/tuplas.declaradas.tsv') != '' }}
+        uses: ./pre-write-gate
+        with:
+          plan: pre-write-gate/tuplas.declaradas.tsv
+          lineas-pre: "-"
+          fail-on-red: "true"
