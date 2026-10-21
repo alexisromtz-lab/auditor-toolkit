@@ -75,6 +75,24 @@ python3 barrido_limite_bytes/barrido_limite_bytes_20261021.py --repo . \
 
 ---
 
+## Pieza 4 · `ci_sweep.py` — ¿qué dicen los checks actuales de los PRs paginados?
+
+Inventaría PRs abiertos y clasifica los shards configurados contra el SHA actual de cada PR.
+
+- **Pieza.** Lista PRs y consulta check-runs con paginación; registra `ROJO`, `VERDE`, `PENDIENTE`, `SIN_CHECKS` o `NO_VERIFICABLE`, junto con SHA y fecha medidos.
+- **Control negativo.** `--self-test` comprueba cinco resultados sintéticos, incluidos checks ausentes y una ejecución cancelada; ninguno se convierte en verde.
+- **Límite declarado.** `--limit` es un tope, no un censo. La caché local predeterminada vence en 900 segundos; los reintentos usan backoff acotado. `CANDIDATA_FUERA_DEL_DIFF` solo significa que el archivo del caso no aparece en el diff: no es prueba causal. El barrido no descarga logs ni recrea mediciones históricas.
+- **Comando.**
+
+```bash
+python3 ci_sweep.py --repo tenstorrent/tt-metal --out ci-sweep.json --limit 1000
+python3 ci_sweep.py --self-test
+```
+
+<!-- HUELLA-CI-SWEEP-README-ES-20261021 -->
+
+---
+
 ## Caso de estudio · tt-metal (CI) — el barrido que evitó un cero falso
 
 Medido el 2026-10-19T05:42Z sobre `tenstorrent/tt-metal`.
@@ -100,7 +118,7 @@ Medido el 2026-10-19T05:42Z sobre `tenstorrent/tt-metal`.
 Lo que todavía **no existe** se dice aquí en vez de aparecer como "pieza" en la tabla de arriba:
 
 - **Checkpoint atómico / guardián de objetos.** No hay implementación publicada. El requisito está claro: escritura `os.replace`, control negativo con `kill -9` a mitad de proceso, y el archivo resultante debe contener los ítems parciales (**no 0 bytes**). Hasta que exista el script y su `kill -9`, no hay pieza.
-- **Barrido de CI empaquetado.** El barrido de tt-metal se corrió ad hoc; empaquetarlo (descarga de logs, criterio de independencia *archivo culpable ausente del diff*) es trabajo pendiente. El criterio ya está escrito arriba; el binario no.
+- **Reproducción histórica completa de CI.** `ci_sweep.py` mide checks actuales y aplica el criterio de archivo ausente del diff, pero no descarga logs ni reconstruye el barrido histórico de 2026-10-19 (229 PRs, 12 shards rojos, 8 casos fuera del diff y 6 logs).
 - **Packaging del driver D4B.** Existe como driver de investigación con sus semillas y blobs declarados, **no** como instrumento de línea de comandos. No se le inventan flags.
 
 ---

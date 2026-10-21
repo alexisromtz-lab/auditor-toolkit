@@ -80,6 +80,24 @@ python3 barrido_limite_bytes/barrido_limite_bytes_20261021.py --repo . \
 
 ---
 
+## Piece 4 · `ci_sweep.py` — what do the current paginated PR checks say?
+
+Inventories open PRs and classifies the configured CI shards against each PR's current head SHA.
+
+- **Piece.** Paginated PR listing and check-run retrieval; records `ROJO`, `VERDE`, `PENDIENTE`, `SIN_CHECKS`, or `NO_VERIFICABLE` with the measured SHA and timestamp.
+- **Negative control.** `--self-test` checks five synthetic outcomes, including missing checks and a cancelled run; neither can become green.
+- **Declared limit.** `--limit` is a cap, not a census. The default cache is local and expires after 900 seconds; retry backoff is bounded. `CANDIDATA_FUERA_DEL_DIFF` means only that the case-study file is absent from the PR diff—it is not causal proof. The sweep does not download logs or recreate historical measurements.
+- **Command.**
+
+```bash
+python3 ci_sweep.py --repo tenstorrent/tt-metal --out ci-sweep.json --limit 1000
+python3 ci_sweep.py --self-test
+```
+
+<!-- HUELLA-CI-SWEEP-README-EN-20261021 -->
+
+---
+
 ## Case study · tt-metal (CI) — the sweep that avoided a false zero
 
 Measured on 2026-10-19T05:42Z over `tenstorrent/tt-metal`. Full evidence, with one URL per PR: [`case_studies/tt-metal.md`](./case_studies/tt-metal.md).
