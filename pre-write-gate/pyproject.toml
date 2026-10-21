@@ -1,11 +1,11 @@
 # HUELLA-PRE-WRITE-GATE-PYPROJECT-20261015
 #
-# SEGUNDO pyproject DEL REPO (declarado, no accidental).
-# La raiz declara "platino-core" (biblioteca) con descubrimiento de paquetes;
-# este declara la HERRAMIENTA "pre-write-gate" como py-module SUELTO.
-# La raiz NO conoce este paquete y este paquete NO conoce la raiz:
+# EXTRACTO (2026-10-21): este pyproject viene del corpus `platino-labs`, donde era
+# el SEGUNDO pyproject del repo. Aqui es el UNICO: el repo solo declara la
+# HERRAMIENTA "pre-write-gate" como py-module SUELTO, sin biblioteca hermana.
 #   pip install ./pre-write-gate        -> instala el comando `pre-write-gate`
-#   (desde la raiz: pip install .       -> instala platino-core, NO esto)
+# Licencia alineada al LICENSE del repo (MIT). En el corpus de origen la raiz
+# declara Apache-2.0: la divergencia es DELIBERADA y se declara aqui, no se hereda.
 # UNIVERSO DECLARADO: rutas del arbol git donde se corre `git hash-object`.
 # MOTOR: python3 >= 3.10 stdlib + binario `git` en PATH. CERO dependencias.
 # FAIL-CLOSED: sin `git`, el gate sale RC 30 (MOTOR_INCOMPLETO).
@@ -20,7 +20,7 @@ version = "0.1.0"
 description = "Puerta de PRE-VUELO bloqueante (A2.1): verifica la tupla de destino antes de escribir (blob, huella, lineas). Read-only."
 readme = "README.md"
 requires-python = ">=3.10"
-license = "Apache-2.0"
+license = "MIT"
 authors = [{ name = "Jose Alexis Roman Martinez" }]
 keywords = [
   "agents",
@@ -35,7 +35,7 @@ classifiers = [
   "Development Status :: 4 - Beta",
   "Environment :: Console",
   "Intended Audience :: Developers",
-  "License :: OSI Approved :: Apache Software License",
+  "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
   "Programming Language :: Python :: 3",
   "Topic :: Software Development :: Version Control :: Git",
@@ -45,8 +45,8 @@ classifiers = [
 dependencies = []
 
 [project.urls]
-Homepage = "https://github.com/alexisromtz-lab/platino-corpus"
-Source = "https://github.com/alexisromtz-lab/platino-corpus"
+Homepage = "https://github.com/alexisromtz-lab/auditor-toolkit"
+Source = "https://github.com/alexisromtz-lab/auditor-toolkit"
 
 [project.scripts]
 # Modulo suelto (no paquete): el archivo vive junto a este pyproject.

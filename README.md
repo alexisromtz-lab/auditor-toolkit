@@ -52,10 +52,10 @@ The manifest apparatus proves that a `.json` parses and that a `.md` has lines. 
 - **Command.**
 
 ```bash
-python3 verify_claims.py REPO [REPO ...]
-python3 verify_claims.py --sonda-digitos REPO [REPO ...] [--presupuesto N|todo]
-python3 verify_claims.py --falsador-dato REPO [REPO ...]
-python3 verify_claims.py --json
+python3 verify_claims/verify_claims.py REPO [REPO ...]
+python3 verify_claims/verify_claims.py --sonda-digitos REPO [REPO ...] [--presupuesto N|todo]
+python3 verify_claims/verify_claims.py --falsador-dato REPO [REPO ...]
+python3 verify_claims/verify_claims.py --json
 ```
 
 ---
@@ -66,13 +66,16 @@ Measures the real cost of a content hook as a function of the indexed file size,
 
 - **Piece.** Each point is measured in **two regimes over the same file**: `TOPE` (the real hook, which **does not scan** above the limit) and `RSS`/passes (the effective scan). Default sizes: `0.5 · 1 · 2 · 4 · 6 · 12` MiB, minimum of `--reps` repetitions.
 - **Negative control.** The `TOPE` regime **is** the control: timing only the real hook measures the rejection branch (constant, ~1 s) and would conclude "cost is flat, the cap is superstition" — *the instrument would be measuring its own exception*. `--solo-pases` and `--solo-rss` isolate each half so the difference is visible.
-- **Declared limit.** It measures the **hook**, not the file system. It takes the **minimum** of the repetitions (declared with `--declaro-reps`), not the mean: the minimum is the reproducible cost, the mean carries machine noise. The `--force-*` flags (`--force-sello`, `--force-ventana`, `--force-curva`, `--force-regimen`) exist to **break** the curve on purpose, not to publish a prettier number.
+- **Declared limit.** It measures the **hook**, not the file system. It takes the **minimum** of the repetitions (declared with `--declaro-reps`), not the mean: the minimum is the reproducible cost, the mean carries machine noise. The `--force-*` flags (`--force-sello`, `--force-ventana`, `--force-curva`, `--force-regimen`) exist to **break** the curve on purpose, not to publish a prettier number. It **does not guess the hook**: if it does not find it, it fails closed. The default path is `tools/hooks/pre-commit`, which is the layout of the corpus this piece came from and **not** the layout of this repo: here the hook lives at `pre-write-gate/hooks/pre-commit`, so it must be named with `--hook`. A command copied without `--hook` fails closed — it does not fall back to a silent default.
 - **Command.**
 
 ```bash
-python3 barrido_limite_bytes_20261021.py --repo . --sizes 0.5,1,2,4,6,12 --reps 2 --json puntos.json
-python3 barrido_limite_bytes_20261021.py --solo-pases   # only the half that scans
+python3 barrido_limite_bytes/barrido_limite_bytes_20261021.py --repo . \
+  --hook pre-write-gate/hooks/pre-commit --sizes 0.5,1,2,4,6,12 --reps 2 --json puntos.json
+python3 barrido_limite_bytes/barrido_limite_bytes_20261021.py --repo . \
+  --hook pre-write-gate/hooks/pre-commit --solo-pases   # only the half that scans
 ```
+<!-- HUELLA-EXTRACCION-RUTAS-AUDITOR-TOOLKIT-20261021 -->
 
 ---
 
