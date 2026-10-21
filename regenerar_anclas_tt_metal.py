@@ -24,10 +24,14 @@ class ApiError(Exception):
         self.not_found = not_found
 
 
-def gh_json(endpoint: str) -> Any:
+def gh_json(endpoint: str, *, paginate: bool = False) -> Any:
+    command = ["gh", "api"]
+    if paginate:
+        command.extend(["--paginate", "--slurp"])
+    command.append(endpoint)
     try:
         response = subprocess.run(
-            ["gh", "api", endpoint], capture_output=True, text=True, check=False
+            command, capture_output=True, text=True, check=False
         )
     except OSError as exc:
         raise ApiError(f"cannot run gh: {exc}") from exc
@@ -121,10 +125,16 @@ def inspect_anchor(pr_number: int, comment_id: int) -> dict[str, Any]:
 
     if head_sha:
         try:
-            checks = gh_json(
-                f"repos/{REPOSITORY}/commits/{head_sha}/check-runs?per_page=100"
+            pages = gh_json(
+                f"repos/{REPOSITORY}/commits/{head_sha}/check-runs?per_page=100",
+                paginate=True,
             )
-            entry["shards"] = shard_result(checks.get("check_runs", []))
+            check_runs = [
+                check
+                for page in pages
+                for check in page.get("check_runs", [])
+            ]
+            entry["shards"] = shard_result(check_runs)
         except ApiError as exc:
             entry["errors"].append(f"check_runs_api: {exc}")
     else:
