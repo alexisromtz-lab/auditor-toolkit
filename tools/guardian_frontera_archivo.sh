@@ -1,13 +1,17 @@
 #!/usr/bin/env bash
 # HUELLA-GUARDIAN-FRONTERA-ARCHIVO-20261021
 # ============================================================================
-# guardian_frontera_archivo.sh — instrumento del §6.3 de
-# sim/NOTA_DE_FRONTERA_DONALDO_20261020.md.
+# guardian_frontera_archivo.sh — instrumento de frontera de archivo.
 #
-# EL HUECO QUE CIERRA (textual de la nota):
-#   «El `.gitignore` es el unico guardian. Si alguien añade `archivo/` con
-#    `git add -f`, la frontera desaparece sin que nada avise. No hay
-#    instrumento que lo detecte hoy.»
+# EL HUECO QUE CIERRA:
+#   «El `.gitignore` es el unico guardian. Si alguien añade un prefijo ignorado
+#    con `git add -f`, la frontera desaparece sin que nada avise. No hay
+#    instrumento que lo detecte.»
+#
+# EL PREFIJO SE DECLARA, NO SE HEREDA: este instrumento no conoce el arbol en el
+# que corre. Sin prefijo declarado no vigila nada y lo DICE (SIN_PREFIJO); fingir
+# una medicion sobre un prefijo supuesto es la tautologia que viene a cazar.
+# Declaracion: `--prefijo P/` (repetible) o la variable FRONTERA_PREFIJOS="a/ b/".
 #
 # LA LEY: ninguna ruta NUEVA bajo un prefijo ignorado entra al indice.
 #   - "prefijo ignorado" no se declara aqui: se DERIVA de `git check-ignore`,
@@ -26,7 +30,9 @@
 #   tools/guardian_frontera_archivo.sh -q               solo RC
 #   tools/guardian_frontera_archivo.sh --regenerar      imprime baseline nuevo
 #   tools/guardian_frontera_archivo.sh --baseline RUTA  baseline alterno
-#   tools/guardian_frontera_archivo.sh --prefijo X/     prefijo extra a vigilar
+#   tools/guardian_frontera_archivo.sh --prefijo X/     prefijo a vigilar (repetible)
+#
+#   entorno: FRONTERA_PREFIJOS="archivo/ export/"   prefijos sin pasar flags
 #
 # RC (fail-closed):
 #   0  FRONTERA INTACTA   — indice == baseline sobre los prefijos vigilados
@@ -42,7 +48,8 @@ set -euo pipefail
 QUIET=0
 REGEN=0
 BASELINE=""
-PREFIJOS=("archivo/")
+PREFIJOS=()
+for _p in ${FRONTERA_PREFIJOS:-}; do PREFIJOS+=("$_p"); done
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -70,7 +77,7 @@ BASE=$(mktemp) || { rm -f "$IND"; exit 20; }
 trap 'rm -f "$IND" "$BASE"' EXIT
 
 : > "$IND"
-for p in "${PREFIJOS[@]}"; do
+for p in ${PREFIJOS[@]+"${PREFIJOS[@]}"}; do
   # solo se vigila un prefijo si git lo considera ignorado; si no, se declara
   if git -C "$RAIZ" check-ignore -q --no-index "$p""x" 2>/dev/null; then
     git -C "$RAIZ" ls-files -- "$p" >> "$IND"
@@ -79,6 +86,11 @@ for p in "${PREFIJOS[@]}"; do
   fi
 done
 sort -u -o "$IND" "$IND"
+
+if [ "${#PREFIJOS[@]}" -eq 0 ]; then
+  [ "$QUIET" -eq 1 ] || printf 'SIN_PREFIJO — no hay prefijo vigilado declarado (--prefijo o FRONTERA_PREFIJOS): no se finge que midio\n'
+  [ "$REGEN" -eq 1 ] || exit 0
+fi
 
 if [ "$REGEN" -eq 1 ]; then
   printf '# HUELLA-FRONTERA-ARCHIVO-BASELINE-20261021\n'
@@ -120,6 +132,6 @@ fi
 
 if [ "$RC" -eq 0 ] && [ "$QUIET" -eq 0 ]; then
   printf 'FRONTERA_OK indice=%s baseline=%s prefijos=%s\n' \
-    "$N_IDX" "$N_BASE" "$(IFS=,; printf '%s' "${PREFIJOS[*]}")"
+    "$N_IDX" "$N_BASE" "$(IFS=,; printf '%s' ${PREFIJOS[@]+"${PREFIJOS[*]}"})"
 fi
 exit "$RC"

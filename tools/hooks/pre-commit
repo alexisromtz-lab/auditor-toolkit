@@ -5,7 +5,7 @@
 # HUELLA-HOOK-REGLA-NVAPI-20261014
 # HUELLA-HOOK-DOS-LISTAS-RUTA-Y-TOTAL-20261014
 # ============================================================================
-# pre-commit de higiene — platino-labs · Fase 0 / Acto 2 · Acto 2B · Acto 2C
+# pre-commit de higiene · Fase 0 / Acto 2 · Acto 2B · Acto 2C
 # ============================================================================
 #
 # ERRATA MEDIDA EN VIVO (Acto 2B y 2C, 14-Oct-2026) — se declara, no se esconde:
@@ -95,19 +95,17 @@ apple_*_ca.pem
 *cacert.pem'
 
 # RETIRO DECLARADO (dueno, 20-Oct-2026) — HUELLA-HOOK-REMOVE-ALLOWLIST-20261020
-#   Estado: la lista vuelve a VACIA. La excepcion que vivio aqui tuvo la huella
-#           HUELLA-ALLOWLIST-TOTAL-RECETA-VISION-PILLOW-20261020, con un unico pathspec:
-#           sim/recetas/REC-VISION-PILLOW-10146.json (v1 · blob c25b7a3e48f6936caf7d003758d7644ad6939461
-#           · 1 244 209 B · 137 lineas), que cae en capa 2 porque embebe fuente de
-#           Pillow (HPND) dentro de sus campos fixture.PIL/.
-#   Por que se retira: la v1 queda en HEAD como objeto historico CONGELADO y no vuelve
-#           a pasar por el stage; una excepcion permanente sobre un objeto que ya no se
-#           stagea es una puerta abierta sin uso. Si alguien la stagea, el hook DEBE gritar
-#           (fail-closed): un commit bloqueado cuesta un minuto, un objeto de terceros
-#           colado cuesta el corpus.
-#   Por que no vuelve a hacer falta: la receta vigente es la v2
-#           (sim/recetas/REC-VISION-PILLOW-10146.v2.json), que REFERENCIA el fixture en
-#           lugar de embeber la fuente y pasa el escaneo de contenido sin excepcion.
+#   Estado: la lista vuelve a VACIA. La excepcion que vivio aqui cubria UN unico
+#           pathspec congelado en HEAD (receta de un arbol privado · 1 244 209 B ·
+#           137 lineas), que cae en capa 2 porque embebe fuente de terceros con
+#           licencia propia dentro de sus campos fixture.
+#   Por que se retira: ese objeto queda en HEAD como historico CONGELADO y no
+#           vuelve a pasar por el stage; una excepcion permanente sobre un objeto
+#           que ya no se stagea es una puerta abierta sin uso. Si alguien lo
+#           stagea, el hook DEBE gritar (fail-closed): un commit bloqueado cuesta
+#           un minuto, un objeto de terceros colado cuesta el arbol.
+#   Por que no vuelve a hacer falta: la version vigente de esa receta REFERENCIA el
+#           fixture en lugar de embeber la fuente, y pasa el escaneo sin excepcion.
 #   Reabrir esta lista exige orden del dueno + tupla A2.1 + tools/install_hooks.sh.
 ALLOWLIST_TOTAL=''
 
@@ -250,7 +248,7 @@ REC="$TMPD/rechazos.txt"
 git -C "$REPO_ROOT" diff --cached --name-only --diff-filter=ACMR > "$LISTA" || exit 1
 
 # --- frontera de archivo/ (HUELLA-HOOK-FRONTERA-ARCHIVO-20261021) -----------
-# Cierra el §6.3 de sim/NOTA_DE_FRONTERA_DONALDO_20261020.md: el .gitignore es
+# Cierra la doctrina de frontera de archivo del corpus de origen: el .gitignore es
 # el unico guardian y `git add -f` lo atraviesa sin que nada avise. El guardian
 # mide el INDICE contra la deuda declarada en tools/frontera_archivo_baseline.txt.
 # RC 0 intacta · 1 ruta nueva bajo un prefijo ignorado · 3/4 baseline roto.
@@ -390,336 +388,33 @@ fi
 printf 'pre-commit higiene OK  ·  archivos indexados: %s  ·  rutas rechazadas: 0\n' "$N_ARCH"
 
 # ============================================================================
-# gate de fixtures estaticos — HUELLA-PRE-COMMIT-VERIFICAR-FIXTURES-20261020
-#                                 HUELLA-PRE-COMMIT-BLOB-INDEXADO-20261020
-#                                 HUELLA-PRE-COMMIT-OBJETO-SIEMPRE-INDEXADO-20261020
+# GATES LOCALES DEL ARBOL QUE ADOPTA EL HOOK — HUELLA-HOOK-GATES-LOCALES-20261022
 # ============================================================================
-# POR QUE EXISTE (ERRATA 11, §8.15): `sim/generar_fixtures_estaticos_20261020.py
-# --verificar` reproduce los quince fixtures congelados. Mientras se corra solo
-# a mano, el congelado no protege nada: en tres semanas nadie se acuerda y el
-# corpus se pudre en silencio. Se dispara UNICAMENTE cuando el stage toca el
-# objeto que protege; un README o un whitepaper no pagan nada.
-# COSTO MEDIDO: 0,88 s. No usa PYTHONHASHSEED: el replay serializa con
-# sort_keys y no depende del orden de dicts.
-# FALSADOR: si un delta falseado en el JSON no aborta el commit, este gate es
-# decorativo y debe retirarse, no maquillarse.
-FIXTURES_DISPARADORES='sim/fixtures_estaticos_20261020.json
-sim/generar_fixtures_estaticos_20261020.py
-sim/banco_fixtures_20261020.py
-sim/censo_patologias_20261020.py
-sim/invariantes_catalogo.py
-sim/router_soluciones_v2.py
-sim/NORMATIVA_BANCO_HUMANO_20261020.md'
-
-_fixtures_dispara=no
-while IFS= read -r _disparador; do
-  [ -n "$_disparador" ] || continue
-  if grep -qxF -- "$_disparador" "$LISTA"; then
-    _fixtures_dispara=si
-    break
-  fi
-done <<EOF
-$FIXTURES_DISPARADORES
-EOF
-
-if [ "$_fixtures_dispara" = "si" ]; then
-  # EL OBJETO MEDIDO ES SIEMPRE EL BLOB INDEXADO, NUNCA EL DISCO
-  # ------------------------------------------------------------------------
-  # Medido 20-Oct-2026: con el JSON falsificado en el indice (8e0960ad) y el
-  # disco sano (aa3f57e9), el gate imprimia "fixtures OK" y commiteaba el blob
-  # falso (08d96f5). Un gate que mide el arbol de trabajo no protege el commit:
-  # verde sobre un objeto que no es el suyo, la familia del replay que leia el
-  # error de contrato. Se extrae `:ruta` SIEMPRE, este o no en el stage: si no
-  # esta, el blob indexado es el que el commit hereda, y el disco puede estar
-  # sucio por otra pestana — medir el disco ahi es falso rojo o falso verde.
-  _objeto="$TMPD/fixtures_indexado.json"
-  if ! git -C "$REPO_ROOT" show ':sim/fixtures_estaticos_20261020.json' \
-       > "$_objeto" 2> "$TMPD/fixtures_blob.err"; then
-    printf '\n'
-    printf '%s\n' '------------------------------------------------------------------------'
-    printf 'PRE-COMMIT — GATE DE FIXTURES: NO SE PUDO LEER EL BLOB INDEXADO\n'
-    sed -n '1,20p' "$TMPD/fixtures_blob.err"
-    printf '%s\n' '------------------------------------------------------------------------'
-    exit 1
-  fi
-  if grep -qxF -- 'sim/fixtures_estaticos_20261020.json' "$LISTA"; then
-    printf 'pre-commit fixtures · objeto = blob INDEXADO :sim/fixtures_estaticos_20261020.json (en el commit)\n'
-  else
-    printf 'pre-commit fixtures · objeto = blob INDEXADO :sim/fixtures_estaticos_20261020.json (heredado, no en el commit)\n'
-  fi
-  if ! python3 "$REPO_ROOT/sim/generar_fixtures_estaticos_20261020.py" \
-       --verificar --ruta "$_objeto" > "$TMPD/fixtures.txt" 2>&1; then
-    printf '\n'
-    printf '========================================================================\n'
-    printf 'PRE-COMMIT — GATE DE FIXTURES: EL CONGELADO NO REPRODUCE\n'
-    printf '========================================================================\n'
-    sed -n '1,200p' "$TMPD/fixtures.txt"
-    printf '%s\n' '------------------------------------------------------------------------'
-    printf 'El stage toca el objeto protegido por ERRATA 11. Para reproducir:\n'
-    printf '  python3 sim/generar_fixtures_estaticos_20261020.py --verificar\n'
-    printf 'Si el cambio es legitimo, la suite se recongela con errata nueva:\n'
-    printf '  --forzar cambia huella_fixtures y exige sellar el hash nuevo.\n'
-    printf '========================================================================\n'
-    exit 1
-  fi
-  printf 'pre-commit fixtures OK  ·  el congelado reproduce (ERRATA 11)\n'
-fi
-
-# ============================================================================
-# gate de la tabla de anclas — HUELLA-PRE-COMMIT-F8-20261021
-# ============================================================================
-# POR QUE EXISTE: `sim/ancla_maestra_20261020.py` ya cobra F8
-# (SECCIONES_DIVERGENTES: el §0 declara un numero de secciones y el archivo
-# tiene otro) y F9 (el pie de §0 no cita un blob: un hash de acto no habita su
-# propio archivo) sobre CUALQUIER copia via `--tabla RUTA`. Mientras se corran
-# solo a mano, el instrumento tiene la capacidad y el camino de ejecucion no la
-# dispara: un §0 que declara 28 sobre 29 secciones aterriza sin que nadie
-# objete. Es la familia del `APPARATUS_DETECTED`: verde por no haber medido.
+# El hook mide por si mismo lo que no depende de nadie: credenciales por ruta y
+# por contenido, captura web, basura de maquina, tope de tamano y frontera de
+# archivo. Un arbol que ademas tenga instrumentos propios —fixtures congelados,
+# tablas de anclas, manifiestos de claims— declara sus disparadores e
+# invocaciones en `.github/pre-commit-local.sh`, y este bloque lo sourcea.
 #
-# EL OBJETO ES EL BLOB INDEXADO, NO EL DISCO (doctrina que el gate de fixtures
-# ya pago): si el stage toca la tabla, se extrae `:sim/TABLA...` a un temporal y
-# se mide ESE. Por eso el hook invoca los DOS verbos estrechos
-# (`--secciones --tabla` y `--pie --tabla`) y NO `--verificar --tabla`: el RC de
-# `--verificar` incluye los falsadores F1-F7, y esos salen de los modulos en
-# DISCO — un gate que mide el arbol de trabajo no protege el commit, puede dar
-# rojo sobre codigo que no entra o verde sobre el que si. `--secciones` y `--pie`
-# adjudican UNICAMENTE la copia que se les pasa. Su preambulo si lee el disco
-# (la CLI imprime la tabla de anclas antes de despachar), y por eso aqui se
-# filtra: se imprime el veredicto — SECCIONES_ / PIE_ / FALLA CERRADA — y no el
-# preambulo. `--verificar --tabla` sigue siendo el camino completo para una
-# persona o un falsador; el hook usa la parte que no miente.
+# POR QUE UN PUNTO DE EXTENSION Y NO CABLEADO: cablear el nombre del instrumento
+# de un corpus privado dentro del hook publico publica su topologia —nombres de
+# archivo, numeros de errata y de seccion— a cualquiera que lea el repositorio.
+# El hook conoce UN archivo, `.github/pre-commit-local.sh`; no conoce, ni debe
+# conocer, que hay dentro.
 #
-# SE DISPARA SOLO CUANDO EL STAGE TOCA EL OBJETO O SU INSTRUMENTO (la tabla, el
-# maestro o este mismo hook, que es quien cablea la invocacion). Un commit de un
-# archivo ajeno no paga nada.
-#
-# COSTO MEDIDO: 0,37 s `--verificar --tabla`; aqui son dos verbos estrechos
-# sobre la tabla indexada.
-# FALSADOR CORRIDO: §30 añadida en el indice -> SECCIONES_DIVERGENTES, exit 1 ·
-# blob plantado en el pie de §0 -> PIE_CON_BLOB, exit 1 · archivo ajeno -> SKIP ·
-# tabla sana -> SECCIONES_OK + PIE_SIN_BLOB, exit 0.
-# ============================================================================
-TABLA_DISPARADORES='sim/TABLA_ANCLAS_VIGENTES_20261020.md
-sim/ancla_maestra_20261020.py
-tools/hooks/pre-commit'
-
-_tabla_dispara=no
-while IFS= read -r _disparador; do
-  [ -n "$_disparador" ] || continue
-  if grep -qxF -- "$_disparador" "$LISTA"; then
-    _tabla_dispara=si
-    break
-  fi
-done <<EOF
-$TABLA_DISPARADORES
-EOF
-
-if [ "$_tabla_dispara" = "si" ]; then
-  _tabla_obj='sim/TABLA_ANCLAS_VIGENTES_20261020.md'
-  _tabla_maestro="$REPO_ROOT/sim/ancla_maestra_20261020.py"
-  _tabla_copia="$TMPD/tabla_indexada.md"
-  if ! git -C "$REPO_ROOT" cat-file -e ":$_tabla_obj" 2>/dev/null; then
-    printf 'pre-commit tabla · SKIP DECLARADO: el indice no trae :%s — este repo no carga el corpus y no puedo medir lo que no esta.\n' "$_tabla_obj"
-  elif [ ! -f "$_tabla_maestro" ]; then
-    printf 'pre-commit tabla · SKIP DECLARADO: falta %s (residuo, no silencio).\n' "$_tabla_maestro"
-  else
-    if ! git -C "$REPO_ROOT" show ":$_tabla_obj" > "$_tabla_copia" 2> "$TMPD/tabla_blob.err"; then
-      printf '\n'
-      printf '%s\n' '------------------------------------------------------------------------'
-      printf 'PRE-COMMIT — GATE DE TABLA: NO SE PUDO LEER EL BLOB INDEXADO\n'
-      sed -n '1,20p' "$TMPD/tabla_blob.err"
-      printf '%s\n' '------------------------------------------------------------------------'
-      exit 1
-    fi
-    if grep -qxF -- "$_tabla_obj" "$LISTA"; then
-      printf 'pre-commit tabla · objeto = blob INDEXADO :%s (en el commit)\n' "$_tabla_obj"
-    else
-      printf 'pre-commit tabla · objeto = blob INDEXADO :%s (heredado, no en el commit)\n' "$_tabla_obj"
-    fi
-    _tabla_roto=no
-    if ! python3 "$_tabla_maestro" --secciones --tabla "$_tabla_copia" \
-         > "$TMPD/tabla_f8.txt" 2>&1; then
-      _tabla_roto=si
-    fi
-    if ! python3 "$_tabla_maestro" --pie --tabla "$_tabla_copia" \
-         > "$TMPD/tabla_f9.txt" 2>&1; then
-      _tabla_roto=si
-    fi
-    if [ "$_tabla_roto" = "si" ]; then
-      printf '\n'
-      printf '========================================================================\n'
-      printf 'PRE-COMMIT — GATE DE TABLA: EL OBJETO INDEXADO NO SE SOSTIENE\n'
-      printf '========================================================================\n'
-      grep -hE 'SECCIONES_|PIE_|FALLA CERRADA' "$TMPD/tabla_f8.txt" "$TMPD/tabla_f9.txt" 2>/dev/null || true
-      printf '%s\n' '------------------------------------------------------------------------'
-      if grep -qE 'SECCIONES_DIVERGENTES|FALLA CERRADA' "$TMPD/tabla_f8.txt"; then
-        printf 'F8: el §0 declara un numero de secciones y el archivo tiene otro.\n'
-      fi
-      if grep -qE 'PIE_CON_BLOB|FALLA CERRADA' "$TMPD/tabla_f9.txt"; then
-        printf 'F9: el pie de §0 cita un literal que resuelve a un objeto git.\n'
-      fi
-      printf 'Para verlo a mano sobre la copia indexada:\n'
-      printf '  git show :%s > /tmp/tabla.md\n' "$_tabla_obj"
-      printf '  python3 sim/ancla_maestra_20261020.py --verificar --tabla /tmp/tabla.md\n'
-      printf 'Si el delta es legitimo, el acto que lo escribe declara el numero nuevo\n'
-      printf 'en §0 en el MISMO commit (tupla A2.1).\n'
-      printf '========================================================================\n'
-      exit 1
-    fi
-    grep -hE 'SECCIONES_|PIE_|FALLA CERRADA' "$TMPD/tabla_f8.txt" "$TMPD/tabla_f9.txt" 2>/dev/null || true
-    printf 'pre-commit tabla OK  ·  F8 y F9 sobre el blob indexado\n'
-  fi
-fi
-
-# ============================================================================
-# gate de claims — HUELLA-PRE-COMMIT-CLAIMS-GATE-20261020
-# ============================================================================
-# POR QUE EXISTE (§28.6): el verificador devuelve 17 (ESPERANDO_TESTIGO_LOCAL) y
-# el consumidor ya sabe que en `--modo commit` eso BLOQUEA. Faltaba el cable: no
-# habia ninguna puerta que lo invocara, asi que la mitad "bloquea el commit" de
-# la politica existia y nadie la mordia. Un RC sin consumidor es un codigo
-# huerfano.
-#
-# QUE NO HACE: no reclasifica. La unica traduccion de RC a politica vive en
-# `sim/claims_gate_20261020.py` (`clasificar`); aqui se lee su etiqueta, no se
-# reimplementa la tabla. Duplicarla seria el D13 de las dos leyes.
-#
-# EL OBJETO ES EL REPO QUE SE COMMITEA (`$REPO_ROOT`), no este arbol: el hook
-# corre en red-green-sandbox mientras el instrumento vive en platino-labs. El
-# instrumento se busca en orden — `$PLATINO_LABS`, el hermano del repo, este
-# mismo arbol — y si no aparece se DECLARA y se permite (residuo, no silencio).
-# Ninguna de esas tres rutas se asume: se comprueba que el archivo exista.
-#
-# SE DISPARA SOLO CUANDO EL STAGE TOCA EL OBJETO QUE EL MANIFIESTO PROTEGE
-# — HUELLA-PRE-COMMIT-CLAIMS-STAGE-ONLY-20261020.
-# Antes se disparaba con solo existir `.github/claims.json`, o sea en TODO
-# commit del repo aunque el stage no tocara ni una figura declarada. Es el D13
-# que el gate de fixtures ya pago y correccion: el gate se dispara con el
-# objeto protegido en el stage; un commit de un archivo ajeno no paga medir el
-# objeto entero.
-#
-# EL OBJETO SE DERIVA DEL MANIFIESTO, NO SE ADIVINA: `.github/claims.json`, y
-# por cada claim su `dato`, su `prosa`, su `portador_local` y el archivo de
-# `deriva` cuando viene como `parser:<archivo>::<lo-que-sea>`. Cuando `deriva`
-# es una EXPRESION (`sum(dato.cumple)`, `len(...)`, `dato.x * 100`) no hay
-# archivo que vigilar aparte: su fuente es el `dato`, ya incluido. Se compara
-# contra el stage SIN filtro de estado: un `git rm sandbox.py` tambien toca el
-# objeto, y `--diff-filter=ACMR` (el que arma $LISTA) no lo veria.
-# Si el manifiesto no se puede leer, corre el gate igual (fail-closed): un
-# extractor roto no puede convertirse en un SKIP.
-#
-# COSTO MEDIDO: 25,5 s el peor caso en frio (red-green-sandbox, 10 claims);
-# caliente 15-20 s; 0,17 s en un repo de 1 claim. Ese coste se paga SOLO en el
-# commit que toca el objeto.
-# FALSADOR: manifiesto en el stage -> corre y muerde (AMARILLO/ROJO, exit 1);
-# README o test derivado en el stage -> corre; archivo ajeno -> SKIP con coste
-# cero; repo sin manifiesto -> el gate no aplica.
-# ============================================================================
-_claims_dispara=no
-if [ -f "$REPO_ROOT/.github/claims.json" ]; then
-  if ! git -C "$REPO_ROOT" diff --cached --name-only > "$TMPD/claims_stage.txt"; then
-    printf 'PRE-COMMIT — GATE DE CLAIMS: no se pudo leer el stage; se corre el gate (fail-closed).\n'
-    : > "$TMPD/claims_stage.txt"
-  fi
-  if ! _claims_dispara=$(python3 - "$REPO_ROOT/.github/claims.json" "$TMPD/claims_stage.txt" <<'PYCLAIMS'
-import json, sys
-
-manifiesto, lista = sys.argv[1], sys.argv[2]
-EXT = (".py", ".md", ".json", ".txt", ".csv", ".toml", ".yml", ".yaml",
-       ".cfg", ".ini", ".ipynb")
-
-
-def es_ruta(valor):
-    if not isinstance(valor, str):
-        return None
-    v = valor.strip()
-    if not v or " " in v or "(" in v or ")" in v or "*" in v or "=" in v:
-        return None
-    if v.startswith("./"):
-        v = v[2:]
-    return v if (v.endswith(EXT) or "/" in v) else None
-
-
-try:
-    with open(manifiesto, encoding="utf-8") as f:
-        manif = json.load(f)
-    with open(lista, encoding="utf-8") as f:
-        staged = [l.strip() for l in f if l.strip()]
-except Exception:
-    print("si")
-    raise SystemExit(0)
-
-vigiladas = {".github/claims.json"}
-for claim in manif.get("claims") or []:
-    if not isinstance(claim, dict):
-        continue
-    for campo in ("dato", "prosa", "portador_local"):
-        r = es_ruta(claim.get(campo))
-        if r:
-            vigiladas.add(r)
-    deriva = claim.get("deriva")
-    if isinstance(deriva, str) and deriva.strip().startswith("parser:"):
-        r = es_ruta(deriva.strip()[len("parser:"):].split("::")[0])
-        if r:
-            vigiladas.add(r)
-
-tocado = sorted(set(staged) & vigiladas)
-if tocado:
-    sys.stderr.write("  objeto vigilado en el stage: %s\n" % " ".join(tocado))
-print("si" if tocado else "no")
-PYCLAIMS
-  ); then
-    _claims_dispara=si
-  fi
-  case "$_claims_dispara" in
-    si|no) : ;;
-    *) _claims_dispara=si ;;
-  esac
-fi
-
-if [ "$_claims_dispara" = "si" ]; then
-  _claims_inst=""
-  for _cand in "${PLATINO_LABS:-}" "$REPO_ROOT/../platino-labs" "$REPO_ROOT"; do
-    [ -n "$_cand" ] || continue
-    if [ -f "$_cand/sim/claims_gate_20261020.py" ]; then
-      _claims_inst="$_cand"
-      break
-    fi
-  done
-  if [ -z "$_claims_inst" ]; then
-    printf 'pre-commit claims · SIN_INSTRUMENTO (ni $PLATINO_LABS, ni el hermano, ni el repo traen sim/claims_gate_20261020.py) — se permite el commit (residuo DECLARADO).\n'
-  else
-    _claims_out="$TMPD/claims.txt"
-    if python3 "$_claims_inst/sim/claims_gate_20261020.py" --modo commit "$REPO_ROOT" \
-         > "$_claims_out" 2>&1; then
-      grep 'CLAIMS_GATE:' "$_claims_out" || true
-      printf 'pre-commit claims OK  ·  ni escalados ni fallos en este repo\n'
-    else
-      _claims_rc=$?
-      grep 'CLAIMS_GATE:' "$_claims_out" || true
-      printf '\n'
-      printf '========================================================================\n'
-      if grep -q 'CLAIMS_GATE: AMARILLO' "$_claims_out"; then
-        printf 'PRE-COMMIT — AMARILLO: ESPERANDO_TESTIGO_LOCAL. El commit NO entra.\n'
-      elif grep -q 'CLAIMS_GATE: ROJO' "$_claims_out"; then
-        printf 'PRE-COMMIT — ROJO: fallo en claims. El commit NO entra.\n'
-      else
-        printf 'PRE-COMMIT — SIN_MEDIDA (rc=%s): el verificador no midio. El commit NO entra.\n' "$_claims_rc"
-      fi
-      printf '========================================================================\n'
-      sed -n '1,200p' "$_claims_out"
-      printf '%s\n' '------------------------------------------------------------------------'
-      printf 'El gate global no da por sano este repo. Si el claim esta escalado, lo\n'
-      printf 'mide el testigo local; si falla, el manifiesto y el crudo divergen.\n'
-      printf 'A mano:\n'
-      printf '  python3 %s/sim/claims_gate_20261020.py --modo commit "%s"\n' \
-        "$_claims_inst" "$REPO_ROOT"
-      printf '========================================================================\n'
-      exit 1
-    fi
-  fi
-elif [ -f "$REPO_ROOT/.github/claims.json" ]; then
-  printf 'pre-commit claims · SKIP: el stage no toca el manifiesto ni un dato, prosa, portador o derivacion que cita — coste cero.\n'
+# CONTRATO DEL ARCHIVO (sh posix, sourced en este punto):
+#   entorno de entrada : REPO_ROOT · LISTA (rutas del stage) · TMPD (temporal)
+#   salida             : 0 permite el commit · 1 lo bloquea (fail-closed)
+#   gate que no puede correr: DEBE declararlo y decir por que. El silencio no es
+#   un verde: un gate que no mide y no lo dice es la tautologia que este hook
+#   existe para cazar.
+_LOCAL_GATES="$REPO_ROOT/.github/pre-commit-local.sh"
+if [ -f "$_LOCAL_GATES" ]; then
+  printf 'pre-commit · gates locales: %s\n' '.github/pre-commit-local.sh'
+  # shellcheck disable=SC1090
+  . "$_LOCAL_GATES"
+else
+  printf 'pre-commit · gates locales: AUSENTE (.github/pre-commit-local.sh) — se declara, no se finge que midio\n'
 fi
 
 exit 0

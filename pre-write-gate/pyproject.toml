@@ -1,7 +1,7 @@
 # HUELLA-PRE-WRITE-GATE-PYPROJECT-20261015
 #
-# EXTRACTO (2026-10-21): este pyproject viene del corpus `platino-labs`, donde era
-# el SEGUNDO pyproject del repo. Aqui es el UNICO: el repo solo declara la
+# EXTRACTO (2026-10-21): este pyproject viene de un corpus privado, donde era el
+# SEGUNDO pyproject del arbol. Aqui es el UNICO: el repo solo declara la
 # HERRAMIENTA "pre-write-gate" como py-module SUELTO, sin biblioteca hermana.
 #   pip install ./pre-write-gate        -> instala el comando `pre-write-gate`
 # Licencia alineada al LICENSE del repo (MIT). En el corpus de origen la raiz
