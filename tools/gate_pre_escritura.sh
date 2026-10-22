@@ -178,7 +178,7 @@ if [ ! -f "$TARGET" ]; then
   # HUELLA-GATE-FAIL-CLOSED-TREE-20261020
   # RC 10 AUTORIZA UNA ESCRITURA y era la UNICA rama que salia antes de la
   # guarda de repo (paso 2b): firmaba creacion sobre un arbol INEXISTENTE.
-  # Medido antes del fix: TARGET=/Users/marlene/directorio_inexistente/test.py
+  # Medido antes del fix: TARGET=~/directorio_inexistente/test.py
   # -> RC 10 (fail-open). Un TARGET mal escrito recibia permiso de escritura.
   # Se sube al ancestro EXISTENTE mas cercano y se exige que git lo reconozca
   # como arbol de trabajo; si no lo es, 14 (fail-closed, cero escrituras).

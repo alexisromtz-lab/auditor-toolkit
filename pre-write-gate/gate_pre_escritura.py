@@ -228,7 +228,7 @@ def evaluar(target, blob_pre, huella, lineas_pre=None, _raiz_git=None):
         # HUELLA-GATE-FAIL-CLOSED-TREE-PY-20261020
         # RC 10 es NO_BLOQUEANTE: AUTORIZA una escritura. Salia ANTES de la
         # guarda 4 (arbol git), asi que firmaba creacion sobre un arbol
-        # INEXISTENTE. Medido antes del fix: TARGET=/Users/marlene/
+        # INEXISTENTE. Medido antes del fix: TARGET=~/
         # directorio_inexistente/test.py -> RC 10 (fail-open). El banco no lo
         # veia porque B5_SINREPO materializa el archivo (existe -> guarda 4).
         # Se sube al ancestro EXISTENTE mas cercano y se exige arbol git; si no
