@@ -1,0 +1,72 @@
+name: Platino Labs architecture audit
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  architecture-audit:
+    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.12"
+
+      - name: Fetch the audit engine
+        env:
+          TOOLKIT_REF: main
+        run: |
+          set -euo pipefail
+          toolkit="$RUNNER_TEMP/platino-auditor-toolkit"
+          git init --quiet "$toolkit"
+          git -C "$toolkit" remote add origin https://github.com/alexisromtz-lab/auditor-toolkit.git
+          git -C "$toolkit" fetch --quiet --depth=1 origin "$TOOLKIT_REF"
+          git -C "$toolkit" checkout --quiet --detach FETCH_HEAD
+
+      - name: Ingest tracked Python source
+        run: >-
+          python "$RUNNER_TEMP/platino-auditor-toolkit/tools/ingesta_ast_v2.py"
+          "$GITHUB_WORKSPACE" "$GITHUB_SHA" --source-root . --package audited_project
+          --output "$RUNNER_TEMP/platino-ingesta.json"
+
+      - name: Calculate observed architecture metrics
+        run: >-
+          python "$RUNNER_TEMP/platino-auditor-toolkit/tools/calculate_arch_index.py"
+          "$RUNNER_TEMP/platino-ingesta.json" --repo "$GITHUB_REPOSITORY"
+          --repo-root "$GITHUB_WORKSPACE" --commit "$GITHUB_SHA"
+          > "$RUNNER_TEMP/platino-architecture.json"
+
+      - name: Add or refresh README badge and snapshot
+        run: |
+          set -euo pipefail
+          observed_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          python "$RUNNER_TEMP/platino-auditor-toolkit/tools/publish_architecture_snapshot.py" \
+            --report "$RUNNER_TEMP/platino-architecture.json" \
+            --readme "$GITHUB_WORKSPACE/README.md" \
+            --run-url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+            --observed-at "$observed_at"
+
+      - name: Commit the README snapshot if it changed
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- README.md; then
+            echo "README snapshot is unchanged"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- README.md
+          git commit -m "docs: refresh Platino Labs architecture snapshot [skip ci]"
+          git push origin "HEAD:refs/heads/$DEFAULT_BRANCH"
+
+# HUELLA-ARCHITECTURE-AUDIT-WORKFLOW-20261029
