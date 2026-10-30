@@ -123,6 +123,20 @@ Lo que todavía **no existe** se dice aquí en vez de aparecer como "pieza" en l
 
 ---
 
+## Opcional · informe de arquitectura de Platino Labs
+
+Instala la auditoría automatizada en aproximadamente un minuto:
+
+1. Copia [`.github/workflows/architecture-audit.yml`](./.github/workflows/architecture-audit.yml) a la misma ruta de tu repositorio.
+2. En **Settings → Actions → General**, permite que `GITHUB_TOKEN` tenga permisos de **Read and write**.
+3. Sube el workflow a la rama predeterminada. En la siguiente ejecución agregará la insignia y actualizará el bloque de métricas en `README.md`.
+
+El informe muestra el **número de módulos Python**, los **componentes fuertemente conexos cíclicos (SCC)** y los **bytes de código fuente Python elegible**, junto con el commit analizado y la hora UTC. No asigna nivel, puntuación ni umbral de calidad. La insignia enlaza a la ejecución y representa un análisis estático automatizado, no una certificación.
+
+**Alcance y límites:** archivos Python rastreados en la instantánea de la rama predeterminada; se excluyen directorios ocultos y `__pycache__`. El motor usa Python 3.12 para analizar imports y no mide imports dinámicos/de ejecución ni otros lenguajes. El workflow solo escribe el resumen agregado en `README.md`. Si las reglas de la rama bloquean los pushes de GitHub Actions, permite que este workflow actualice ese archivo. Por defecto, el motor se descarga desde `main`; para fijar una versión inmutable, reemplaza `TOOLKIT_REF: main` por el SHA completo de un commit revisado.
+
+<!-- HUELLA-PLATINO-AUDIT-WORKFLOW-README-ES-20261029 -->
+
 ## Principios de colaboración
 
 - No pedimos bounties: pedimos **datasets** y **merges**.
