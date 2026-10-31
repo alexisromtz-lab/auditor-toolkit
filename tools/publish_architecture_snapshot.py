@@ -22,6 +22,14 @@ def _non_negative_integer(report: dict[str, Any], key: str) -> int:
     return value
 
 
+def _badge_url(modules: int, cycles: int) -> str:
+    """El escudo lleva las cifras medidas: un badge genérico no es una medición."""
+    return (
+        "https://img.shields.io/badge/static%20scan-"
+        f"{modules}%20modules%20%C2%B7%20{cycles}%20cyclic%20SCC-6C48B1"
+    )
+
+
 def _render(report: dict[str, Any], run_url: str, observed_at: str) -> str:
     commit = report.get("commit")
     if not isinstance(commit, str) or re.fullmatch(r"(?:[0-9a-f]{40}|[0-9a-f]{64})", commit) is None:
@@ -42,9 +50,10 @@ def _render(report: dict[str, Any], run_url: str, observed_at: str) -> str:
 
     return "\n".join((
         START_MARKER,
-        f"[![Audited by Platino Labs](https://img.shields.io/badge/Audited%20by-Platino%20Labs-6C48B1)]({run_url})",
+        f"[![Static Python scan: {modules:,} modules, {cycles:,} cyclic SCC — "
+        f"observation, not a certification]({_badge_url(modules, cycles)})]({run_url})",
         "",
-        "### Architecture snapshot · Python static analysis",
+        "### Static architecture scan · observed metrics (not a certification)",
         "",
         "| Observed metric | Value |",
         "|---|---:|",
@@ -54,7 +63,15 @@ def _render(report: dict[str, Any], run_url: str, observed_at: str) -> str:
         "",
         f"Commit: `{commit}` · Observed at: `{observed_at}` (UTC) · [Workflow run]({run_url})",
         "",
-        "Scope: eligible Python source files tracked in this commit. SCC means component size > 1 or a self-loop. Metrics are observations, not a quality score or certification.",
+        "**What this shows.** How many tracked Python files are eligible for static analysis, "
+        "how many of their dependency components close a cycle, and how many bytes they total — "
+        "measured on the single commit cited above.",
+        "",
+        "**What this does not show.** It is not a security audit, not a quality score, not a "
+        "certification, not an endorsement and not a comparison against other repositories. "
+        "Zero cyclic components does not mean the code is safe; cycles do not mean it is unsound. "
+        "The numbers are produced by the workflow run linked above; if that run is older than the "
+        "commit you are reading, the workflow is not running and these numbers are stale.",
         END_MARKER,
     ))
 
@@ -88,7 +105,8 @@ def update_readme(readme_path: Path, report: dict[str, Any], run_url: str, obser
         updated = _insert_near_title(contents, block)
     if updated == contents:
         return False
-    readme_path.write_text(updated, encoding="utf-8", newline="")
+    with readme_path.open("w", encoding="utf-8", newline="") as handle:
+        handle.write(updated)
     return True
 
 

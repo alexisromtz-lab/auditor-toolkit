@@ -153,6 +153,8 @@ Instala la auditoría automatizada en aproximadamente un minuto:
 
 El informe muestra el **número de módulos Python**, los **componentes fuertemente conexos cíclicos (SCC)** y los **bytes de código fuente Python elegible**, junto con el commit analizado y la hora UTC. No asigna nivel, puntuación ni umbral de calidad. La insignia enlaza a la ejecución y representa un análisis estático automatizado, no una certificación.
 
+El texto de la insignia se construye con las cifras medidas — `static scan: N modules · M cyclic SCC` —, así que viaja con su propio denominador y no puede leerse como una afirmación genérica de calidad o seguridad. Una insignia sin números no la produce este workflow.
+
 **Alcance y límites:** archivos Python rastreados en la instantánea de la rama predeterminada; se excluyen directorios ocultos y `__pycache__`. El motor usa Python 3.12 para analizar imports y no mide imports dinámicos/de ejecución ni otros lenguajes. El workflow solo escribe el resumen agregado en `README.md`. Si las reglas de la rama bloquean los pushes de GitHub Actions, permite que este workflow actualice ese archivo. Por defecto, el motor se descarga desde `main`; para fijar una versión inmutable, reemplaza `TOOLKIT_REF: main` por el SHA completo de un commit revisado.
 
 <!-- HUELLA-PLATINO-AUDIT-WORKFLOW-README-ES-20261029 -->
