@@ -1,6 +1,21 @@
 <!-- HUELLA-README-AUDITOR-TOOLKIT-EN-20261021 -->
 # Auditor-Toolkit — metrological verification and falsifiers
 
+<!-- PLATINO-LABS-ARCHITECTURE-AUDIT:START -->
+[![Audited by Platino Labs](https://img.shields.io/badge/Audited%20by-Platino%20Labs-6C48B1)](https://github.com/alexisromtz-lab/auditor-toolkit/actions/runs/41233436179)
+
+### Architecture snapshot · Python static analysis
+
+| Observed metric | Value |
+|---|---:|
+| Python modules | 11 |
+| Cyclic components (SCC) | 0 |
+| Python source bytes | 371,813 bytes |
+
+Commit: `6a4c87a3775bb5084cb47b22b8c85d7878bec83e` · Observed at: `2026-10-31T19:16:38Z` (UTC) · [Workflow run](https://github.com/alexisromtz-lab/auditor-toolkit/actions/runs/41233436179)
+
+Scope: eligible Python source files tracked in this commit. SCC means component size > 1 or a self-loop. Metrics are observations, not a quality score or certification.
+<!-- PLATINO-LABS-ARCHITECTURE-AUDIT:END -->
 Instruments to audit artifacts, manifests and CI **without trusting the author's word**.
 
 Most benchmarks measure the average. These instruments measure **the limit of the instrument**:
