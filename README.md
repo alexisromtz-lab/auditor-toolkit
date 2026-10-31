@@ -2,19 +2,21 @@
 # Auditor-Toolkit — metrological verification and falsifiers
 
 <!-- PLATINO-LABS-ARCHITECTURE-AUDIT:START -->
-[![Audited by Platino Labs](https://img.shields.io/badge/Audited%20by-Platino%20Labs-6C48B1)](https://github.com/alexisromtz-lab/auditor-toolkit/actions/runs/41233436179)
+[![Static Python scan: 11 modules, 0 cyclic SCC — observation, not a certification](https://img.shields.io/badge/static%20scan-11%20modules%20%C2%B7%200%20cyclic%20SCC-6C48B1)](https://github.com/alexisromtz-lab/auditor-toolkit/actions/runs/41234585268)
 
-### Architecture snapshot · Python static analysis
+### Static architecture scan · observed metrics (not a certification)
 
 | Observed metric | Value |
 |---|---:|
 | Python modules | 11 |
 | Cyclic components (SCC) | 0 |
-| Python source bytes | 371,813 bytes |
+| Python source bytes | 374,034 bytes |
 
-Commit: `6a4c87a3775bb5084cb47b22b8c85d7878bec83e` · Observed at: `2026-10-31T19:16:38Z` (UTC) · [Workflow run](https://github.com/alexisromtz-lab/auditor-toolkit/actions/runs/41233436179)
+Commit: `512fdb43a65a1df5eb675b438eb627b1ce7bafa4` · Observed at: `2026-10-31T19:31:08Z` (UTC) · [Workflow run](https://github.com/alexisromtz-lab/auditor-toolkit/actions/runs/41234585268)
 
-Scope: eligible Python source files tracked in this commit. SCC means component size > 1 or a self-loop. Metrics are observations, not a quality score or certification.
+**What this shows.** How many tracked Python files are eligible for static analysis, how many of their dependency components close a cycle, and how many bytes they total — measured on the single commit cited above.
+
+**What this does not show.** It is not a security audit, not a quality score, not a certification, not an endorsement and not a comparison against other repositories. Zero cyclic components does not mean the code is safe; cycles do not mean it is unsound. The numbers are produced by the workflow run linked above; if that run is older than the commit you are reading, the workflow is not running and these numbers are stale.
 <!-- PLATINO-LABS-ARCHITECTURE-AUDIT:END -->
 Instruments to audit artifacts, manifests and CI **without trusting the author's word**.
 
