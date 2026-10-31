@@ -93,6 +93,26 @@ python3 ci_sweep.py --self-test
 
 ---
 
+## Pieza 5 · `auditar_supply_chain.py` — ¿un workflow concede más de lo que necesita?
+
+Lee workflows de GitHub Actions y publica lo que el gate encuentra, un código por hallazgo, agrupado por política: **SC-1** (qué concede `permissions` en la raíz del workflow — alcances explícitos, `write` heredado), **SC-2** (refs de acciones remotas fijadas a un SHA completo), **SC-3** (`pull_request_target` / `workflow_run` que alcanza un contexto privilegiado con entrada no confiable). Un universo vacío no es un certificado de limpieza: una raíz sin workflows devuelve `UNIVERSO_VACIO`, nunca `PASS`.
+
+- **Pieza.** Una tabla de reglas y un llamador: los veredictos los emite `gate_workflows_ci.py`, un port de 711 líneas del gate privado, vendorizado aquí para que el auditor se sostenga solo.
+- **Control negativo.** `--self-test` corre 19 workflows sintéticos —uno por código, más las formas que deben quedarse calladas— y falla si falta un código esperado o aparece uno inesperado.
+- **Límite declarado.** Lee los archivos de workflow del checkout o del repositorio que le señalas; no se autentica por su cuenta contra la API de GitHub ni juzga si el código de un job es confiable. Un hallazgo habla de la superficie de permisos declarada, no del runtime.
+- **Dependencia.** `PyYAML` (ver `requirements.txt`). Sin ella el auditor no adivina: se detiene con `UNVERIFIABLE` y `DEPENDENCIA_GATE_AUSENTE_RC_30`.
+- **Comando.**
+
+```bash
+python3 -m pip install -r requirements.txt
+python3 auditar_supply_chain.py --self-test
+python3 auditar_supply_chain.py --repo alexisromtz-lab/git-preflight-gate
+```
+
+<!-- HUELLA-PORT-SUPPLY-AUDITOR-TOOLKIT-20261031 -->
+
+---
+
 ## Caso de estudio · tt-metal (CI) — el barrido que evitó un cero falso
 
 Medido el 2026-10-19T05:42Z sobre `tenstorrent/tt-metal`.
