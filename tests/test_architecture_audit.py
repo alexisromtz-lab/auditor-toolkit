@@ -88,12 +88,42 @@ class ArchitectureAuditIntegrationTests(unittest.TestCase):
             )
             self.assertEqual(first_publish.stdout.strip(), "README_UPDATED")
             self.assertEqual(second_publish.stdout.strip(), "README_UNCHANGED")
-            self.assertIn("Audited by Platino Labs", published_readme)
+            self.assertIn(
+                "![Static Python scan: 3 modules, 1 cyclic SCC — "
+                "observation, not a certification]",
+                published_readme,
+            )
             self.assertIn("| Python modules | 3 |", published_readme)
             self.assertIn("| Cyclic components (SCC) | 1 |", published_readme)
             self.assertIn(f"| Python source bytes | {expected_bytes} bytes |", published_readme)
             self.assertIn(f"Commit: `{commit}`", published_readme)
             self.assertEqual(readme.read_text(encoding="utf-8"), published_readme)
+
+            # El escudo publica las cifras medidas; un genérico «Audited» no es una medición.
+            self.assertIn(
+                "https://img.shields.io/badge/static%20scan-"
+                "3%20modules%20%C2%B7%201%20cyclic%20SCC-6C48B1",
+                published_readme,
+            )
+            self.assertNotIn("Audited by Platino Labs", published_readme)
+            self.assertIn("**What this does not show.**", published_readme)
+            self.assertIn("not a security audit", published_readme)
+            self.assertIn("these numbers are stale", published_readme)
+
+
+class BadgeHonestyTests(unittest.TestCase):
+    def test_badge_message_carries_the_counts_it_reports(self) -> None:
+        sys.path.insert(0, str(REPO_ROOT / "tools"))
+        try:
+            from publish_architecture_snapshot import _badge_url
+        finally:
+            sys.path.pop(0)
+        self.assertEqual(
+            _badge_url(11, 0),
+            "https://img.shields.io/badge/static%20scan-"
+            "11%20modules%20%C2%B7%200%20cyclic%20SCC-6C48B1",
+        )
+        self.assertNotEqual(_badge_url(11, 0), _badge_url(11, 1))
 
 
 if __name__ == "__main__":

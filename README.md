@@ -174,6 +174,8 @@ Install the automated audit in about a minute:
 
 The workflow reports observed **Python module count**, **cyclic strongly connected components (SCCs)**, and **bytes in eligible Python source files**, alongside the analyzed commit and UTC observation time. It does not assign a coupling level, score, or quality threshold. The badge links to the workflow run; it denotes an automated static snapshot, not a certification.
 
+The badge text is built from the measured counts — `static scan: N modules · M cyclic SCC` — so it carries its own denominator and cannot be read as a generic quality or security claim. A badge without numbers is not produced by this workflow.
+
 **Scope and limits:** tracked Python files in the default-branch snapshot; hidden directories and `__pycache__` are excluded. The engine uses Python 3.12 to parse imports and does not measure runtime/dynamic imports or other languages. The workflow writes only the aggregate snapshot to `README.md`. Repositories whose branch rules block GitHub Actions pushes must allow this workflow to update that file. The engine is fetched from `main` by default; for immutable supply-chain pinning, replace `TOOLKIT_REF: main` in the workflow with a reviewed full commit SHA.
 
 ## Collaboration principles
