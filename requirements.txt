@@ -1,0 +1,4 @@
+# auditar_supply_chain.py no reimplementa el parseo de YAML: el gate lo necesita para leer
+# workflows. Sin PyYAML el auditor se detiene con UNVERIFIABLE, no adivina.
+PyYAML>=6.0
+# HUELLA-PORT-SUPPLY-AUDITOR-TOOLKIT-20261031

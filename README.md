@@ -98,6 +98,26 @@ python3 ci_sweep.py --self-test
 
 ---
 
+## Piece 5 · `auditar_supply_chain.py` — does a workflow grant more than it needs?
+
+Reads GitHub Actions workflows and reports what the gate finds, one code per finding, grouped by policy: **SC-1** (what `permissions` grants at the workflow root — explicit scopes, inherited `write`), **SC-2** (remote action refs pinned to a full SHA), **SC-3** (`pull_request_target` / `workflow_run` reaching a privileged context with untrusted input). An empty universe is not a clean bill of health: a root with no workflows returns `UNIVERSO_VACIO`, never `PASS`.
+
+- **Piece.** A rule table plus a caller: the verdicts come from `gate_workflows_ci.py`, a 711-line port of the private gate, vendored here so the auditor stands alone.
+- **Negative control.** `--self-test` runs 19 synthetic workflows — one per code, plus the shapes that must stay silent — and fails if any expected code is missing or any unexpected code appears.
+- **Declared limit.** It reads the workflow files of the checkout or repository you point it at; it does not authenticate against the GitHub API on its own, and it does not judge whether a job's code is trustworthy. A finding is a statement about the declared permission surface, not about runtime. An empty universe is **not** a clean bill of health: a root with no workflows returns `UNIVERSO_VACIO`, never `PASS`.
+- **Dependency.** `PyYAML` (see `requirements.txt`). Without it the auditor does not guess: it stops with `UNVERIFIABLE` and `DEPENDENCIA_GATE_AUSENTE_RC_30`.
+- **Command.**
+
+```bash
+python3 -m pip install -r requirements.txt
+python3 auditar_supply_chain.py --self-test
+python3 auditar_supply_chain.py --repo alexisromtz-lab/git-preflight-gate
+```
+
+<!-- HUELLA-PORT-SUPPLY-AUDITOR-TOOLKIT-20261031 -->
+
+---
+
 ## Case study · tt-metal (CI) — the sweep that avoided a false zero
 
 Measured on 2026-10-19T05:42Z over `tenstorrent/tt-metal`. Full evidence, with one URL per PR: [`case_studies/tt-metal.md`](./case_studies/tt-metal.md).
