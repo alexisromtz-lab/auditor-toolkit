@@ -36,6 +36,29 @@ Spanish version: [`README.es.md`](./README.es.md).
 
 ---
 
+## Live demos — no clone, no install
+
+**[→ open the demos](https://alexisromtz-lab.github.io/auditor-toolkit/)**
+
+Each demo is one self-contained page. None of them is a mock-up: the arithmetic
+running in your browser is a line-by-line port of a Python engine, and each
+`demo/<name>/` folder ships the frozen answer key plus the falsifier that proves
+the port never drifted from it. No network calls, no build step, no dependencies.
+
+| Demo | What it answers | Answer key |
+|---|---|---|
+| [Electromagnetic field classifier](https://alexisromtz-lab.github.io/auditor-toolkit/demo/clasificador-de-campos/) | Which algebraic class does a field `(E, B)` belong to — and what survives every change of frame? | 66 cases + 8 border controls |
+
+The engine the port was taken from lives in a private repository. What is public —
+and enough — is the answer key and the check that re-runs the port against it:
+
+```
+python3 demo/clasificador-de-campos/verificar_paridad.py   # parity against the frozen key
+node    demo/clasificador-de-campos/verificar_ui.js        # the page actually starts
+```
+
+---
+
 ## Piece 1 · `pre-write-gate` (A2.1) — does this write have the right to happen?
 
 A gate that runs **before** writing: it does not measure the result, it measures whether the write is authorized.

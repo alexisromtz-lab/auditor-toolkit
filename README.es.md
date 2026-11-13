@@ -17,6 +17,31 @@ Si un número de este README no tiene comando, es un error del README: repórtal
 
 ---
 
+## Demos en vivo — sin clonar, sin instalar
+
+**[→ abrir las demos](https://alexisromtz-lab.github.io/auditor-toolkit/)**
+
+Cada demo es una sola página autocontenida. Ninguna es una maqueta: la aritmética
+que corre en tu navegador es un port línea por línea de un motor en Python, y la
+carpeta `demo/<nombre>/` publica el banco de respuestas congelado junto al
+falsificador que prueba que el port no se desvió. Sin llamadas de red, sin paso
+de compilación, sin dependencias.
+
+| Demo | Qué contesta | Banco de respuestas |
+|---|---|---|
+| [Clasificador de campos electromagnéticos](https://alexisromtz-lab.github.io/auditor-toolkit/demo/clasificador-de-campos/) | ¿A qué clase algebraica pertenece un campo `(E, B)` — y qué sobrevive a todo cambio de marco? | 66 casos + 8 controles de borde |
+
+El motor del que se tomó el port vive en un repositorio privado. Lo que sí es
+público —y suficiente— es el banco de respuestas y la comprobación que vuelve a
+correr el port contra él:
+
+```
+python3 demo/clasificador-de-campos/verificar_paridad.py   # paridad contra el banco congelado
+node    demo/clasificador-de-campos/verificar_ui.js        # la página arranca de verdad
+```
+
+---
+
 ## Pieza 1 · `pre-write-gate` (A2.1) — ¿esta escritura tiene derecho a ocurrir?
 
 Un gate que se corre **antes** de escribir: no mide el resultado, mide si la escritura está autorizada.
