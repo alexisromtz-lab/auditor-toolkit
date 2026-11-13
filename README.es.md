@@ -113,6 +113,32 @@ python3 auditar_supply_chain.py --repo alexisromtz-lab/git-preflight-gate
 
 ---
 
+## Pieza 6 · `calculate_arch_index.py` — ¿cuántos ciclos tiene tu propio grafo?
+
+Convierte una ingesta estática en las dos cifras sobre las que se apoya cualquier afirmación de arquitectura: cuántas **componentes fuertemente conexas (SCC) cíclicas** tiene el grafo de imports, y cuántas **líneas físicas de código** hay detrás. `LOC` cuenta líneas físicas con tokens Python distintos de comentarios y espacios; la ingesta y el checkout quedan atados por el **SHA-256** de cada archivo y por el commit Git, así que un informe no puede describir un árbol distinto del que nombra.
+
+- **Pieza.** `tools/ingesta_ast_v2.py` recorre los archivos Python rastreados y emite un documento `ingesta_ast/v2`; `tools/calculate_arch_index.py` lo proyecta y publica; `tools/publish_architecture_snapshot.py` escribe la insignia y la tabla dentro del bloque `PLATINO-LABS-ARCHITECTURE-AUDIT` de la cabecera de este archivo.
+- **Control negativo.** `--self-test` corre la comprobación mínima de Tarjan sobre un grafo sintético más un caso de condensación: debe encontrar los ciclos que la fixture declara y quedarse callado ante un DAG. Medido en un clon limpio de este repositorio, `2026-11-12`, `RC 0` ⇒ `SELF-TEST OK: 4 SCC, 2 cyclic SCC` y `SELF-TEST CONDENSACION OK: DAG aciclico, 2 aristas, SCC maximo 2, 1 modulo expuesto`.
+- **Límite declarado.** Mide imports **estáticos** de archivos Python en un commit: los imports en runtime y dinámicos, otros lenguajes y los archivos que la ingesta excluye quedan fuera de su universo. Una componente cuenta como cíclica cuando su tamaño es mayor que 1 o es un autoenlace. `0 cyclic SCC` es una observación sobre un commit — no un veredicto de calidad, ni una nota, ni un umbral. El flag `--graph-sensitivity` **no es alcanzable desde este README**: exige una proyección `graph-input/1` que los comandos de abajo no producen, así que se declara ausente en vez de prometerse.
+- **Dependencia.** Python **3.12**: `python tools/calculate_arch_index.py --self-test` devuelve `RC 0` ahí, y la ingesta llama `Path.write_text(newline=...)`, que no existe antes de 3.10. Sin paquetes de terceros.
+- **Comando.** El control negativo es un comando; la tabla son tres.
+
+```bash
+python3 tools/calculate_arch_index.py --self-test
+
+# reproducir la tabla del informe para HEAD
+python3 tools/ingesta_ast_v2.py . "$(git rev-parse HEAD)" --source-root . \
+  --package audited_project --output /tmp/ingesta.json
+python3 tools/calculate_arch_index.py /tmp/ingesta.json --repo <owner>/<repo> \
+  --repo-root . --commit "$(git rev-parse HEAD)" > /tmp/architecture.json
+python3 tools/publish_architecture_snapshot.py --report /tmp/architecture.json \
+  --readme README.md --run-url <workflow-run-url> --observed-at "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+```
+
+<!-- HUELLA-PIEZA6-ARCH-INDEX-20261112 -->
+
+---
+
 ## Caso de estudio · tt-metal (CI) — el barrido que evitó un cero falso
 
 Medido el 2026-10-19T05:42Z sobre `tenstorrent/tt-metal`.

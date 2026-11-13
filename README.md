@@ -135,6 +135,32 @@ python3 auditar_supply_chain.py --repo alexisromtz-lab/git-preflight-gate
 
 ---
 
+## Piece 6 · `calculate_arch_index.py` — how many cycles does your own graph have?
+
+Turns a static ingest into the two numbers an architecture claim rests on: how many **cyclic strongly connected components (SCC)** the import graph has, and how many **physical lines of code** sit behind them. `LOC` counts physical lines that carry Python tokens other than comments and blanks; the ingest and the checkout are bound by the **SHA-256** of each file and by the Git commit, so a report cannot describe a tree other than the one it names.
+
+- **Piece.** `tools/ingesta_ast_v2.py` walks the tracked Python files and emits an `ingesta_ast/v2` document; `tools/calculate_arch_index.py` projects it and reports; `tools/publish_architecture_snapshot.py` writes the badge and the table inside the `PLATINO-LABS-ARCHITECTURE-AUDIT` block near the top of this file.
+- **Negative control.** `--self-test` runs Tarjan's minimum check on a synthetic graph plus a condensation case: it must find the cycles the fixture declares and stay silent on a DAG. Measured on a clean clone of this repository, `2026-11-12`, `RC 0` ⇒ `SELF-TEST OK: 4 SCC, 2 cyclic SCC` and `SELF-TEST CONDENSACION OK: DAG aciclico, 2 aristas, SCC maximo 2, 1 modulo expuesto`.
+- **Declared limit.** It measures **static** imports of Python files in one commit: runtime and dynamic imports, other languages, and files the ingest excludes are outside its universe. A component counts as cyclic when its size is greater than 1 or it is a self-loop. `0 cyclic SCC` is an observation about one commit — not a quality verdict, a score or a threshold. The `--graph-sensitivity` flag is **not reachable from this README**: it demands a `graph-input/1` projection that the commands below do not produce, so it is declared absent rather than promised.
+- **Dependency.** Python **3.12**: `python tools/calculate_arch_index.py --self-test` returns `RC 0` there, while the ingest calls `Path.write_text(newline=...)`, which does not exist before 3.10. No third-party packages.
+- **Command.** The negative control is one command; the table is three.
+
+```bash
+python3 tools/calculate_arch_index.py --self-test
+
+# reproduce the snapshot table for HEAD
+python3 tools/ingesta_ast_v2.py . "$(git rev-parse HEAD)" --source-root . \
+  --package audited_project --output /tmp/ingesta.json
+python3 tools/calculate_arch_index.py /tmp/ingesta.json --repo <owner>/<repo> \
+  --repo-root . --commit "$(git rev-parse HEAD)" > /tmp/architecture.json
+python3 tools/publish_architecture_snapshot.py --report /tmp/architecture.json \
+  --readme README.md --run-url <workflow-run-url> --observed-at "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+```
+
+<!-- HUELLA-PIEZA6-ARCH-INDEX-20261112 -->
+
+---
+
 ## Case study · tt-metal (CI) — the sweep that avoided a false zero
 
 Measured on 2026-10-19T05:42Z over `tenstorrent/tt-metal`. Full evidence, with one URL per PR: [`case_studies/tt-metal.md`](./case_studies/tt-metal.md).
