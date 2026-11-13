@@ -409,7 +409,33 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
+PISO_PYTHON = (3, 9)
+
+
+def _causa_interprete(version_info: tuple[int, ...]) -> str | None:
+    """Causa si el intérprete está por debajo del piso medido; ``None`` si lo alcanza.
+
+    Medido el 2026-11-13 sobre un clon limpio con el `python3` de macOS (3.9.6): el pipe
+    documentado completo —ingesta, índice, sensibilidad y publicador— devuelve RC 0. El
+    piso no es una preferencia: es lo que el código ejercita. Por debajo se niega con
+    causa nombrada en vez de reventar con un `TypeError` sin sujeto, que es lo que hacía.
+    """
+    actual = tuple(int(parte) for parte in version_info[:2])
+    if actual >= PISO_PYTHON:
+        return None
+    exigido = ".".join(str(parte) for parte in PISO_PYTHON)
+    return (
+        f"INTERPRETE_INSUFICIENTE: este instrumento exige Python >= {exigido} "
+        f"y el intérprete es {'.'.join(str(parte) for parte in actual)} — "
+        f"no es un fallo de la medición, es un sujeto que no puede ejecutarla"
+    )
+
+
 def main(argv: list[str] | None = None) -> int:
+    causa = _causa_interprete(sys.version_info)
+    if causa is not None:
+        print(f"ERROR: {causa}", file=sys.stderr)
+        return 30
     args = _parser().parse_args(argv)
     try:
         corpus = ingest(
@@ -424,7 +450,8 @@ def main(argv: list[str] | None = None) -> int:
         if args.output == "-":
             sys.stdout.write(serialized)
         else:
-            Path(args.output).write_text(serialized, encoding="utf-8", newline="\n")
+            with open(args.output, "w", encoding="utf-8", newline="\n") as salida:
+                salida.write(serialized)
     except (IngestaError, OSError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 2
