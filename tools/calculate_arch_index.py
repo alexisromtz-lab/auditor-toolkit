@@ -626,16 +626,19 @@ def main(argv: list[str] | None = None) -> int:
     if args.self_test:
         _self_test()
         return 0
-    if args.graph_sensitivity and not args.corpus_json:
-        parser.error("graph-sensitivity requiere una proyección graph-input/1")
+    if not args.corpus_json:
+        parser.error(
+            "corpus_json es obligatorio: pásalo por ruta o por stdin ('-'); "
+            "--repo, --repo-root y --commit sólo ratifican ese corpus contra el checkout"
+        )
 
     try:
-        corpus, raw = _load_input(args.corpus_json) if args.corpus_json else ({}, b"")
+        corpus, raw = _load_input(args.corpus_json)
         if args.graph_sensitivity:
             result = analyze_graph_sensitivity(corpus, raw)
         else:
             if not args.repo or not args.repo_root or not args.commit:
-                parser.error("se requieren corpus_json, --repo, --repo-root y --commit")
+                parser.error("el índice exige --repo, --repo-root y --commit junto al corpus")
             result = analyze(
                 corpus,
                 raw,
