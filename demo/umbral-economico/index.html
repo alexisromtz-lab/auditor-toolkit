@@ -1,0 +1,750 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>El umbral — paga el intento, y ¿sobrevives a cobrarlo?</title>
+<meta name="description" content="Cuatro números deciden dos cosas distintas: si el intento paga y si sobrevives para cobrarlo. Sólo una de ellas depende del número de intentos.">
+<style>
+  :root {
+    --fondo: #0d1014;
+    --panel: #151a21;
+    --panel-alto: #1b222b;
+    --borde: #263141;
+    --texto: #d7dee8;
+    --tenue: #8d9bad;
+    --acento: #5fb3a1;
+    --verde: #2e7d5b;
+    --rojo: #c62828;
+    --ambar: #d4a017;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--fondo); color: var(--texto); }
+  body {
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    max-width: 1120px; margin: 0 auto; padding: 28px 20px 64px;
+  }
+  h1 { font-size: 25px; line-height: 1.25; margin: 0 0 6px; letter-spacing: -0.01em; }
+  h2 { font-size: 15px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--tenue);
+       margin: 0 0 14px; font-weight: 600; }
+  p { margin: 0 0 12px; }
+  .sub { color: var(--tenue); font-size: 14px; max-width: 74ch; margin-bottom: 22px; }
+  code, .mono { font-family: var(--mono); font-size: 0.92em; }
+  a { color: var(--acento); }
+  .barra { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+  .pastilla {
+    font-family: var(--mono); font-size: 12px; padding: 5px 10px; border: 1px solid var(--borde);
+    border-radius: 999px; color: var(--tenue); background: var(--panel); white-space: nowrap;
+  }
+  .rejilla { display: grid; grid-template-columns: 340px 1fr; gap: 18px; align-items: start; }
+  @media (max-width: 900px) { .rejilla { grid-template-columns: 1fr; } }
+  .panel { background: var(--panel); border: 1px solid var(--borde); border-radius: 10px; padding: 16px 18px; }
+  .control { margin-bottom: 15px; }
+  .control:last-child { margin-bottom: 0; }
+  .control label { display: flex; justify-content: space-between; align-items: baseline;
+                   font-size: 13px; color: var(--tenue); margin-bottom: 5px; gap: 8px; }
+  .control .valor { font-family: var(--mono); color: var(--texto); font-size: 13px; white-space: nowrap; }
+  input[type=range] { width: 100%; accent-color: var(--acento); margin: 0; }
+  button {
+    font: inherit; font-size: 13px; color: var(--texto); background: var(--panel-alto);
+    border: 1px solid var(--borde); border-radius: 6px; padding: 6px 8px; cursor: pointer;
+  }
+  button:hover { border-color: var(--acento); }
+  .presets { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0 0; }
+  .presets button { font-size: 12px; padding: 5px 9px; }
+  .veredicto { border-left: 4px solid var(--borde); }
+  .veredicto.ok { border-left-color: var(--verde); }
+  .veredicto.alerta { border-left-color: var(--ambar); }
+  .veredicto.malo { border-left-color: var(--rojo); }
+  .veredicto .cifra { font-family: var(--mono); font-size: 19px; margin-bottom: 6px; }
+  .veredicto .frase { font-size: 14px; color: var(--texto); }
+  .dos { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 18px; align-items: start; }
+  @media (max-width: 900px) { .dos { grid-template-columns: 1fr; } }
+  canvas { display: block; width: 100%; height: auto; border-radius: 6px; background: #0a0d11; }
+  .leyenda { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--tenue); margin-top: 10px; }
+  .leyenda i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--borde); vertical-align: top; }
+  th { color: var(--tenue); font-weight: 500; }
+  td.nv { font-family: var(--mono); text-align: right; white-space: nowrap; }
+  tr.destaca th, tr.destaca td { color: var(--texto); }
+  tr.destaca { background: rgba(212,160,23,0.07); }
+  .formula { font-family: var(--mono); font-size: 13px; line-height: 1.9; color: var(--texto);
+             background: var(--panel-alto); border: 1px solid var(--borde); border-radius: 8px;
+             padding: 10px 12px; overflow-x: auto; margin-bottom: 12px; }
+  .formula .dim { color: var(--tenue); }
+  .pie { margin-top: 26px; color: var(--tenue); font-size: 12.5px; line-height: 1.7; }
+  .pie code { color: var(--texto); }
+</style>
+</head>
+<body>
+
+<div class="barra">
+  <div>
+    <h1 data-t="titulo">El umbral — paga el intento, y ¿sobrevives a cobrarlo?</h1>
+    <p class="sub" data-t="subtitulo">Un intento cuesta C y, si sale, paga V. Sale con probabilidad p. Cuatro números responden dos preguntas distintas — si el intento paga en promedio, y si sobrevives lo suficiente para cobrarlo — y sólo una de las dos depende de cuántos intentos te puedas permitir.</p>
+  </div>
+  <button id="btn-idioma" data-t="boton_idioma">EN</button>
+</div>
+
+<div class="rejilla">
+
+  <div>
+    <div class="panel">
+      <div class="control">
+        <label for="pp"><span data-t="et_p">Probabilidad de éxito por intento</span><span class="valor" id="val-pp">10.5 %</span></label>
+        <input type="range" id="pp" min="5" max="900" step="1" value="105">
+      </div>
+      <div class="control">
+        <label for="V"><span data-t="et_V">Lo que paga si sale</span><span class="valor" id="val-V">100</span></label>
+        <input type="range" id="V" min="10" max="1000" step="10" value="100">
+      </div>
+      <div class="control">
+        <label for="C"><span data-t="et_C">Lo que cuesta cada intento</span><span class="valor" id="val-C">10</span></label>
+        <input type="range" id="C" min="1" max="100" step="1" value="10">
+      </div>
+      <div class="control">
+        <label for="m"><span data-t="et_m">Intentos que puedes pagar</span><span class="valor" id="val-m">5</span></label>
+        <input type="range" id="m" min="1" max="200" step="1" value="5">
+      </div>
+      <div class="presets">
+        <button data-preset="al-filo" data-t="p_al_filo">al filo</button>
+        <button data-preset="solido" data-t="p_solido">sólido</button>
+        <button data-preset="bajo-umbral" data-t="p_bajo">bajo el umbral</button>
+        <button data-preset="una-bala" data-t="p_bala">una bala</button>
+      </div>
+    </div>
+
+    <div class="panel veredicto" id="veredicto" style="margin-top:14px">
+      <div class="cifra" id="v-cifra">+0.5000 · 57.43 % · 5×</div>
+      <div class="frase" id="v-frase" data-t="veredicto_alerta">Paga en promedio y te hundes más de la mitad de las veces.</div>
+    </div>
+  </div>
+
+  <div>
+    <div class="panel">
+      <h2 data-t="t_mapa">Dónde estás en el mapa</h2>
+      <canvas id="mapa" width="660" height="330"></canvas>
+      <div class="leyenda">
+        <span><i style="background:#2e7d5b"></i><span data-t="ley_bajo">ruina baja</span></span>
+        <span><i style="background:#d4a017"></i><span data-t="ley_medio">ruina media</span></span>
+        <span><i style="background:#c62828"></i><span data-t="ley_alto">ruina alta</span></span>
+        <span><i style="background:#ffffff"></i><span data-t="ley_frontera">frontera de signo p_min</span></span>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:14px">
+      <h2 data-t="t_ruina">Cuánta ruina compra cada intento</h2>
+      <canvas id="ruina" width="660" height="300"></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="dos">
+  <div class="panel">
+    <h2 data-t="t_medidas">Lo que se mide</h2>
+    <table id="tabla"><tbody></tbody></table>
+  </div>
+
+  <div class="panel">
+    <h2 data-t="t_porque">Por qué dos preguntas y no una</h2>
+    <div class="formula" id="identidad"></div>
+    <p data-t="por_que_1">El número de intentos multiplica un veredicto que ya estaba tomado.</p>
+    <p data-t="por_que_2">Los valores de la tabla salen de tres cómputos independientes del mismo número.</p>
+  </div>
+</div>
+
+<div class="pie" id="pie"></div>
+
+<script id="motor">
+/* motor.js — el núcleo de «umbral», escrito para dar el mismo bit que umbral.py.
+ *
+ * Un intento cuesta C y paga V con probabilidad p, hasta m intentos. Hay tres
+ * cómputos independientes del mismo número: la suma de términos positivos, la
+ * forma cerrada y un Monte Carlo con PRNG especificado (no heredado). Cuando no
+ * hay un oráculo previo contra el que portar, el falsificador no compara un
+ * port con su original: compara dos caminos que deberían llegar al mismo sitio.
+ *
+ * Este archivo es la copia canónica. La página embebe el cuerpo de arriba del
+ * centinela «fin del cuerpo portable» carácter por carácter, y
+ * `verificar_paridad.py` falla si los dos textos divergen.
+ */
+
+var SEMILLA_DEFECTO = 20261113;
+var N_MONTECARLO_DEFECTO = 8000;
+
+function potencia(u, m) {
+  // Elevación al cuadrado: la misma secuencia de multiplicaciones que umbral.py.
+  // IEEE 754 es determinista, así que esto sale paritario bit a bit.
+  var r = 1.0, b = u, e = m | 0;
+  while (e) {
+    if (e & 1) r *= b;
+    b *= b;
+    e >>= 1;
+  }
+  return r;
+}
+
+function supervivenciaTrasM(p, m) {
+  return potencia(1.0 - p, m);
+}
+
+function exitoEnM(p, m) {
+  return 1.0 - supervivenciaTrasM(p, m);
+}
+
+function umbral(V, C) {
+  return C / V;
+}
+
+function evPorIntento(p, V, C) {
+  return p * V - C;
+}
+
+function esperanzaIntentosSuma(p, m) {
+  var u = 1.0 - p, t = 1.0, s = 0.0, k;
+  for (k = 1; k <= m; k++) {
+    s += k * p * t;
+    t *= u;
+  }
+  return s + m * t;
+}
+
+function esperanzaIntentosCerrada(p, m) {
+  return (1.0 - potencia(1.0 - p, m)) / p;
+}
+
+function evPolitica(p, V, C, m) {
+  return exitoEnM(p, m) * V - C * esperanzaIntentosSuma(p, m);
+}
+
+function evPoliticaCerrada(p, V, C, m) {
+  return exitoEnM(p, m) * (V - C / p);
+}
+
+/* Intentos necesarios para que la ruina baje del objetivo. Búsqueda entera a
+ * propósito: `Math.log` de V8 y `math.log` de CPython no coinciden en el último
+ * ULP, y meterlo aquí rompería la paridad que este archivo promete. */
+function intentosParaRuina(p, objetivo, tope) {
+  if (tope === undefined) tope = 200000;
+  var m = 1;
+  while (m <= tope) {
+    if (supervivenciaTrasM(p, m) <= objetivo) return m;
+    m += 1;
+  }
+  return -1;
+}
+
+function Lcg(semilla) {
+  this.s = semilla >>> 0;
+}
+Lcg.prototype.siguiente = function () {
+  // Math.imul da el producto 32x32 en 32 bits exactos: el mismo entero que
+  // `(1664525 * s + 1013904223) & 0xFFFFFFFF` en Python.
+  this.s = (Math.imul(1664525, this.s) + 1013904223) >>> 0;
+  return this.s;
+};
+Lcg.prototype.uniforme = function () {
+  return this.siguiente() / 4294967296.0;
+};
+
+function montecarlo(p, V, C, m, n, semilla) {
+  if (n === undefined) n = N_MONTECARLO_DEFECTO;
+  if (semilla === undefined) semilla = SEMILLA_DEFECTO;
+  var gen = new Lcg(semilla), ruinas = 0, suma = 0.0, i, k, neto;
+  for (i = 0; i < n; i++) {
+    k = 0;
+    neto = -m * C;
+    while (k < m) {
+      k += 1;
+      if (gen.uniforme() < p) {
+        neto = V - k * C;
+        break;
+      }
+    }
+    if (neto === -m * C) ruinas += 1;
+    suma += neto;
+  }
+  return { n: n, semilla: semilla, ruinas: ruinas, ruina_mc: ruinas / n, media_mc: suma / n };
+}
+
+function medir(p, V, C, m, n, semilla) {
+  var u = 1.0 - p, pmin = umbral(V, C);
+  var r = {
+    p: p, V: V, C: C, m: m,
+    u_m: potencia(u, m),
+    p_min: pmin,
+    ratio: p / pmin,
+    ev_intento: evPorIntento(p, V, C),
+    q_exito: exitoEnM(p, m),
+    ruina: supervivenciaTrasM(p, m),
+    ek: esperanzaIntentosSuma(p, m),
+    ek_cerrada: esperanzaIntentosCerrada(p, m),
+    ev_politica: evPolitica(p, V, C, m),
+    ev_politica_cerrada: evPoliticaCerrada(p, V, C, m),
+    perdida_maxima: m * C,
+    m_ruina_50: intentosParaRuina(p, 0.50),
+    m_ruina_10: intentosParaRuina(p, 0.10)
+  };
+  /* n <= 0 no es «cero mediciones»: es la ausencia de la medición, y una
+   * ausencia no se publica como cero. La clave no viaja. */
+  if (n === undefined) n = N_MONTECARLO_DEFECTO;
+  if (n > 0) r.montecarlo = montecarlo(p, V, C, m, n, semilla);
+  return r;
+}
+
+var CLAVES_EXACTAS = [
+  "u_m", "p_min", "ratio", "ev_intento", "q_exito", "ruina",
+  "ek", "ek_cerrada", "ev_politica", "ev_politica_cerrada",
+  "perdida_maxima", "m_ruina_50", "m_ruina_10"
+];
+</script>
+
+<script>
+"use strict";
+
+var TEXTO = {
+  es: {
+    titulo: "El umbral — paga el intento, y ¿sobrevives a cobrarlo?",
+    subtitulo: "Un intento cuesta C y, si sale, paga V. Sale con probabilidad p. Cuatro números responden dos preguntas distintas — si el intento paga en promedio, y si sobrevives lo suficiente para cobrarlo — y sólo una de las dos depende de cuántos intentos te puedas permitir.",
+    boton_idioma: "EN",
+    et_p: "Probabilidad de éxito por intento",
+    et_V: "Lo que paga si sale",
+    et_C: "Lo que cuesta cada intento",
+    et_m: "Intentos que puedes pagar",
+    p_al_filo: "al filo",
+    p_solido: "sólido",
+    p_bajo: "bajo el umbral",
+    p_bala: "una bala",
+    t_mapa: "Dónde estás en el mapa",
+    t_ruina: "Cuánta ruina compra cada intento",
+    t_medidas: "Lo que se mide",
+    t_porque: "Por qué dos preguntas y no una",
+    ley_bajo: "ruina baja",
+    ley_medio: "ruina media",
+    ley_alto: "ruina alta",
+    ley_frontera: "frontera de signo p_min",
+    eje_p: "p (escala logarítmica)",
+    eje_m: "m",
+    eje_ruina: "ruina acumulada (escala logarítmica)",
+    curva_p: "con tu p",
+    curva_frontera: "justo en p_min",
+    nivel_50: "50 %",
+    nivel_10: "10 %",
+    nivel_1: "1 %",
+    fuera_mapa: "p_min fuera del mapa: C > V, ningún intento paga",
+    veredicto_ok: "Paga y sobrevives: las dos mitades de la decisión están de tu lado.",
+    veredicto_alerta: "Paga en promedio y te hundes más de la mitad de las veces.",
+    veredicto_malo: "No paga, y además te hundes. El único consuelo es que el signo ya lo decía.",
+    por_que_1: "El número de intentos multiplica un veredicto que ya estaba tomado. Por eso la frontera blanca del mapa es vertical: no se mueve cuando m cambia. Lo que sí se mueve es el sombreado — la ruina — y es la otra mitad de la decisión.",
+    por_que_2: "Los valores de la tabla salen de tres cómputos independientes del mismo número: la suma de términos positivos, la forma cerrada y una simulación con semilla fija. Los dos primeros coinciden bit a bit; el tercero se contrasta contra una cota de cuatro sigma.",
+    veredicto_inutil: "Sobrevives para perder: la ruina es baja y el signo es negativo. Morir no es el único modo de fracasar.",
+    fila_p_min: "Umbral p_min = C/V",
+    fila_ratio: "p dividido por el umbral",
+    fila_ev: "Valor esperado de un intento",
+    fila_q: "Probabilidad de acertar al menos una vez",
+    fila_ruina: "Probabilidad de quedarse sin nada",
+    fila_ek: "Intentos esperados hasta acertar o agotarse",
+    fila_evpol: "Valor esperado de la política completa",
+    fila_perdida: "Lo que pierdes si te hundes",
+    fila_m50: "Intentos para bajar de 50 % de ruina",
+    fila_m10: "Intentos para bajar de 10 % de ruina",
+    fila_mcruina: "Ruina medida (simulación)",
+    fila_mcmedia: "Resultado medio medido (simulación)",
+    pie_p1: "Los cuatro números del panel izquierdo son todo el motor: no hay archivos, ni corpus, ni dependencias que instalar. El oráculo en Python viaja en este mismo directorio y da estas mismas cifras:",
+    pie_p2: "Esta pieza es la primera del escaparate que no es un port: no existía un motor interno que copiar, así que el motor se escribió dos veces desde cero y lo que se verifica es que los dos caminos coincidan — 4 270 valores analíticos sobre 250 estados y 4 estados de simulación Monte Carlo, bit a bit.",
+    pie_p3: "Sin enlaces a repositorios privados. Todo lo que la página afirma se puede recalcular aquí mismo."
+  },
+  en: {
+    titulo: "The threshold — does the attempt pay, and do you survive to collect?",
+    subtitulo: "An attempt costs C and pays V when it lands. It lands with probability p. Four numbers answer two different questions — whether the attempt pays on average, and whether you live long enough to collect — and only one of them depends on how many attempts you can afford.",
+    boton_idioma: "ES",
+    et_p: "Success probability per attempt",
+    et_V: "What it pays when it lands",
+    et_C: "What each attempt costs",
+    et_m: "Attempts you can afford",
+    p_al_filo: "on the edge",
+    p_solido: "solid",
+    p_bajo: "below the threshold",
+    p_bala: "one bullet",
+    t_mapa: "Where you sit on the map",
+    t_ruina: "How much ruin each attempt buys",
+    t_medidas: "What gets measured",
+    t_porque: "Why two questions and not one",
+    ley_bajo: "low ruin",
+    ley_medio: "medium ruin",
+    ley_alto: "high ruin",
+    ley_frontera: "sign boundary p_min",
+    eje_p: "p (logarithmic scale)",
+    eje_m: "m",
+    eje_ruina: "accumulated ruin (logarithmic scale)",
+    curva_p: "at your p",
+    curva_frontera: "exactly at p_min",
+    nivel_50: "50 %",
+    nivel_10: "10 %",
+    nivel_1: "1 %",
+    fuera_mapa: "p_min off the map: C > V, no attempt pays",
+    veredicto_ok: "It pays and you survive: both halves of the decision are on your side.",
+    veredicto_alerta: "It pays on average and you go under more than half the time.",
+    veredicto_malo: "It does not pay, and you go under as well. The only consolation is that the sign already said so.",
+    por_que_1: "The number of attempts multiplies a verdict that was already reached. That is why the white boundary on the map is vertical: it does not move when m changes. What does move is the shading — ruin — and that is the other half of the decision.",
+    por_que_2: "The table values come from three independent computations of the same number: the summation of positive terms, the closed form, and a fixed-seed simulation. The first two agree bit for bit; the third is checked against a four-sigma bound.",
+    veredicto_inutil: "You survive in order to lose: ruin is low and the sign is negative. Dying is not the only way to fail.",
+    fila_p_min: "Threshold p_min = C/V",
+    fila_ratio: "p divided by the threshold",
+    fila_ev: "Expected value of one attempt",
+    fila_q: "Probability of landing at least once",
+    fila_ruina: "Probability of ending with nothing",
+    fila_ek: "Expected attempts until a hit or exhaustion",
+    fila_evpol: "Expected value of the whole policy",
+    fila_perdida: "What you lose if you go under",
+    fila_m50: "Attempts to get below 50 % ruin",
+    fila_m10: "Attempts to get below 10 % ruin",
+    fila_mcruina: "Measured ruin (simulation)",
+    fila_mcmedia: "Measured mean outcome (simulation)",
+    pie_p1: "The four numbers on the left are the whole engine: no files, no corpus, no dependencies to install. The Python oracle ships in this same directory and returns these same figures:",
+    pie_p2: "This is the first piece in the showcase that is not a port: there was no internal engine to copy, so the engine was written twice from scratch and what gets verified is that the two paths agree — 4 270 analytic values over 250 states and 4 Monte Carlo simulation states, bit for bit.",
+    pie_p3: "No links to private repositories. Everything the page claims can be recomputed right here."
+  }
+};
+
+var DISPOSICION = [
+  { id: "al-filo", pp: 105, V: 100, C: 10, m: 5 },
+  { id: "solido", pp: 350, V: 100, C: 10, m: 8 },
+  { id: "bajo-umbral", pp: 60, V: 100, C: 10, m: 100 },
+  { id: "una-bala", pp: 500, V: 1000, C: 100, m: 1 }
+];
+
+var CONTROLES = [
+  { id: "pp", min: 5, max: 900, step: 1, valor: 105 },
+  { id: "V", min: 10, max: 1000, step: 10, valor: 100 },
+  { id: "C", min: 1, max: 100, step: 1, valor: 10 },
+  { id: "m", min: 1, max: 200, step: 1, valor: 5 }
+];
+
+var est = { idioma: "es", pp: 105, V: 100, C: 10, m: 5, p: 0.105 };
+
+function nodo(id) { return document.getElementById(id); }
+
+function fmt(x, dec) {
+  if (x === null || x === undefined || !isFinite(x)) return "—";
+  var a = Math.abs(x);
+  if (a === 0) return "0";
+  if (a >= 0.001) return x.toFixed(dec === undefined ? 4 : dec);
+  return x.toExponential(4);
+}
+
+function pct(t) { return fmt(t * 100, 2) + " %"; }
+
+function leer() {
+  var pp = parseFloat(nodo("pp").value);
+  est.pp = pp;
+  est.p = pp / 1000;
+  est.V = parseFloat(nodo("V").value);
+  est.C = parseFloat(nodo("C").value);
+  est.m = parseInt(nodo("m").value, 10);
+  est.r = medir(est.p, est.V, est.C, est.m);
+}
+
+function rotula() {
+  var T = TEXTO[est.idioma];
+  var conData = document.querySelectorAll("[data-t]");
+  for (var i = 0; i < conData.length; i++) {
+    var k = conData[i].getAttribute("data-t");
+    if (T[k] !== undefined) conData[i].textContent = T[k];
+  }
+  nodo("val-pp").textContent = fmt(est.p * 100, 1) + " %";
+  nodo("val-V").textContent = String(est.V);
+  nodo("val-C").textContent = String(est.C);
+  nodo("val-m").textContent = String(est.m);
+  document.documentElement.lang = est.idioma;
+}
+
+function veredicto() {
+  var T = TEXTO[est.idioma], r = est.r;
+  var paga = r.ev_intento > 0;
+  var altaRuina = r.ruina >= 0.10;
+  var clave, clase;
+  if (paga && altaRuina) { clave = "veredicto_alerta"; clase = "alerta"; }
+  else if (paga) { clave = "veredicto_ok"; clase = "ok"; }
+  else if (altaRuina) { clave = "veredicto_malo"; clase = "malo"; }
+  else { clave = "veredicto_inutil"; clase = "malo"; }
+  var caja = nodo("veredicto");
+  caja.className = "panel veredicto " + clase;
+  nodo("v-cifra").textContent = (r.ev_intento >= 0 ? "+" : "") + fmt(r.ev_intento, 4) +
+    " · " + pct(r.ruina) + " · " + est.m + "×";
+  nodo("v-frase").textContent = T[clave];
+}
+
+function colorRuina(t) {
+  if (!(t >= 0)) t = 0;
+  if (t > 1) t = 1;
+  var r, g, b, k;
+  if (t < 0.5) {
+    k = t / 0.5;
+    r = Math.round(46 + (212 - 46) * k);
+    g = Math.round(125 + (160 - 125) * k);
+    b = Math.round(91 + (23 - 91) * k);
+  } else {
+    k = (t - 0.5) / 0.5;
+    r = Math.round(212 + (198 - 212) * k);
+    g = Math.round(160 + (40 - 160) * k);
+    b = Math.round(23 + (40 - 23) * k);
+  }
+  return "rgb(" + r + "," + g + "," + b + ")";
+}
+
+var P_MIN_EJE = 0.005, P_MAX_EJE = 0.9, M_MIN_EJE = 1, M_MAX_EJE = 200;
+
+function pintaMapa(cv) {
+  var ctx = cv.getContext("2d");
+  if (!ctx) return;
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  var T = TEXTO[est.idioma];
+  var W = cv.width, H = cv.height, ML = 46, MR = 12, MT = 14, MB = 36;
+  var x0 = ML, x1 = W - MR, y0 = MT, y1 = H - MB;
+  var lmin = Math.log(P_MIN_EJE), lmax = Math.log(P_MAX_EJE);
+  function xp(p) { return x0 + (Math.log(p) - lmin) / (lmax - lmin) * (x1 - x0); }
+  function ym(m) { return y1 - (m - M_MIN_EJE) / (M_MAX_EJE - M_MIN_EJE) * (y1 - y0); }
+
+  var celda = 4, xx, yy, px, pm;
+  for (yy = y0; yy < y1; yy += celda) {
+    for (xx = x0; xx < x1; xx += celda) {
+      px = Math.exp(lmin + (xx - x0) / (x1 - x0) * (lmax - lmin));
+      pm = Math.round(M_MIN_EJE + (1 - (yy - y0) / (y1 - y0)) * (M_MAX_EJE - M_MIN_EJE));
+      ctx.fillStyle = colorRuina(supervivenciaTrasM(px, pm));
+      ctx.fillRect(xx, yy, celda, celda);
+    }
+  }
+
+  ctx.fillStyle = "#8d9bad";
+  ctx.font = "12px ui-monospace, monospace";
+  ctx.fillText(T.eje_p, (x0 + x1) / 2 - 60, H - 10);
+  ctx.fillText(T.eje_m, 6, y0 + 10);
+  var ticks = [10, 50, 200], i;
+  for (i = 0; i < ticks.length; i++) {
+    ctx.fillText(String(ticks[i]), 22, ym(ticks[i]) + 4);
+  }
+  var pt = [0.01, 0.1, 0.5];
+  for (i = 0; i < pt.length; i++) {
+    ctx.fillText(fmt(pt[i] * 100, 0) + " %", xp(pt[i]) - 10, y1 + 16);
+  }
+
+  var pmin = est.r.p_min;
+  if (pmin > P_MIN_EJE && pmin < P_MAX_EJE) {
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(xp(pmin) - 1, y0, 2, y1 - y0);
+  }
+
+  /* El color ya dice la ruina; el signo se rotula a los dos lados de la linea
+     porque no es una region sino una banda: la mitad izquierda nunca paga. */
+  var yl = (y0 + y1) / 2;
+  function placa(texto, cx) {
+    cx = Math.min(Math.max(cx, x0 + 26), x1 - 26);
+    ctx.fillStyle = "rgba(11,15,20,0.80)";
+    ctx.fillRect(cx - 24, yl - 9, 48, 18);
+    ctx.fillStyle = "#e6edf3";
+    ctx.fillText(texto, cx - 20, yl + 4);
+  }
+  ctx.font = "11px ui-monospace, monospace";
+  if (pmin <= P_MIN_EJE) placa("EV > 0", (x0 + x1) / 2);
+  else if (pmin >= P_MAX_EJE) placa("EV < 0", (x0 + x1) / 2);
+  /* a 26 px las dos placas se tocaban y tapaban justo la frontera que explican:
+     el hueco de 32 px deja ver la linea blanca entre ellas. */
+  else { placa("EV < 0", xp(pmin) - 40); placa("EV > 0", xp(pmin) + 40); }
+  ctx.font = "12px ui-monospace, monospace";
+
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(xp(est.p) - 3, ym(est.m) - 3, 6, 6);
+}
+
+function pintaRuina(cv) {
+  var ctx = cv.getContext("2d");
+  if (!ctx) return;
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  var T = TEXTO[est.idioma];
+  var W = cv.width, H = cv.height, ML = 56, MR = 14, MT = 26, MB = 34;
+  var x0 = ML, x1 = W - MR, y0 = MT, y1 = H - MB;
+  var TECHO = 0.0, SUELO = -9;
+  function xm(m) { return x0 + (m - M_MIN_EJE) / (M_MAX_EJE - M_MIN_EJE) * (x1 - x0); }
+  function yr(t) {
+    if (!(t > 0)) t = 1e-300;
+    var l = Math.log(t) / Math.LN10;
+    if (l > TECHO) l = TECHO;
+    if (l < SUELO) l = SUELO;
+    return y0 + (TECHO - l) / (TECHO - SUELO) * (y1 - y0);
+  }
+
+  ctx.fillStyle = "#8d9bad";
+  ctx.font = "12px ui-monospace, monospace";
+  ctx.fillText(T.eje_m, (x0 + x1) / 2 - 3, H - 6);
+  ctx.fillText(T.eje_ruina, 6, y0 - 8);
+  /* sin marca en m=1: cae sobre el eje y, y su rotulo se montaba sobre el de 10. */
+  var marcas = [10, 50, 100, 200], k, xt;
+  for (k = 0; k < marcas.length; k++) {
+    xt = xm(marcas[k]) - 6;
+    if (marcas[k] === M_MAX_EJE) xt = x1 - 24;
+    ctx.fillText(String(marcas[k]), xt, y1 + 16);
+  }
+  /* una entre un millon: sirve de horizonte practico y de escala para leer el
+     tramo bajo, donde las dos curvas ya no se distinguen a ojo. */
+  ctx.strokeStyle = "#1b2431";
+  ctx.beginPath();
+  ctx.moveTo(x0, yr(1e-6));
+  ctx.lineTo(x1, yr(1e-6));
+  ctx.stroke();
+  ctx.fillText("1e-6", 8, yr(1e-6) + 4);
+  var guias = [0.5, 0.1, 0.01], etiquetas = [T.nivel_50, T.nivel_10, T.nivel_1], i;
+  for (i = 0; i < guias.length; i++) {
+    ctx.strokeStyle = "#263141";
+    ctx.beginPath();
+    ctx.moveTo(x0, yr(guias[i]));
+    ctx.lineTo(x1, yr(guias[i]));
+    ctx.stroke();
+    ctx.fillStyle = "#8d9bad";
+    ctx.fillText(etiquetas[i], 8, yr(guias[i]) + 4);
+  }
+
+  var pminDibujable = est.r.p_min > 0 && est.r.p_min <= P_MAX_EJE;
+  if (pminDibujable) {
+    ctx.strokeStyle = "#c62828";
+    ctx.beginPath();
+    for (i = 1; i <= M_MAX_EJE; i++) {
+      var yy = yr(supervivenciaTrasM(est.r.p_min, i));
+      if (i === 1) ctx.moveTo(xm(i), yy); else ctx.lineTo(xm(i), yy);
+    }
+    ctx.stroke();
+  } else {
+    ctx.fillStyle = "#c62828";
+    ctx.fillText(T.fuera_mapa, x0 + 8, y0 + 30);
+  }
+
+  ctx.strokeStyle = "#5fb3a1";
+  ctx.beginPath();
+  for (i = 1; i <= M_MAX_EJE; i++) {
+    var yv = yr(supervivenciaTrasM(est.p, i));
+    if (i === 1) ctx.moveTo(xm(i), yv); else ctx.lineTo(xm(i), yv);
+  }
+  ctx.stroke();
+
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(xm(est.m) - 2, y0 - 4, 4, y1 - y0 + 8);
+
+  /* alineadas a la derecha: con anclaje a la izquierda quedaban pegadas al borde
+     y una de las dos se leia cortada. */
+  ctx.textAlign = "right";
+  ctx.fillStyle = "#5fb3a1";
+  ctx.fillText(T.curva_p, x1 - 6, y0 + 12);
+  if (pminDibujable) {
+    ctx.fillStyle = "#c62828";
+    ctx.fillText(T.curva_frontera, x1 - 6, y0 + 28);
+  }
+  ctx.textAlign = "left";
+}
+
+function pintaTabla() {
+  var T = TEXTO[est.idioma], r = est.r;
+  var mc = r.montecarlo;
+  var sigma = Math.sqrt(Math.max(r.ruina * (1 - r.ruina), 0) / mc.n);
+  var filas = [
+    ["fila_p_min", fmt(r.p_min, 4), false],
+    ["fila_ratio", fmt(r.ratio, 4) + "×", true],
+    ["fila_ev", (r.ev_intento >= 0 ? "+" : "") + fmt(r.ev_intento, 4), true],
+    ["fila_q", pct(r.q_exito), false],
+    ["fila_ruina", pct(r.ruina), true],
+    ["fila_ek", fmt(r.ek, 4), false],
+    ["fila_evpol", (r.ev_politica >= 0 ? "+" : "") + fmt(r.ev_politica, 4), true],
+    ["fila_perdida", fmt(r.perdida_maxima, 2), false],
+    ["fila_m50", r.m_ruina_50 > 0 ? String(r.m_ruina_50) : "—", false],
+    ["fila_m10", r.m_ruina_10 > 0 ? String(r.m_ruina_10) : "—", false],
+    ["fila_mcruina", pct(mc.ruina_mc) + " ± " + fmt(2 * sigma * 100, 2), false],
+    ["fila_mcmedia", (mc.media_mc >= 0 ? "+" : "") + fmt(mc.media_mc, 4), false]
+  ];
+  var html = "";
+  for (var i = 0; i < filas.length; i++) {
+    html += '<tr' + (filas[i][2] ? ' class="destaca"' : '') + '><th>' + T[filas[i][0]] +
+      '</th><td class="nv">' + filas[i][1] + "</td></tr>";
+  }
+  nodo("tabla").innerHTML = "<tbody>" + html + "</tbody>";
+}
+
+function pintaIdentidad() {
+  var r = est.r, T = TEXTO[est.idioma];
+  var q = r.q_exito, neto = r.V - r.C / r.p;
+  nodo("identidad").innerHTML =
+    '<div class="dim">EV(política) = (1 − (1−p)<sup>m</sup>) · (V − C/p)</div>' +
+    "<div>" + fmt(q, 4) + " · (" + fmt(r.V, 2) + " − " + fmt(r.C / r.p, 4) + ") = " +
+    '<strong>' + (r.ev_politica >= 0 ? "+" : "") + fmt(r.ev_politica, 4) + "</strong></div>" +
+    '<div class="dim">' + T.fila_evpol + ": " + fmt(r.ev_politica, 4) +
+    " · " + T.fila_ev + ": " + fmt(r.ev_intento, 4) + "</div>";
+}
+
+function pintaPie() {
+  var T = TEXTO[est.idioma];
+  nodo("pie").innerHTML =
+    "<p>" + T.pie_p1 + "</p>" +
+    '<p><code>python3 umbral.py --self-test</code> · <code>python3 verificar_paridad.py</code> · <code>node verificar_ui.js</code></p>' +
+    "<p>" + T.pie_p2 + "</p>" +
+    "<p>" + T.pie_p3 + "</p>";
+}
+
+function pintar() {
+  leer();
+  rotula();
+  veredicto();
+  pintaMapa(nodo("mapa"));
+  pintaRuina(nodo("ruina"));
+  pintaTabla();
+  pintaIdentidad();
+  pintaPie();
+}
+
+function aplicaPreset(clave) {
+  for (var i = 0; i < DISPOSICION.length; i++) {
+    if (DISPOSICION[i].id !== clave) continue;
+    var d = DISPOSICION[i];
+    nodo("pp").value = String(d.pp);
+    nodo("V").value = String(d.V);
+    nodo("C").value = String(d.C);
+    nodo("m").value = String(d.m);
+    pintar();
+    return true;
+  }
+  return false;
+}
+
+function arrancar() {
+  var entradas = document.querySelectorAll("input");
+  for (var i = 0; i < entradas.length; i++) {
+    entradas[i].addEventListener("input", function () { pintar(); });
+  }
+  var botones = document.querySelectorAll("[data-preset]");
+  for (i = 0; i < botones.length; i++) {
+    (function (b) {
+      b.addEventListener("click", function () { aplicaPreset(b.getAttribute("data-preset")); });
+    })(botones[i]);
+  }
+  nodo("btn-idioma").addEventListener("click", function () {
+    est.idioma = est.idioma === "es" ? "en" : "es";
+    pintar();
+  });
+  pintar();
+}
+
+var T = {
+  TEXTO: TEXTO,
+  DISPOSICION: DISPOSICION,
+  CONTROLES: CONTROLES,
+  est: est,
+  pintar: pintar,
+  aplicaPreset: aplicaPreset,
+  medir: medir,
+  supervivenciaTrasM: supervivenciaTrasM,
+  intentosParaRuina: intentosParaRuina
+};
+
+arrancar();
+</script>
+</body>
+</html>

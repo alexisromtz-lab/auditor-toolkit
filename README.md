@@ -50,9 +50,12 @@ the port never drifted from it. No network calls, no build step, no dependencies
 | [Electromagnetic field classifier](https://alexisromtz-lab.github.io/auditor-toolkit/demo/clasificador-de-campos/) | Which algebraic class does a field `(E, B)` belong to — and what survives every change of frame? | 66 cases + 8 border controls |
 | [Does your null have teeth?](https://alexisromtz-lab.github.io/auditor-toolkit/demo/nulo-con-dientes/) | Is this permutation test a null for the invariant it claims to destroy? Five resamplers, two invariants, four states. | 140 cases |
 | [The detection floor: ε is not a tolerance](https://alexisromtz-lab.github.io/auditor-toolkit/demo/piso-de-deteccion/) | A gate with a constant ε is not choosing a precision — it is choosing between two blindnesses. Drag δ and watch the local gate see what the constant one approves. | 80 bit-exact fields + 108 gates |
+| [The threshold: the attempt pays, and do you survive to collect?](https://alexisromtz-lab.github.io/auditor-toolkit/demo/umbral-economico/) | An attempt costs `C` and pays `V` with probability `p`. Two questions that look like one — does it pay on average, and will you still have attempts left when it finally lands? | 250 frozen states · 4 270 exact values |
 
-The engines the ports were taken from live in a private repository. What is public —
-and enough — is the answer key and the check that re-runs each port against it:
+The engines the first three ports were taken from live in a private repository. The
+fourth ships its own: `demo/umbral-economico/umbral.py` **is** the oracle, stdlib
+only, and it runs from anywhere. What is public — and enough — is the answer key and
+the check that re-runs each port against it:
 
 ```
 python3 demo/clasificador-de-campos/verificar_paridad.py   # parity against the frozen key
@@ -61,6 +64,9 @@ python3 demo/nulo-con-dientes/verificar_paridad.py         # same, for the resam
 node    demo/nulo-con-dientes/verificar_ui.js
 python3 demo/piso-de-deteccion/verificar_paridad.py        # same, for the detection floor
 node    demo/piso-de-deteccion/verificar_ui.js
+python3 demo/umbral-economico/verificar_paridad.py         # same, for the economic threshold
+node    demo/umbral-economico/verificar_ui.js
+python3 demo/umbral-economico/umbral.py --self-test        # the oracle, alone, no imports beyond stdlib
 python3 -m pytest tests/ -q                                # all of the above, plus the mutants
 ```
 
@@ -99,6 +105,85 @@ down. Both are assertions now: the DOM stub applies the browser's step-snapping
 rule, and any painted string or table cell containing prose must exist in the
 active language's dictionary. **Ten mutations, one per assertion, must each return
 `RC 1`** — a verifier that has never failed is a decoration.
+
+### What the fourth piece changes: there was nothing to port
+
+The first three demos are **ports**. An engine existed; the work was to prove the
+browser copy never drifted from it. The fourth had no engine to port — there is none
+in the corpus — so it was written twice, independently, and its falsifier compares
+**two computations of the same number**: the term-by-term sum of `E[K]` against its
+closed form `(1 − uᵐ)/p`, and the JavaScript motor against the Python oracle. The
+tolerance is **0.0**, not a bound, because nothing in this motor is transcendental —
+there is no last ULP to argue about. 250 states, 4 270 values, 0 discrepancies.
+
+Two consequences worth naming:
+
+- **The oracle is public, and that is measured.** `fixture.json` declares
+  `fuente_publica: true` — the one claim the first three pieces could not make —
+  because `demo/umbral-economico/umbral.py` ships in the same folder. The test suite
+  proves the claim instead of asserting it: it copies that single file into a temp
+  directory and runs `python3 -I umbral.py --self-test` there, with `-I` ignoring
+  `PYTHONPATH` and user site, so a hidden dependency on the corpus would fail the run
+  rather than hide in it.
+- **The claim is about the sign, not about survival.**
+  `EV_política = q·(V − C/p)` with `q = 1 − (1−p)ᵐ` is a positive multiple of
+  `pV − C`, so the sign can never depend on `m`; `m` only sets
+  `P(ruina) = (1−p)ᵐ`. The four presets are exactly that 2×2: *al filo* pays +0.5 per
+  attempt with 57.4 % ruin, *sólido* pays +25 with 3.2 %, *bajo el umbral*
+  **survives in order to lose** (−4 at 0.2 % ruin), and *una bala* pays +400 while
+  flipping a coin on whether it collects at all.
+
+Six frozen states sit exactly on `p·V = C`, where the sign claim has to hold with no
+margin whatsoever (`cerca_del_umbral == 6`, band `1e-12·max(V,C)`). If they stopped
+landing in that band, the answer key would return `RC 5` and name what moved — the
+oracle, the motor, or the values — instead of quietly weakening the claim the page
+makes.
+
+#### What looking at the page found that the verifier could not
+
+Everything above is measured by code. Four defects below were **not** — they were
+found by rendering the page in a headless browser and reading the PNG, and each one
+is now an assertion so the same class cannot come back silently:
+
+| what the render showed | why the verifier was blind | assertion |
+|---|---|---|
+| the English view painted an "off the map" message **in Spanish** | `fuera_mapa` was declared **twice** inside the `TEXTO.en` object, so the Spanish string *was* in the English dictionary. "Is this string in the dictionary" cannot see it | **A16** scans each language block for a key declared twice |
+| switching ES → EN left the Spanish labels **underneath** the English ones | neither painter called `clearRect`, and the DOM stub's `clearRect` was a no-op — a painter that never clears looked correct | **A18** repaints after a language switch *without* clearing by hand; the stub now erases for real |
+| the ruin chart's x axis had **no numbers**, and the `m` title collided with the `200` tick | canvas text was only checked for being *translated*, never for *where* it lands | ticks at `10 / 50 / 100 / 200`, title centred, checked by the two cases A7 now paints |
+| the map's two plaques `EV < 0` / `EV > 0` **touched each other**, hiding the very frontier they explain | A7 asks what is painted, not what is legible | 32 px gap; both are still in the dictionary |
+
+The piece also **published figures nobody counted**: the footer claimed *26 880
+analytic values and 40 simulation states* while the fixture held **4 270 values over
+250 states, 4 of them with a Monte Carlo block**. A page can be bit-exact and lie in
+its own footer. `verificar_paridad.py` now reads the number printed in each language
+and compares it with the count it just made: **RC 8**, *the footer announces figures
+nobody counted*.
+
+#### What the fourth piece cost
+
+Hand-written lines, generated data excluded, same measure for all four:
+
+| piece | hand-written lines | of which the oracle | mutation rows in `pytest` |
+|---|---|---|---|
+| 1 · field classifier | 1 406 | 0 (ported) | 0 — the test only invokes the two verifiers |
+| 2 · resampling null | 1 802 | 0 (ported) | 6 |
+| 3 · detection floor | 1 827 | 0 (ported) | 10 |
+| **4 · economic threshold** | **2 387** | **630** (`umbral.py` + `generar_fixture.py`) | **18** (5 parity layers + 13 UI) |
+
+The assertion count is deliberately **not** a column: the four verifiers do not count
+in the same unit (piece 1 reports "32 ids · 18 readouts · 8 canvas methods", piece 3
+reports "14 comprobaciones"). Mutation rows are comparable because each one is a named
+break that must redden the assertion that owns it.
+
+The fourth costs **about a third more**, and the third is exactly the part the first
+three did not have to write: an engine to port from. Subtract those 630 lines and the
+factory is flat — 1 757 against 1 802 and 1 827. What grew without being asked is the
+**verifier** (607 lines against 296–523), because every defect found by looking became
+an assertion. That is the trade this showcase makes on purpose: the page is cheap, the
+proof that the page is right is not.
+
+Elapsed time is **not measured** here: the sessions were not instrumented, and a
+number typed from memory would be the same defect the footer had.
 
 ---
 

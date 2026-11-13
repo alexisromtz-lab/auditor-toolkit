@@ -32,9 +32,12 @@ de compilación, sin dependencias.
 | [Clasificador de campos electromagnéticos](https://alexisromtz-lab.github.io/auditor-toolkit/demo/clasificador-de-campos/) | ¿A qué clase algebraica pertenece un campo `(E, B)` — y qué sobrevive a todo cambio de marco? | 66 casos + 8 controles de borde |
 | [¿Tu nulo tiene dientes?](https://alexisromtz-lab.github.io/auditor-toolkit/demo/nulo-con-dientes/) | ¿Este test de permutación es un nulo para el invariante que dice destruir? Cinco remuestreadores, dos invariantes, cuatro estados. | 140 casos |
 | [El piso de detección: ε no es una tolerancia](https://alexisromtz-lab.github.io/auditor-toolkit/demo/piso-de-deteccion/) | Una compuerta con ε constante no elige una precisión: elige entre dos cegueras. Mueve δ y mira la compuerta local ver lo que la constante aprueba. | 80 campos bit a bit + 108 compuertas |
+| [El umbral: paga el intento, y ¿sobrevives a cobrarlo?](https://alexisromtz-lab.github.io/auditor-toolkit/demo/umbral-economico/) | Un intento cuesta `C` y paga `V` con probabilidad `p`. Dos preguntas que parecen una: si el intento paga en promedio, y si te quedan intentos cuando por fin sale. | 250 estados congelados · 4 270 valores exactos |
 
-Los motores de los que se tomaron los ports viven en un repositorio privado. Lo
-que sí es público —y suficiente— es el banco de respuestas y la comprobación que
+Los motores de los que se tomaron **los tres primeros** ports viven en un
+repositorio privado. El cuarto trae el suyo: `demo/umbral-economico/umbral.py`
+**es** el oráculo, sólo biblioteca estándar, y corre desde cualquier sitio. Lo que
+sí es público —y suficiente— es el banco de respuestas y la comprobación que
 vuelve a correr cada port contra él:
 
 ```
@@ -44,6 +47,9 @@ python3 demo/nulo-con-dientes/verificar_paridad.py         # lo mismo, para el n
 node    demo/nulo-con-dientes/verificar_ui.js
 python3 demo/piso-de-deteccion/verificar_paridad.py        # lo mismo, para el piso de detección
 node    demo/piso-de-deteccion/verificar_ui.js
+python3 demo/umbral-economico/verificar_paridad.py         # lo mismo, para el umbral económico
+node    demo/umbral-economico/verificar_ui.js
+python3 demo/umbral-economico/umbral.py --self-test        # el oráculo, solo, sin más imports que stdlib
 python3 -m pytest tests/ -q                                # todo lo anterior, más los mutantes
 ```
 
@@ -85,6 +91,86 @@ regla de redondeo al paso del navegador, y toda cadena pintada o celda de tabla 
 contenga prosa tiene que existir en el diccionario del idioma activo. **Diez
 mutaciones, una por aserto, tienen que devolver `RC 1`** — un verificador que nunca
 ha fallado es un adorno.
+
+### Qué cambia la cuarta pieza: no había nada que portar
+
+Las tres primeras demos son **ports**. Había un motor; el trabajo era probar que la
+copia del navegador no se desvió de él. La cuarta no tuvo motor que portar —no hay
+ninguno en el corpus—, así que se escribió dos veces, por caminos independientes, y su
+falsificador compara **dos cómputos del mismo número**: la suma término a término de
+`E[K]` contra su forma cerrada `(1 − uᵐ)/p`, y el motor JavaScript contra el oráculo
+Python. La tolerancia es **0.0**, no una cota, porque nada en este motor es
+trascendente: no hay último ULP del que discutir. 250 estados, 4 270 valores, 0
+discrepancias.
+
+Dos consecuencias que conviene nombrar:
+
+- **El oráculo es público, y eso se mide.** `fixture.json` declara
+  `fuente_publica: true` —la única afirmación que las tres primeras piezas no podían
+  hacer— porque `demo/umbral-economico/umbral.py` viaja en la misma carpeta. La batería
+  de tests prueba la afirmación en vez de enunciarla: copia ese único archivo a un
+  directorio temporal y corre allí `python3 -I umbral.py --self-test`, con `-I`
+  ignorando `PYTHONPATH` y el sitio de usuario, de modo que una dependencia oculta del
+  corpus haría fallar la corrida en vez de esconderse en ella.
+- **La afirmación es sobre el signo, no sobre la supervivencia.**
+  `EV_política = q·(V − C/p)` con `q = 1 − (1−p)ᵐ` es un múltiplo positivo de
+  `pV − C`, así que el signo no puede depender nunca de `m`; `m` sólo fija
+  `P(ruina) = (1−p)ᵐ`. Los cuatro presets son exactamente ese 2×2: *al filo* paga +0.5
+  por intento con 57.4 % de ruina, *sólido* paga +25 con 3.2 %, *bajo el umbral*
+  **sobrevive para perder** (−4 con 0.2 % de ruina) y *una bala* paga +400 mientras se
+  juega a cara o cruz si llega a cobrar.
+
+Seis estados congelados se sientan exactamente sobre `p·V = C`, donde la afirmación del
+signo tiene que sostenerse sin margen alguno (`cerca_del_umbral == 6`, banda
+`1e-12·max(V,C)`). Si dejaran de caer en esa banda, el banco de respuestas devolvería
+`RC 5` y nombraría qué se movió —el oráculo, el motor o los valores— en vez de debilitar
+en silencio la afirmación que la página hace.
+
+#### Lo que encontró mirar la página, y el verificador no podía
+
+Todo lo de arriba lo miden programas. Los cuatro defectos de abajo **no**: salieron de
+renderizar la página en un navegador headless y leer el PNG, y cada uno es hoy un
+aserto para que esa clase no vuelva en silencio:
+
+| lo que mostró el render | por qué el verificador estaba ciego | aserto |
+|---|---|---|
+| la vista inglesa pintaba el mensaje de "fuera del mapa" **en español** | `fuera_mapa` estaba declarada **dos veces** dentro de `TEXTO.en`, así que la cadena española *sí* estaba en el diccionario inglés. "¿Está esta cadena en el diccionario?" no puede verlo | **A16** recorre cada bloque de idioma buscando una clave declarada dos veces |
+| pasar de ES a EN dejaba los rótulos españoles **debajo** de los ingleses | ningún pintor llamaba a `clearRect`, y el `clearRect` del stub de DOM no hacía nada: un pintor que nunca limpia parecía correcto | **A18** repinta tras cambiar de idioma *sin* limpiar a mano; el stub ahora borra de verdad |
+| el eje x del gráfico de ruina no tenía **números**, y el título `m` chocaba con la marca `200` | del texto de canvas se comprobaba que estuviera *traducido*, nunca *dónde* cae | marcas en `10 / 50 / 100 / 200`, título centrado, medido por los dos casos que A7 pinta ahora |
+| las dos placas del mapa `EV < 0` / `EV > 0` **se tocaban**, tapando justo la frontera que explican | A7 pregunta qué se pinta, no qué se lee | 32 px de hueco; las dos siguen en el diccionario |
+
+La pieza además **publicaba cifras que nadie contó**: el pie anunciaba *26 880 valores
+analíticos y 40 estados de simulación* mientras el fixture tenía **4 270 valores sobre
+250 estados, 4 de ellos con bloque Monte Carlo**. Una página puede dar paridad exacta y
+mentir en su propio pie. `verificar_paridad.py` ahora lee el número impreso en cada
+idioma y lo compara con el conteo que acaba de hacer: **RC 8**, *el pie anuncia cifras
+que nadie contó*.
+
+#### Lo que costó la cuarta pieza
+
+Líneas escritas a mano, sin datos generados, con la misma medida para las cuatro:
+
+| pieza | líneas a mano | de ellas el oráculo | filas de mutación en `pytest` |
+|---|---|---|---|
+| 1 · clasificador de campos | 1 406 | 0 (portada) | 0 — su test sólo invoca los dos verificadores |
+| 2 · nulo de remuestreo | 1 802 | 0 (portada) | 6 |
+| 3 · piso de detección | 1 827 | 0 (portada) | 10 |
+| **4 · umbral económico** | **2 387** | **630** (`umbral.py` + `generar_fixture.py`) | **18** (5 capas de paridad + 13 de UI) |
+
+El número de asertos no es columna a propósito: los cuatro verificadores no cuentan en
+la misma unidad (la pieza 1 informa "32 ids · 18 readouts · 8 métodos de canvas"; la 3,
+"14 comprobaciones"). Las filas de mutación sí son comparables, porque cada una es una
+rotura nombrada que tiene que enrojecer al aserto que la posee.
+
+La cuarta cuesta **cerca de un tercio más**, y ese tercio es exactamente lo que las
+tres primeras no tuvieron que escribir: un motor del que portar. Restadas esas 630
+líneas, la fábrica queda plana — 1 757 contra 1 802 y 1 827. Lo que creció sin que
+nadie lo pidiera es el **verificador** (607 líneas contra 296–523), porque cada defecto
+encontrado mirando se volvió un aserto. Ese es el intercambio que este escaparate hace
+a propósito: la página es barata, la prueba de que la página está bien no lo es.
+
+El tiempo transcurrido **no se mide** aquí: las sesiones no estaban instrumentadas, y
+un número dictado de memoria sería el mismo defecto que tenía el pie.
 
 ---
 
