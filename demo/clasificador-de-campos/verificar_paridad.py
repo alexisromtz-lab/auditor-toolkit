@@ -190,7 +190,12 @@ def _procedencia(oraculo: Path) -> dict:
         "oraculo": oraculo.name,
         "commit": git("rev-parse", "HEAD"),
         "blob": git("hash-object", str(oraculo)),
-        "remoto": git("remote", "get-url", "origin"),
+        # El origen del oraculo NO se publica: su repositorio es privado y una URL
+        # que da 404 a quien la sigue es una procedencia que nadie puede comprobar.
+        # Lo verificable en publico es la pagina contra este fixture, y eso si tiene
+        # comando: verificar_paridad.py sin --oraculo.
+        "fuente_publica": False,
+        "verificable": "la pagina contra este fixture: verificar_paridad.py (sin --oraculo)",
         "generado_por": "demo/clasificador-de-campos/verificar_paridad.py --oraculo",
     }
 

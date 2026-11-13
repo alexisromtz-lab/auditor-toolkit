@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demos · Auditor-Toolkit</title>
+<style>
+  :root {
+    --fondo: #0b0f14;
+    --panel: #131a22;
+    --borde: #24303d;
+    --texto: #e6edf3;
+    --tenue: #8b9aab;
+    --acento: #39d0d8;
+    --aviso: #f0b429;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 3rem 1.25rem 4rem;
+    background: var(--fondo);
+    color: var(--texto);
+    font: 16px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 46rem; margin: 0 auto; }
+  h1 { font-size: 1.6rem; margin: 0 0 .35rem; letter-spacing: -.01em; }
+  .bajada { color: var(--tenue); margin: 0 0 2.25rem; }
+  .pieza {
+    display: block;
+    padding: 1.15rem 1.25rem;
+    margin-bottom: .9rem;
+    background: var(--panel);
+    border: 1px solid var(--borde);
+    border-radius: 10px;
+    color: inherit;
+    text-decoration: none;
+    transition: border-color .15s ease, transform .15s ease;
+  }
+  .pieza:hover, .pieza:focus-visible {
+    border-color: var(--acento);
+    transform: translateY(-1px);
+    outline: none;
+  }
+  .pieza h2 { font-size: 1.02rem; margin: 0 0 .3rem; font-weight: 600; }
+  .pieza p { margin: 0; color: var(--tenue); font-size: .9rem; }
+  .pieza .flecha { float: right; color: var(--acento); }
+  .regla {
+    margin-top: 2.25rem;
+    padding-top: 1.1rem;
+    border-top: 1px solid var(--borde);
+    color: var(--tenue);
+    font-size: .82rem;
+  }
+  .regla strong { color: var(--aviso); font-weight: 600; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .92em; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Demos · Auditor-Toolkit</h1>
+  <p class="bajada">
+    Each piece is an engine with a frozen answer key and the falsifier that proves the page did not drift from it.<br>
+    Cada pieza es un motor con su banco de respuestas congelado y el falsificador que prueba que la página no se desvió.
+  </p>
+
+  <a class="pieza" href="clasificador-de-campos/">
+    <span class="flecha">→</span>
+    <h2>Clasificador de campos algebraicos</h2>
+    <p>Seis números y un resultado: ¿este campo tiene un marco donde <code>B</code> desaparece?
+       Lorentz invariants, boost en vivo y barrido de β. 66 casos + 8 controles de borde.</p>
+  </a>
+
+  <p class="regla">
+    <strong>Regla de la casa:</strong> ninguna pieza se publica sin el mutante que debe hacerla fallar.
+    Si un número de esta página no trae su comando, es un error de la página: repórtalo.
+  </p>
+</main>
+</body>
+</html>

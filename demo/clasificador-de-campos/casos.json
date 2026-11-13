@@ -3,7 +3,8 @@
   "oraculo": "clasificador_campo_algebraico.py",
   "commit": "11a567f0c0929c7cc40535e01ab246f432eeb8fb",
   "blob": "c5713935234b1c26d728c718c51caf022996bc56",
-  "remoto": "https://github.com/alexisromtz-lab/platino-labs.git",
+  "fuente_publica": false,
+  "verificable": "la pagina contra este fixture: verificar_paridad.py (sin --oraculo)",
   "generado_por": "demo/clasificador-de-campos/verificar_paridad.py --oraculo"
  },
  "control_sintetico": [
