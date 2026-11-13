@@ -624,3 +624,54 @@ jobs:
           if [ "$compuesto" -eq 1 ]; then
             echo "COMPUESTO_OK: $(printf '%s' "$modos_decl" | paste -sd'+' -) verificados — el certificado cubre TODAS las evidencias declaradas."
           fi
+
+  # HUELLA-CI-PISO-PYTHON-20261113 — el piso declarado no tenía lector: el README decía
+  # «Python 3.12» y ningún trabajo instalaba otra cosa, así que el día que una llamada subiera
+  # el piso de verdad nadie se habría enterado. Este trabajo EJECUTA el pipe documentado bajo
+  # 3.9, que es el intérprete que trae macOS por defecto, y exige que las dos lecturas declaren
+  # el mismo corpus: si el piso deja de ser cierto, enrojece aquí y no en la máquina del lector.
+  floor-python:
+    if: github.repository != 'alexisromtz-lab/platino-labs'
+    # `ubuntu-latest` ya es 26.04 y ahí `setup-python` no encuentra 3.9 (medido 2026-11-13:
+    # «The version '3.9' with architecture 'x64' was not found for Ubuntu 26.04»). El corredor
+    # se elige por el intérprete, no por ser el más nuevo: el día que retiren 22.04, este trabajo
+    # se muda o el piso se sube — y ese día es justo el que hay que mirar.
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.9'
+
+      - name: El pipe documentado, bajo el piso declarado
+        run: |
+          set -euo pipefail
+          python3 --version
+          python3 tools/calculate_arch_index.py --self-test
+          python3 tools/ingesta_ast_v2.py . "$(git rev-parse HEAD)" \
+            --source-root . --package audited_project --output /tmp/ingesta.json
+          python3 tools/calculate_arch_index.py /tmp/ingesta.json \
+            --repo "$GITHUB_REPOSITORY" --repo-root . --commit "$(git rev-parse HEAD)" \
+            > /tmp/architecture.json
+          python3 tools/calculate_arch_index.py /tmp/ingesta.json --graph-sensitivity \
+            > /tmp/sensitivity.json
+          # El publicador reescribe el README; aquí corre sobre una copia para que el pipe
+          # entero se ejerza sin dejar el árbol sucio a mitad del trabajo.
+          cp README.md /tmp/README.md
+          python3 tools/publish_architecture_snapshot.py --report /tmp/architecture.json \
+            --readme /tmp/README.md --run-url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+            --observed-at "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          python3 - <<'PY'
+          import json
+          indice = json.load(open("/tmp/architecture.json"))
+          sens = json.load(open("/tmp/sensitivity.json"))
+          # La segunda lectura no lleva `commit`: su identidad es el corpus del que se proyectó.
+          # Comparar contra `sens.get("commit", indice["commit"])` sería una condición que no
+          # puede fallar, y un chequeo que no puede fallar no es un chequeo.
+          if indice["corpus_sha256"] != sens["graph_input_sha256"]:
+              print(f"CORPUS_DISTINTO: índice {indice['corpus_sha256']} ≠ sensibilidad "
+                    f"{sens['graph_input_sha256']} — las dos lecturas no son el mismo documento.")
+              raise SystemExit(1)
+          print(f"PISO_OK: {indice['module_count']} módulos · {indice['cyclic_scc_count']} SCC cíclicas · "
+                f"corpus {indice['corpus_sha256'][:12]} idéntico en las dos lecturas.")
+          PY
