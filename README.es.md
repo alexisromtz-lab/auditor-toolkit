@@ -31,6 +31,7 @@ de compilación, sin dependencias.
 |---|---|---|
 | [Clasificador de campos electromagnéticos](https://alexisromtz-lab.github.io/auditor-toolkit/demo/clasificador-de-campos/) | ¿A qué clase algebraica pertenece un campo `(E, B)` — y qué sobrevive a todo cambio de marco? | 66 casos + 8 controles de borde |
 | [¿Tu nulo tiene dientes?](https://alexisromtz-lab.github.io/auditor-toolkit/demo/nulo-con-dientes/) | ¿Este test de permutación es un nulo para el invariante que dice destruir? Cinco remuestreadores, dos invariantes, cuatro estados. | 140 casos |
+| [El piso de detección: ε no es una tolerancia](https://alexisromtz-lab.github.io/auditor-toolkit/demo/piso-de-deteccion/) | Una compuerta con ε constante no elige una precisión: elige entre dos cegueras. Mueve δ y mira la compuerta local ver lo que la constante aprueba. | 80 campos bit a bit + 108 compuertas |
 
 Los motores de los que se tomaron los ports viven en un repositorio privado. Lo
 que sí es público —y suficiente— es el banco de respuestas y la comprobación que
@@ -41,6 +42,8 @@ python3 demo/clasificador-de-campos/verificar_paridad.py   # paridad contra el b
 node    demo/clasificador-de-campos/verificar_ui.js        # la página arranca de verdad
 python3 demo/nulo-con-dientes/verificar_paridad.py         # lo mismo, para el nulo de remuestreo
 node    demo/nulo-con-dientes/verificar_ui.js
+python3 demo/piso-de-deteccion/verificar_paridad.py        # lo mismo, para el piso de detección
+node    demo/piso-de-deteccion/verificar_ui.js
 python3 -m pytest tests/ -q                                # todo lo anterior, más los mutantes
 ```
 
@@ -56,6 +59,32 @@ ningún port entre lenguajes puede ser bit a bit ahí sin reimplementar la libm 
 anfitrión, y eso ataría el banco de respuestas a una sola máquina. Por eso la
 página afirma **veredictos idénticos**, nunca «bit a bit», y el falsificador falla
 si un campo discreto se mueve.
+
+La tercera pieza añade un **segundo** nivel declarado, porque sus cantidades están
+peor condicionadas que las de la pieza 2. Sus 16 campos de perfil por caso se
+comparan **bit a bit** —80 de 80 exactos, 0 ULP— y sus 108 compuertas se comparan
+como enteros exactos. Pero tres de sus diagnósticos son el cociente de una
+diferencia que cancela: `τ = |div_central − div_exacta|`, así que un solo ULP en
+`div` se convierte en error relativo grande en `τ`, y `τ̂/τ` lo amplifica.
+`Math.exp` (V8/fdlibm) y `np.exp` (libm) difieren en 908 de 9 216 nodos por
+exactamente 1 ULP; el cociente queda en **5.6e-13 medido, 1e-11 declarado**. Eso
+no es deriva del port —es el condicionamiento de la cantidad— y la página lo dice
+en vez de esconder un factor de apaño. Lo que hace fiables las cifras que lee un
+visitante es otra cosa, y es comprobable: en las 108 compuertas congeladas
+**ningún nodo cae a menos de 1e-9 relativo de su umbral** (`cerca_del_umbral == 0`),
+así que cada conteo que la página muestra es exacto entre implementaciones, no
+sólo parecido.
+
+Dos defectos de esta pieza fueron invisibles para ella hasta que la página se abrió
+en un navegador. Un control declarado `step="0.02"` **redondeaba el preset `δ = 0.25`
+a `0.26`**: la cifra en pantalla cuadraba con el dibujo y las dos mentían sobre el
+nombre del preset. Y el rótulo del eje del canvas y todas las etiquetas de fila de la
+tabla de medidas seguían en español en la vista inglesa — el mismo defecto de la
+pieza 1, una capa más abajo. Ahora los dos son asertos: el stub de DOM aplica la
+regla de redondeo al paso del navegador, y toda cadena pintada o celda de tabla que
+contenga prosa tiene que existir en el diccionario del idioma activo. **Diez
+mutaciones, una por aserto, tienen que devolver `RC 1`** — un verificador que nunca
+ha fallado es un adorno.
 
 ---
 

@@ -1,0 +1,936 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>El piso de detección — ε no es una tolerancia</title>
+<meta name="description" content="Una compuerta con epsilon constante elige entre dos cegueras. El piso de truncamiento de un operador es local, y se mide.">
+<style>
+  :root {
+    --fondo: #0d1014;
+    --panel: #151a21;
+    --panel-alto: #1b222b;
+    --borde: #263141;
+    --texto: #d7dee8;
+    --tenue: #8d9bad;
+    --acento: #5fb3a1;
+    --verde: #2e7d5b;
+    --rojo: #c62828;
+    --ambar: #d4a017;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--fondo); color: var(--texto); }
+  body {
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    max-width: 1120px; margin: 0 auto; padding: 28px 20px 64px;
+  }
+  h1 { font-size: 25px; line-height: 1.25; margin: 0 0 6px; letter-spacing: -0.01em; }
+  h2 { font-size: 15px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--tenue);
+       margin: 0 0 14px; font-weight: 600; }
+  p { margin: 0 0 12px; }
+  .sub { color: var(--tenue); font-size: 14px; max-width: 74ch; margin-bottom: 22px; }
+  code, .mono { font-family: var(--mono); font-size: 0.92em; }
+  a { color: var(--acento); }
+  .barra { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+  .pastilla {
+    font-family: var(--mono); font-size: 12px; padding: 5px 10px; border: 1px solid var(--borde);
+    border-radius: 999px; color: var(--tenue); background: var(--panel); white-space: nowrap;
+  }
+  .rejilla { display: grid; grid-template-columns: 320px 1fr; gap: 18px; align-items: start; }
+  @media (max-width: 880px) { .rejilla { grid-template-columns: 1fr; } }
+  .panel { background: var(--panel); border: 1px solid var(--borde); border-radius: 10px; padding: 16px 18px; }
+  .control { margin-bottom: 16px; }
+  .control:last-child { margin-bottom: 0; }
+  .control label { display: flex; justify-content: space-between; align-items: baseline;
+                   font-size: 13px; color: var(--tenue); margin-bottom: 5px; }
+  .control .valor { font-family: var(--mono); color: var(--texto); font-size: 13px; }
+  input[type=range] { width: 100%; accent-color: var(--acento); margin: 0; }
+  select, button {
+    font: inherit; font-size: 13px; color: var(--texto); background: var(--panel-alto);
+    border: 1px solid var(--borde); border-radius: 6px; padding: 6px 8px;
+  }
+  button { cursor: pointer; }
+  button:hover { border-color: var(--acento); }
+  .presets { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .presets button { font-size: 12px; padding: 5px 9px; }
+  .matriz { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .celda { background: var(--panel-alto); border: 1px solid var(--borde); border-radius: 8px; padding: 10px; }
+  .celda h3 { margin: 0 0 8px; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase;
+              color: var(--tenue); font-weight: 600; }
+  .celda canvas { display: block; width: 100%; height: auto; aspect-ratio: 1 / 1;
+                  image-rendering: pixelated; border-radius: 4px; background: #0a0c0f; }
+  .celda .pie { display: flex; justify-content: space-between; gap: 8px; margin-top: 8px;
+                font-family: var(--mono); font-size: 12px; }
+  .sello { padding: 1px 6px; border-radius: 4px; font-size: 11px; letter-spacing: 0.04em; }
+  .sello.ok { background: rgba(46,125,91,0.22); color: #7fd3ae; border: 1px solid rgba(46,125,91,0.6); }
+  .sello.no { background: rgba(198,40,40,0.22); color: #ff9b9b; border: 1px solid rgba(198,40,40,0.6); }
+  .sello.nd { background: rgba(212,160,23,0.18); color: #e8c86a; border: 1px solid rgba(212,160,23,0.55); }
+  .leyenda { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--tenue); margin-top: 10px; }
+  .leyenda span { display: inline-flex; align-items: center; gap: 6px; }
+  .chip { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+  table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 12.5px; }
+  th, td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--borde); }
+  th { color: var(--tenue); font-weight: 500; }
+  td.num, th.num { text-align: right; }
+  .dos { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 880px) { .dos { grid-template-columns: 1fr; } }
+  .dos > .panel:first-child { display: flex; flex-direction: column; }
+  #perfil { display: block; width: 100%; height: auto; margin-bottom: auto; }
+  .tesis { border-left: 3px solid var(--acento); padding-left: 14px; margin-top: 4px; }
+  .tesis strong { color: #fff; }
+  .nota { font-size: 12.5px; color: var(--tenue); }
+  footer { margin-top: 26px; border-top: 1px solid var(--borde); padding-top: 14px;
+           font-size: 12.5px; color: var(--tenue); }
+  footer code { color: var(--texto); }
+</style>
+</head>
+<body>
+
+<div class="barra">
+  <div>
+    <h1 data-t="titulo"></h1>
+    <p class="sub" data-t="subtitulo"></p>
+  </div>
+  <div style="display:flex; gap:8px; align-items:center;">
+    <span class="pastilla" data-t="etiqueta_oraculo"></span>
+    <button id="btn-idioma" title="ES / EN">EN</button>
+  </div>
+</div>
+
+<div class="rejilla">
+  <section class="panel">
+    <h2 data-t="rotulo_controles"></h2>
+
+    <div class="control">
+      <label for="ctl-n"><span data-t="ctl_malla"></span><span class="valor" id="val-n"></span></label>
+      <select id="ctl-n">
+        <option value="32">32 × 32</option>
+        <option value="64" selected>64 × 64</option>
+        <option value="96">96 × 96</option>
+        <option value="128">128 × 128</option>
+      </select>
+    </div>
+
+    <div class="control">
+      <label for="ctl-delta"><span data-t="ctl_delta"></span><span class="valor" id="val-delta"></span></label>
+      <input type="range" id="ctl-delta" min="0" max="1.2" step="0.01" value="0.25">
+      <div class="nota" data-t="nota_delta"></div>
+    </div>
+
+    <div class="control">
+      <label for="ctl-margen"><span data-t="ctl_margen"></span><span class="valor" id="val-margen"></span></label>
+      <input type="range" id="ctl-margen" min="1" max="3" step="0.1" value="1">
+      <div class="nota" data-t="nota_margen"></div>
+    </div>
+
+    <div class="control">
+      <label for="ctl-eps"><span data-t="ctl_eps"></span><span class="valor" id="val-eps"></span></label>
+      <input type="range" id="ctl-eps" min="0.1" max="1.2" step="0.05" value="1">
+      <div class="nota" data-t="nota_eps"></div>
+    </div>
+
+    <div class="control">
+      <div class="presets">
+        <button data-preset="honesto" data-t="preset_honesto"></button>
+        <button data-preset="debil" data-t="preset_debil"></button>
+        <button data-preset="ciego" data-t="preset_ciego"></button>
+        <button data-preset="falso_rojo" data-t="preset_falso_rojo"></button>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2 data-t="rotulo_matriz"></h2>
+    <div class="matriz">
+      <div class="celda">
+        <h3 data-t="celda_local_honesto"></h3>
+        <canvas id="mapa-local-honesto" width="64" height="64"></canvas>
+        <div class="pie"><span id="pie-local-honesto"></span><span id="sello-local-honesto" class="sello"></span></div>
+      </div>
+      <div class="celda">
+        <h3 data-t="celda_local_contaminado"></h3>
+        <canvas id="mapa-local-contaminado" width="64" height="64"></canvas>
+        <div class="pie"><span id="pie-local-contaminado"></span><span id="sello-local-contaminado" class="sello"></span></div>
+      </div>
+      <div class="celda">
+        <h3 data-t="celda_const_honesto"></h3>
+        <canvas id="mapa-const-honesto" width="64" height="64"></canvas>
+        <div class="pie"><span id="pie-const-honesto"></span><span id="sello-const-honesto" class="sello"></span></div>
+      </div>
+      <div class="celda">
+        <h3 data-t="celda_const_contaminado"></h3>
+        <canvas id="mapa-const-contaminado" width="64" height="64"></canvas>
+        <div class="pie"><span id="pie-const-contaminado"></span><span id="sello-const-contaminado" class="sello"></span></div>
+      </div>
+    </div>
+    <div class="leyenda">
+      <span><i class="chip" style="background:var(--verde)"></i><span data-t="leyenda_conserva"></span></span>
+      <span><i class="chip" style="background:var(--rojo)"></i><span data-t="leyenda_viola"></span></span>
+      <span><i class="chip" style="background:#2b3542"></i><span data-t="leyenda_fuera"></span></span>
+    </div>
+    <p class="nota" style="margin-top:12px" data-t="nota_matriz"></p>
+  </section>
+</div>
+
+<div class="dos" style="margin-top:18px">
+  <section class="panel">
+    <h2 data-t="rotulo_perfil"></h2>
+    <canvas id="perfil" width="640" height="530"></canvas>
+    <p class="nota" style="margin-top:10px" data-t="nota_perfil"></p>
+  </section>
+
+  <section class="panel">
+    <h2 data-t="rotulo_medidas"></h2>
+    <table>
+      <tbody id="tabla-medidas"></tbody>
+    </table>
+    <p class="nota" style="margin-top:12px" data-t="nota_medidas"></p>
+  </section>
+</div>
+
+<section class="panel" style="margin-top:18px">
+  <h2 data-t="rotulo_tesis"></h2>
+  <div class="tesis">
+    <p data-t="tesis_1"></p>
+    <p data-t="tesis_2"></p>
+    <p data-t="tesis_3"></p>
+  </div>
+</section>
+
+<footer>
+  <p data-t="pie_oraculo"></p>
+  <p class="mono" style="margin-top:8px" id="pie-comando"></p>
+</footer>
+
+<!-- =====================================================================
+     MOTOR — port fiel de tools/piso_de_deteccion.py
+     El verificador extrae ESTE bloque por su id y lo ejecuta bajo node.
+     ===================================================================== -->
+<script id="motor">
+var L_DEFECTO = 8.0;
+var MASCARA_UMBRAL = 0.01;
+var MARGEN_DEFECTO = 1.0;
+var C4_ANALITICO = 4.0;
+
+var ESTADO = {
+  CONSERVA: "CONSERVA",
+  VIOLA: "VIOLA",
+  NO_MEDIDO: "NO_MEDIDO"
+};
+
+function _pow(x, e) { return Math.pow(x, e); }
+
+function rejilla(L, N) {
+  if (N < 8) throw new RangeError("malla < 8: no admite un estencil de 5 puntos");
+  if (!(L > 0)) throw new RangeError("L debe ser positivo");
+  var h = L / N;
+  var medio = Math.floor(N / 2);
+  var x = new Float64Array(N);
+  for (var i = 0; i < N; i++) x[i] = (i - medio) * h;
+  return { x: x, h: h, N: N, L: L };
+}
+
+function campoMonopolo(x, N) {
+  var Bx = new Float64Array(N * N);
+  var By = new Float64Array(N * N);
+  for (var i = 0; i < N; i++) {
+    var xi = x[i];
+    for (var j = 0; j < N; j++) {
+      var yj = x[j];
+      var f = Math.exp(-(_pow(xi, 2) + _pow(yj, 2)));
+      var k = i * N + j;
+      Bx[k] = xi * f;
+      By[k] = yj * f;
+    }
+  }
+  return { Bx: Bx, By: By };
+}
+
+function divergenciaExacta(x, N) {
+  var out = new Float64Array(N * N);
+  for (var i = 0; i < N; i++) {
+    var xi = x[i];
+    for (var j = 0; j < N; j++) {
+      var yj = x[j];
+      var r2 = _pow(xi, 2) + _pow(yj, 2);
+      out[i * N + j] = 2.0 * (1.0 - r2) * Math.exp(-r2);
+    }
+  }
+  return out;
+}
+
+function d1Central(f, h, eje, N) {
+  var out = new Float64Array(N * N);
+  var i, j, k, a, b;
+  if (eje === 0) {
+    for (i = 0; i < N; i++) {
+      var ip = ((i + 1) % N) * N, im = ((i - 1 + N) % N) * N;
+      for (j = 0; j < N; j++) out[i * N + j] = (f[ip + j] - f[im + j]) / (2.0 * h);
+    }
+  } else {
+    for (i = 0; i < N; i++) {
+      k = i * N;
+      for (j = 0; j < N; j++) {
+        a = k + ((j + 1) % N);
+        b = k + ((j - 1 + N) % N);
+        out[k + j] = (f[a] - f[b]) / (2.0 * h);
+      }
+    }
+  }
+  return out;
+}
+
+function d3CincoPuntos(f, h, eje, N) {
+  var out = new Float64Array(N * N);
+  var den = 2.0 * _pow(h, 3);
+  var i, j, k;
+  if (eje === 0) {
+    for (i = 0; i < N; i++) {
+      var p2 = ((i + 2) % N) * N, p1 = ((i + 1) % N) * N;
+      var m1 = ((i - 1 + N) % N) * N, m2 = ((i - 2 + 2 * N) % N) * N;
+      for (j = 0; j < N; j++) {
+        out[i * N + j] = (f[p2 + j] - 2.0 * f[p1 + j] + 2.0 * f[m1 + j] - f[m2 + j]) / den;
+      }
+    }
+  } else {
+    for (i = 0; i < N; i++) {
+      k = i * N;
+      for (j = 0; j < N; j++) {
+        out[k + j] = (f[k + ((j + 2) % N)] - 2.0 * f[k + ((j + 1) % N)]
+                      + 2.0 * f[k + ((j - 1 + N) % N)] - f[k + ((j - 2 + 2 * N) % N)]) / den;
+      }
+    }
+  }
+  return out;
+}
+
+function divergenciaCentral(Bx, By, h, N) {
+  var dx = d1Central(Bx, h, 0, N), dy = d1Central(By, h, 1, N);
+  var out = new Float64Array(N * N);
+  for (var i = 0; i < N * N; i++) out[i] = dx[i] + dy[i];
+  return out;
+}
+
+function tauEstimado(Bx, By, h, N) {
+  var gx = d3CincoPuntos(Bx, h, 0, N), gy = d3CincoPuntos(By, h, 1, N);
+  var out = new Float64Array(N * N);
+  var c = _pow(h, 2) / 6.0;
+  for (var i = 0; i < N * N; i++) out[i] = c * Math.abs(gx[i] + gy[i]);
+  return out;
+}
+
+function pisoMedido(Bx, By, x, h, N) {
+  var div = divergenciaCentral(Bx, By, h, N);
+  var exacta = divergenciaExacta(x, N);
+  var R = new Float64Array(N * N), tau = new Float64Array(N * N);
+  for (var i = 0; i < N * N; i++) {
+    R[i] = div[i] - exacta[i];
+    tau[i] = Math.abs(R[i]);
+  }
+  return { tau: tau, R: R };
+}
+
+function mascaraRelevante(Bx, By, N, umbral) {
+  if (umbral === undefined) umbral = MASCARA_UMBRAL;
+  var mag = new Float64Array(N * N), tope = 0, i;
+  for (i = 0; i < N * N; i++) {
+    mag[i] = Math.sqrt(_pow(Bx[i], 2) + _pow(By[i], 2));
+    if (mag[i] > tope) tope = mag[i];
+  }
+  var mask = new Uint8Array(N * N);
+  if (!(tope > 0)) return mask;
+  for (i = 0; i < N * N; i++) mask[i] = mag[i] >= umbral * tope ? 1 : 0;
+  return mask;
+}
+
+function pisoLocal(Bx, By, h, N, margen, c4) {
+  if (margen === undefined) margen = MARGEN_DEFECTO;
+  if (c4 === undefined) c4 = C4_ANALITICO;
+  var t = tauEstimado(Bx, By, h, N);
+  var out = new Float64Array(N * N);
+  var c = c4 * _pow(h, 4);
+  for (var i = 0; i < N * N; i++) out[i] = margen * t[i] + c;
+  return out;
+}
+
+function deficitC4(Bx, By, x, h, N, mask) {
+  var pm = pisoMedido(Bx, By, x, h, N);
+  var th = tauEstimado(Bx, By, h, N);
+  var mejor = -Infinity;
+  for (var i = 0; i < N * N; i++) {
+    if (mask && !mask[i]) continue;
+    var d = pm.tau[i] - th[i];
+    if (d > mejor) mejor = d;
+  }
+  return mejor / _pow(h, 4);
+}
+
+function _lerp(a, b, t) {
+  var d = b - a;
+  if (t >= 0.5) return b - d * (1 - t);
+  return a + d * t;
+}
+
+function percentilDeOrdenados(v, q) {
+  var n = v.length;
+  if (n === 0) return NaN;
+  if (n === 1) return v[0];
+  var idx = q / 100 * (n - 1);
+  var lo = Math.floor(idx), hi = Math.ceil(idx);
+  if (lo === hi) return v[lo];
+  return _lerp(v[lo], v[hi], idx - lo);
+}
+
+function percentil(v, q) {
+  var a = Array.prototype.slice.call(v);
+  a.sort(function (p, q2) { return p - q2; });
+  return percentilDeOrdenados(a, q);
+}
+
+function percentilSinNan(v, q) {
+  var a = [];
+  for (var i = 0; i < v.length; i++) if (!isNaN(v[i])) a.push(v[i]);
+  if (a.length === 0) return NaN;
+  a.sort(function (p, q2) { return p - q2; });
+  return percentilDeOrdenados(a, q);
+}
+
+function medianaSinNan(v) {
+  var a = [];
+  for (var i = 0; i < v.length; i++) if (!isNaN(v[i])) a.push(v[i]);
+  if (a.length === 0) return NaN;
+  a.sort(function (p, q2) { return p - q2; });
+  var n = a.length;
+  if (n % 2 === 1) return a[(n - 1) / 2];
+  return (a[n / 2 - 1] + a[n / 2]) / 2;
+}
+
+function veredictoLocal(R, tau, margen, mask, abstol) {
+  if (margen === undefined) margen = MARGEN_DEFECTO;
+  if (abstol === undefined) abstol = 0.0;
+  var n = R.length, i;
+  for (i = 0; i < n; i++) {
+    if (!isFinite(R[i]) || !isFinite(tau[i])) {
+      return { medido: false, rechazado: true, violaciones: null,
+               fraccion_violada: null, exceso_max: null, estado: ESTADO.NO_MEDIDO };
+    }
+  }
+  var viol = 0, nSel = 0, excesoMax = -Infinity;
+  for (i = 0; i < n; i++) {
+    if (!mask[i]) continue;
+    nSel++;
+    var exceso = Math.abs(R[i]) - (margen * tau[i] + abstol);
+    if (exceso > excesoMax) excesoMax = exceso;
+    if (exceso > 0.0) viol++;
+  }
+  return {
+    medido: true,
+    rechazado: viol > 0,
+    violaciones: viol,
+    fraccion_violada: nSel ? viol / nSel : 0.0,
+    exceso_max: nSel ? excesoMax : 0.0,
+    estado: viol > 0 ? ESTADO.VIOLA : ESTADO.CONSERVA
+  };
+}
+
+function veredictoConstante(R, epsilon, mask) {
+  var viol = 0, nSel = 0, i;
+  for (i = 0; i < R.length; i++) {
+    if (!mask[i]) continue;
+    nSel++;
+    if (Math.abs(R[i]) > epsilon) viol++;
+  }
+  return {
+    rechazado: viol > 0,
+    violaciones: viol,
+    fraccion_violada: nSel ? viol / nSel : 0.0,
+    epsilon: epsilon,
+    estado: viol > 0 ? ESTADO.VIOLA : ESTADO.CONSERVA
+  };
+}
+
+function contaminacionDivergencia(Bx, By, x, delta, N) {
+  var a = delta / 2.0;
+  var cx = new Float64Array(N * N), cy = new Float64Array(N * N);
+  for (var i = 0; i < N; i++) {
+    for (var j = 0; j < N; j++) {
+      var k = i * N + j;
+      cx[k] = Bx[k] + a * x[i];
+      cy[k] = By[k] + a * x[j];
+    }
+  }
+  return { Bx: cx, By: cy };
+}
+
+function medir(L, N, umbralMascara) {
+  if (L === undefined) L = L_DEFECTO;
+  if (N === undefined) N = 64;
+  if (umbralMascara === undefined) umbralMascara = MASCARA_UMBRAL;
+  var g = rejilla(L, N), x = g.x, h = g.h;
+  var campo = campoMonopolo(x, N), Bx = campo.Bx, By = campo.By;
+  var pm = pisoMedido(Bx, By, x, h, N), tau = pm.tau, R = pm.R;
+  var th = tauEstimado(Bx, By, h, N);
+  var mask = mascaraRelevante(Bx, By, N, umbralMascara);
+
+  var tauMax = -Infinity, thMax = -Infinity, nMasc = 0, i;
+  var enMascara = [], ratio = [];
+  for (i = 0; i < N * N; i++) {
+    if (tau[i] > tauMax) tauMax = tau[i];
+    if (th[i] > thMax) thMax = th[i];
+    if (mask[i]) { nMasc++; enMascara.push(tau[i]); }
+  }
+  var corte = tauMax / 10.0, bajo = 0;
+  for (i = 0; i < enMascara.length; i++) if (enMascara[i] < corte) bajo++;
+  for (i = 0; i < N * N; i++) {
+    if (!mask[i]) continue;
+    ratio.push(tau[i] > 0 ? th[i] / tau[i] : NaN);
+  }
+  var p10 = enMascara.length ? percentil(enMascara, 10) : 0.0;
+  var p50 = enMascara.length ? percentil(enMascara, 50) : 0.0;
+  var pisoMax = -Infinity;
+  var pl = pisoLocal(Bx, By, h, N);
+  for (i = 0; i < N * N; i++) if (pl[i] > pisoMax) pisoMax = pl[i];
+
+  var vHonesto = veredictoLocal(R, th, MARGEN_DEFECTO, mask, C4_ANALITICO * _pow(h, 4));
+
+  return {
+    L: L, N: N, h: h,
+    tau_max: tauMax,
+    A: tauMax / _pow(h, 2),
+    A_estimado: thMax / _pow(h, 2),
+    tau_max_por_N2: tauMax * N * N,
+    mascara_fraccion: nMasc / (N * N),
+    tau_p10_mascara: p10,
+    tau_p50_mascara: p50,
+    spread_p10: p10 > 0 ? tauMax / p10 : Infinity,
+    spread_p50: p50 > 0 ? tauMax / p50 : Infinity,
+    frac_bajo_decimo: bajo / Math.max(enMascara.length, 1),
+    estimador_ratio_p50: medianaSinNan(ratio),
+    estimador_ratio_p10: percentilSinNan(ratio, 10),
+    estimador_ratio_p90: percentilSinNan(ratio, 90),
+    c4_medido: deficitC4(Bx, By, x, h, N, mask),
+    piso_local_max: pisoMax,
+    violaciones_honesto: vHonesto.violaciones
+  };
+}
+</script>
+
+<script>
+/* =====================================================================
+   INTERFAZ — estado, calculo, pintado. Todo lo que mide vive en el motor.
+   ===================================================================== */
+var T = null;
+
+var TEXTO = {
+  es: {
+    titulo: "El piso de detección: ε no es una tolerancia",
+    subtitulo: "Una compuerta que juzga un campo con un ε constante no elige una precisión: elige entre dos cegueras. El piso de truncamiento del operador depende del nodo, y se mide sin ground truth. Mueve δ y mira las cuatro celdas.",
+    etiqueta_oraculo: "oráculo Python · congelado",
+    rotulo_controles: "Controles",
+    ctl_malla: "Malla (N por eje, L = 8)",
+    ctl_delta: "δ · densidad espuria, en unidades de τ_max",
+    ctl_margen: "margen de la compuerta local",
+    ctl_eps: "ε constante, en unidades de τ_max",
+    nota_delta: "Suma a B un término cuya divergencia central es exactamente δ: monopolos espurios invisibles al estimador de tercera derivada.",
+    nota_margen: "ε(x) = margen · τ̂(x) + 4h⁴. El margen escala el piso entero; no lo sustituye.",
+    nota_eps: "La compuerta ingenua: un solo número para todos los nodos.",
+    preset_honesto: "campo honesto",
+    preset_debil: "contaminación δ = 0.25",
+    preset_ciego: "ε ciego",
+    preset_falso_rojo: "falso rojo",
+    rotulo_matriz: "El mismo residuo, cuatro lecturas",
+    celda_local_honesto: "local · campo honesto",
+    celda_local_contaminado: "local · campo contaminado",
+    celda_const_honesto: "ε constante · campo honesto",
+    celda_const_contaminado: "ε constante · campo contaminado",
+    leyenda_conserva: "cabe en el piso",
+    leyenda_viola: "excede el piso",
+    leyenda_fuera: "fuera de la máscara",
+    nota_matriz: "El color no es el dato: es el cociente entre el residuo y el umbral que lo juzga. La esquina inferior derecha es la ceguera: un campo con monopolos espurios que la compuerta constante aprueba.",
+    rotulo_perfil: "Por qué: el piso no es un número",
+    nota_perfil: "Corte por y = 0, escala logarítmica. La curva blanca es el piso medido τ(x); la línea fina, el estimador sin ground truth; la discontinua, el ε constante que has elegido.",
+    perfil_eje: "τ(x) en y = 0, escala log",
+    fila_N: "N", fila_h: "h = L/N", fila_taumax: "τ_max", fila_taumax_n2: "τ_max · N²",
+    fila_A: "A = τ_max / h²", fila_p10: "τ_p10 (máscara)", fila_p50: "τ_p50 (máscara)",
+    fila_spread: "spread p10", fila_bajo: "bajo τ_max/10", fila_mascara: "máscara",
+    fila_nodos: "nodos en máscara", fila_ratio: "τ̂ / τ mediana", fila_c4: "C medido (h⁴)",
+    fila_eps: "ε constante", fila_delta: "δ aplicado",
+    rotulo_medidas: "Medidas de este montaje",
+    nota_medidas: "Todas las cifras salen del motor JavaScript que acabas de mover, no de una tabla pegada.",
+    rotulo_tesis: "Lo que la página demuestra",
+    tesis_1: "Un ε constante que no produce falsos positivos sobre el campo honesto tiene que ser al menos tan grande como el máximo del piso en todo el dominio. Con ese valor es ciego a cualquier contaminación más débil que ese máximo. Bajarlo para ver algo enciende, en el mismo acto, nodos honestos.",
+    tesis_2: "La compuerta local no tiene ese dilema porque no compara contra un número: compara contra τ̂(x) + 4h⁴, que vale hasta 170 veces menos en el decil bajo de la máscara. Ahí el residuo honesto cabe y la contaminación no.",
+    tesis_3: "Ninguna de las dos cifras está configurada: las dos se miden. El oráculo en Python y este motor en el navegador se comparan bit a bit sobre 108 compuertas congeladas y con cota declarada en los campos que cancelan.",
+    pie_oraculo: "Oráculo: tools/piso_de_deteccion.py · el motor de esta página es un port verificado contra él. Los campos que son cociente de una diferencia que cancela se comparan con cota relativa declarada (5.6e-13 medido, 1e-11 contratado).",
+    est_conserva: "conserva",
+    est_viola: "viola",
+    est_no_medido: "no medido",
+    viol: "viola",
+    de: "de",
+    nodos: "nodos"
+  },
+  en: {
+    titulo: "The detection floor: ε is not a tolerance",
+    subtitulo: "A gate that judges a field with a constant ε is not choosing a precision: it is choosing between two blindnesses. The operator's truncation floor depends on the node, and it is measured without ground truth. Move δ and watch the four cells.",
+    etiqueta_oraculo: "Python oracle · frozen",
+    rotulo_controles: "Controls",
+    ctl_malla: "Grid (N per axis, L = 8)",
+    ctl_delta: "δ · spurious density, in units of τ_max",
+    ctl_margen: "margin of the local gate",
+    ctl_eps: "constant ε, in units of τ_max",
+    nota_delta: "Adds to B a term whose central divergence is exactly δ: spurious monopoles invisible to the third-derivative estimator.",
+    nota_margen: "ε(x) = margin · τ̂(x) + 4h⁴. The margin scales the whole floor; it does not replace it.",
+    nota_eps: "The naive gate: a single number for all nodes.",
+    preset_honesto: "honest field",
+    preset_debil: "contamination δ = 0.25",
+    preset_ciego: "blind ε",
+    preset_falso_rojo: "false red",
+    rotulo_matriz: "The same residual, four readings",
+    celda_local_honesto: "local · honest field",
+    celda_local_contaminado: "local · contaminated field",
+    celda_const_honesto: "constant ε · honest field",
+    celda_const_contaminado: "constant ε · contaminated field",
+    leyenda_conserva: "fits in the floor",
+    leyenda_viola: "exceeds the floor",
+    leyenda_fuera: "outside the mask",
+    nota_matriz: "The colour is not the datum: it is the ratio between the residual and the threshold that judges it. The bottom-right corner is the blindness: a field with spurious monopoles that the constant gate approves.",
+    rotulo_perfil: "Why: the floor is not a number",
+    nota_perfil: "Slice at y = 0, logarithmic scale. The white curve is the measured floor τ(x); the thin line, the estimator without ground truth; the dashed line, the constant ε you have chosen.",
+    perfil_eje: "τ(x) at y = 0, log scale",
+    fila_N: "N", fila_h: "h = L/N", fila_taumax: "τ_max", fila_taumax_n2: "τ_max · N²",
+    fila_A: "A = τ_max / h²", fila_p10: "τ_p10 (mask)", fila_p50: "τ_p50 (mask)",
+    fila_spread: "spread p10", fila_bajo: "below τ_max/10", fila_mascara: "mask",
+    fila_nodos: "nodes in mask", fila_ratio: "τ̂ / τ median", fila_c4: "C measured (h⁴)",
+    fila_eps: "constant ε", fila_delta: "δ applied",
+    rotulo_medidas: "Measurements of this setup",
+    nota_medidas: "Every figure comes from the JavaScript engine you just moved, not from a pasted table.",
+    rotulo_tesis: "What the page demonstrates",
+    tesis_1: "A constant ε that produces no false positives on the honest field must be at least as large as the maximum of the floor over the whole domain. At that value it is blind to any contamination weaker than that maximum. Lowering it to see something lights up honest nodes in the same act.",
+    tesis_2: "The local gate has no such dilemma because it does not compare against a number: it compares against τ̂(x) + 4h⁴, which is up to 170 times smaller in the low decile of the mask. There the honest residual fits and the contamination does not.",
+    tesis_3: "Neither figure is configured: both are measured. The Python oracle and this browser engine are compared bit for bit over 108 frozen gate cases and with a declared bound on the fields that cancel.",
+    pie_oraculo: "Oracle: tools/piso_de_deteccion.py · this page's engine is a port verified against it. Fields that are a quotient of a cancelling difference are compared with a declared relative bound (5.6e-13 measured, 1e-11 contracted).",
+    est_conserva: "conserves",
+    est_viola: "violates",
+    est_no_medido: "not measured",
+    viol: "violates",
+    de: "of",
+    nodos: "nodes"
+  }
+};
+
+var DISPOSICION = {
+  honesto: { delta: 0, margen: 1, eps: 1 },
+  debil: { delta: 0.25, margen: 1, eps: 1 },
+  ciego: { delta: 0.5, margen: 1, eps: 1 },
+  falso_rojo: { delta: 0, margen: 1, eps: 0.5 }
+};
+
+var SONDAS = {};
+var CACHE_PERFIL = {};
+
+function $(id) { return SONDAS[id] || (SONDAS[id] = document.getElementById(id)); }
+
+var est = { L: 8, N: 64, delta: 0.25, margen: 1, eps: 1, idioma: "es" };
+
+function decimalCrudo(v) { return String(v); }
+
+function cifra(v) {
+  if (v === null || v === undefined) return "—";
+  if (!isFinite(v)) return String(v);
+  if (v === 0) return "0";
+  var a = Math.abs(v);
+  if (a < 1e-3 || a >= 1e5) return v.toExponential(6);
+  return v.toPrecision(7);
+}
+
+function pintarTextos() {
+  var t = TEXTO[est.idioma];
+  var nodos = document.querySelectorAll("[data-t]");
+  for (var i = 0; i < nodos.length; i++) {
+    var clave = nodos[i].getAttribute("data-t");
+    if (t[clave] !== undefined) nodos[i].textContent = t[clave];
+  }
+  $("btn-idioma").textContent = est.idioma === "es" ? "EN" : "ES";
+  document.documentElement.lang = est.idioma;
+}
+
+function perfilDe(N) {
+  if (!CACHE_PERFIL[N]) CACHE_PERFIL[N] = medir(est.L, N);
+  return CACHE_PERFIL[N];
+}
+
+function calcular() {
+  var g = rejilla(est.L, est.N), N = est.N, h = g.h, x = g.x;
+  var campo = campoMonopolo(x, N);
+  var pm = pisoMedido(campo.Bx, campo.By, x, h, N);
+  var th = tauEstimado(campo.Bx, campo.By, h, N);
+  var mask = mascaraRelevante(campo.Bx, campo.By, N);
+
+  var tauMax = 0, nMask = 0, i;
+  for (i = 0; i < N * N; i++) {
+    if (pm.tau[i] > tauMax) tauMax = pm.tau[i];
+    if (mask[i]) nMask++;
+  }
+  var c4h4 = C4_ANALITICO * _pow(h, 4);
+  var eps = est.eps * tauMax;
+  var delta = est.delta * tauMax;
+
+  var cont, pmc, thc;
+  if (est.delta === 0) {
+    pmc = pm; thc = th;
+  } else {
+    cont = contaminacionDivergencia(campo.Bx, campo.By, x, delta, N);
+    pmc = pisoMedido(cont.Bx, cont.By, x, h, N);
+    thc = tauEstimado(cont.Bx, cont.By, h, N);
+  }
+
+  return {
+    N: N, L: est.L, h: h, x: x, mask: mask, nMask: nMask,
+    tauMax: tauMax, c4h4: c4h4, eps: eps, delta: delta,
+    honesto: { R: pm.R, th: th },
+    contaminado: { R: pmc.R, th: thc },
+    localHon: veredictoLocal(pm.R, th, est.margen, mask, c4h4),
+    localCon: veredictoLocal(pmc.R, thc, est.margen, mask, c4h4),
+    constHon: veredictoConstante(pm.R, eps, mask),
+    constCon: veredictoConstante(pmc.R, eps, mask),
+    perfil: perfilDe(N)
+  };
+}
+
+var PALETA = {
+  conserva: [46, 125, 91],
+  viola: [198, 40, 40],
+  fuera: [43, 53, 66]
+};
+
+function pintarMapa(id, R, tau, mask, N, margen, c4h4, esConstante, eps) {
+  var cv = $(id);
+  if (!cv || !cv.getContext) return;
+  var ctx = cv.getContext("2d");
+  if (!ctx) return;
+  if (cv.width !== N) { cv.width = N; cv.height = N; }
+  var img = ctx.createImageData(N, N);
+  var d = img.data;
+  for (var i = 0; i < N * N; i++) {
+    var r, g, b, o = i * 4;
+    if (!mask[i]) {
+      r = PALETA.fuera[0]; g = PALETA.fuera[1]; b = PALETA.fuera[2];
+    } else {
+      var umbral = esConstante ? eps : (margen * tau[i] + c4h4);
+      var cociente = Math.abs(R[i]) / (umbral > 0 ? umbral : 1e-300);
+      var base = cociente > 1 ? PALETA.viola : PALETA.conserva;
+      var exceso = cociente > 1 ? cociente - 1 : 1 / Math.max(cociente, 1e-12) - 1;
+      var k = Math.min(1, exceso / 3);
+      var claro = 0.55 + 0.45 * k;
+      r = Math.round(base[0] * claro);
+      g = Math.round(base[1] * claro);
+      b = Math.round(base[2] * claro);
+    }
+    d[o] = r; d[o + 1] = g; d[o + 2] = b; d[o + 3] = 255;
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
+function sello(id, veredicto) {
+  var el = $(id);
+  if (!el) return;
+  var t = TEXTO[est.idioma];
+  el.className = "sello " + (veredicto.estado === ESTADO.VIOLA ? "no"
+    : veredicto.estado === ESTADO.CONSERVA ? "ok" : "nd");
+  el.textContent = veredicto.estado === ESTADO.VIOLA ? t.est_viola
+    : veredicto.estado === ESTADO.CONSERVA ? t.est_conserva : t.est_no_medido;
+}
+
+function pie(id, veredicto, nMask) {
+  var el = $(id);
+  if (!el) return;
+  var t = TEXTO[est.idioma];
+  el.textContent = veredicto.violaciones + " " + t.de + " " + nMask;
+}
+
+function pintarPerfil(c) {
+  var cv = $("perfil");
+  if (!cv || !cv.getContext) return;
+  var ctx = cv.getContext("2d");
+  if (!ctx) return;
+  var W = cv.width, H = cv.height;
+  var izq = 58, der = 16, arr = 18, aba = 34;
+  var ancho = W - izq - der, alto = H - arr - aba;
+  ctx.clearRect(0, 0, W, H);
+
+  var N = c.N, j0 = Math.floor(N / 2), i;
+  var vals = [], minPos = Infinity, maxPos = 0;
+  for (i = 0; i < N; i++) {
+    var k = i * N + j0;
+    var v = c.mask[k] ? c.honesto.th[k] : NaN;
+    vals.push(v);
+    if (!isNaN(v) && v > 0) { if (v < minPos) minPos = v; if (v > maxPos) maxPos = v; }
+  }
+  if (!isFinite(minPos) || maxPos <= 0) minPos = 1e-12;
+  var l0 = Math.log10(minPos) - 0.5, l1 = Math.log10(maxPos) + 0.5;
+  if (!(l1 > l0)) l1 = l0 + 1;
+
+  function px(i2) { return izq + ancho * (i2 / (N - 1)); }
+  function py(v) {
+    var l = v > 0 ? Math.log10(v) : l0;
+    var f = (l - l0) / (l1 - l0);
+    return arr + alto * (1 - Math.max(0, Math.min(1, f)));
+  }
+
+  ctx.strokeStyle = "#263141"; ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (var d = Math.ceil(l0); d <= Math.floor(l1); d++) {
+    var y = py(Math.pow(10, d));
+    ctx.moveTo(izq, y); ctx.lineTo(izq + ancho, y);
+  }
+  ctx.stroke();
+  ctx.fillStyle = "#8d9bad"; ctx.font = "11px ui-monospace, monospace";
+  for (var d2 = Math.ceil(l0); d2 <= Math.floor(l1); d2++) {
+    var y2 = py(Math.pow(10, d2));
+    ctx.fillText("1e" + d2, 8, y2 + 4);
+  }
+
+  if (c.eps > 0) {
+    ctx.strokeStyle = "#d4a017"; ctx.lineWidth = 1.5; ctx.setLineDash([6, 4]);
+    var ye = py(c.eps);
+    ctx.beginPath(); ctx.moveTo(izq, ye); ctx.lineTo(izq + ancho, ye); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = "#d4a017";
+    ctx.fillText("ε", izq + ancho - 14, ye - 5);
+  }
+
+  ctx.strokeStyle = "rgba(95,179,161,0.55)"; ctx.lineWidth = 1;
+  ctx.beginPath();
+  var empezado = false;
+  for (i = 0; i < N; i++) {
+    var kk = i * N + j0;
+    if (!c.mask[kk] || !(c.honesto.th[kk] > 0)) { empezado = false; continue; }
+    var xx = px(i), yy = py(c.honesto.th[kk]);
+    if (!empezado) { ctx.moveTo(xx, yy); empezado = true; } else ctx.lineTo(xx, yy);
+  }
+  ctx.stroke();
+
+  ctx.strokeStyle = "#e8eef6"; ctx.lineWidth = 2;
+  ctx.beginPath();
+  var em = false;
+  for (i = 0; i < N; i++) {
+    var k2 = i * N + j0;
+    if (!c.mask[k2] || !isFinite(vals[i])) { em = false; continue; }
+    var x2 = px(i), y2b = py(vals[i]);
+    if (!em) { ctx.moveTo(x2, y2b); em = true; } else ctx.lineTo(x2, y2b);
+  }
+  ctx.stroke();
+
+  ctx.fillStyle = "#8d9bad";
+  ctx.fillText("x", izq + ancho / 2, H - 10);
+  ctx.fillText(T.TEXTO[est.idioma].perfil_eje, izq, H - 10);
+  ctx.strokeStyle = "#263141";
+  ctx.strokeRect(izq, arr, ancho, alto);
+}
+
+function pintarTabla(c) {
+  var tb = $("tabla-medidas");
+  if (!tb) return;
+  var p = c.perfil;
+  var t = T.TEXTO[est.idioma];
+  var filas = [
+    [t.fila_N, String(c.N)],
+    [t.fila_h, cifra(c.h)],
+    [t.fila_taumax, cifra(p.tau_max)],
+    [t.fila_taumax_n2, cifra(p.tau_max_por_N2)],
+    [t.fila_A, cifra(p.A)],
+    [t.fila_p10, cifra(p.tau_p10_mascara)],
+    [t.fila_p50, cifra(p.tau_p50_mascara)],
+    [t.fila_spread, cifra(p.spread_p10) + " ×"],
+    [t.fila_bajo, cifra(p.frac_bajo_decimo)],
+    [t.fila_mascara, cifra(p.mascara_fraccion)],
+    [t.fila_nodos, String(c.nMask)],
+    [t.fila_ratio, cifra(p.estimador_ratio_p50)],
+    [t.fila_c4, cifra(p.c4_medido)],
+    [t.fila_eps, cifra(c.eps)],
+    [t.fila_delta, cifra(c.delta)]
+  ];
+  var html = "";
+  for (var i = 0; i < filas.length; i++) {
+    html += "<tr><td>" + filas[i][0] + '</td><td class="num">' + filas[i][1] + "</td></tr>";
+  }
+  tb.innerHTML = html;
+}
+
+function pintar() {
+  var c = calcular();
+  $("val-n").textContent = c.N + " × " + c.N;
+  $("val-delta").textContent = decimalCrudo(est.delta);
+  $("val-margen").textContent = decimalCrudo(est.margen);
+  $("val-eps").textContent = decimalCrudo(est.eps);
+
+  pintarMapa("mapa-local-honesto", c.honesto.R, c.honesto.th, c.mask, c.N, est.margen, c.c4h4, false, c.eps);
+  pintarMapa("mapa-local-contaminado", c.contaminado.R, c.contaminado.th, c.mask, c.N, est.margen, c.c4h4, false, c.eps);
+  pintarMapa("mapa-const-honesto", c.honesto.R, c.honesto.th, c.mask, c.N, est.margen, c.c4h4, true, c.eps);
+  pintarMapa("mapa-const-contaminado", c.contaminado.R, c.contaminado.th, c.mask, c.N, est.margen, c.c4h4, true, c.eps);
+
+  pie("pie-local-honesto", c.localHon, c.nMask);
+  pie("pie-local-contaminado", c.localCon, c.nMask);
+  pie("pie-const-honesto", c.constHon, c.nMask);
+  pie("pie-const-contaminado", c.constCon, c.nMask);
+  sello("sello-local-honesto", c.localHon);
+  sello("sello-local-contaminado", c.localCon);
+  sello("sello-const-honesto", c.constHon);
+  sello("sello-const-contaminado", c.constCon);
+
+  pintarPerfil(c);
+  pintarTabla(c);
+  $("pie-comando").textContent =
+    "python3 tools/piso_de_deteccion.py --medir --n " + c.N + " --L " + c.L;
+  return c;
+}
+
+function arrancar() {
+  T = {
+    rejilla: rejilla, campoMonopolo: campoMonopolo, divergenciaExacta: divergenciaExacta,
+    d1Central: d1Central, d3CincoPuntos: d3CincoPuntos, divergenciaCentral: divergenciaCentral,
+    tauEstimado: tauEstimado, pisoMedido: pisoMedido, mascaraRelevante: mascaraRelevante,
+    pisoLocal: pisoLocal, deficitC4: deficitC4, percentil: percentil,
+    percentilSinNan: percentilSinNan, medianaSinNan: medianaSinNan,
+    veredictoLocal: veredictoLocal, veredictoConstante: veredictoConstante,
+    contaminacionDivergencia: contaminacionDivergencia, medir: medir,
+    ESTADO: ESTADO, C4_ANALITICO: C4_ANALITICO, MASCARA_UMBRAL: MASCARA_UMBRAL,
+    calcular: calcular, pintar: pintar, est: est, TEXTO: TEXTO, DISPOSICION: DISPOSICION
+  };
+  pintarTextos();
+  var n = $("ctl-n"), d = $("ctl-delta"), m = $("ctl-margen"), e = $("ctl-eps");
+  n.addEventListener("change", function () { est.N = parseInt(n.value, 10); pintar(); });
+  d.addEventListener("input", function () { est.delta = parseFloat(d.value); pintar(); });
+  m.addEventListener("input", function () { est.margen = parseFloat(m.value); pintar(); });
+  e.addEventListener("input", function () { est.eps = parseFloat(e.value); pintar(); });
+  $("btn-idioma").addEventListener("click", function () {
+    est.idioma = est.idioma === "es" ? "en" : "es";
+    pintarTextos(); pintar();
+  });
+  var bs = document.querySelectorAll("[data-preset]");
+  for (var i = 0; i < bs.length; i++) {
+    bs[i].addEventListener("click", function (ev) {
+      var clave = ev.currentTarget.getAttribute("data-preset");
+      var p = DISPOSICION[clave];
+      if (!p) return;
+      est.delta = p.delta; est.margen = p.margen; est.eps = p.eps;
+      d.value = String(p.delta); m.value = String(p.margen); e.value = String(p.eps);
+      pintar();
+    });
+  }
+  est.N = parseInt(n.value, 10);
+  est.delta = parseFloat(d.value);
+  est.margen = parseFloat(m.value);
+  est.eps = parseFloat(e.value);
+  pintar();
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", arrancar);
+} else {
+  arrancar();
+}
+</script>
+</body>
+</html>

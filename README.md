@@ -49,6 +49,7 @@ the port never drifted from it. No network calls, no build step, no dependencies
 |---|---|---|
 | [Electromagnetic field classifier](https://alexisromtz-lab.github.io/auditor-toolkit/demo/clasificador-de-campos/) | Which algebraic class does a field `(E, B)` belong to — and what survives every change of frame? | 66 cases + 8 border controls |
 | [Does your null have teeth?](https://alexisromtz-lab.github.io/auditor-toolkit/demo/nulo-con-dientes/) | Is this permutation test a null for the invariant it claims to destroy? Five resamplers, two invariants, four states. | 140 cases |
+| [The detection floor: ε is not a tolerance](https://alexisromtz-lab.github.io/auditor-toolkit/demo/piso-de-deteccion/) | A gate with a constant ε is not choosing a precision — it is choosing between two blindnesses. Drag δ and watch the local gate see what the constant one approves. | 80 bit-exact fields + 108 gates |
 
 The engines the ports were taken from live in a private repository. What is public —
 and enough — is the answer key and the check that re-runs each port against it:
@@ -58,6 +59,8 @@ python3 demo/clasificador-de-campos/verificar_paridad.py   # parity against the 
 node    demo/clasificador-de-campos/verificar_ui.js        # the page actually starts
 python3 demo/nulo-con-dientes/verificar_paridad.py         # same, for the resampling null
 node    demo/nulo-con-dientes/verificar_ui.js
+python3 demo/piso-de-deteccion/verificar_paridad.py        # same, for the detection floor
+node    demo/piso-de-deteccion/verificar_ui.js
 python3 -m pytest tests/ -q                                # all of the above, plus the mutants
 ```
 
@@ -72,6 +75,30 @@ about 1 in 800 doubles on this machine — no cross-language port can be bit-exa
 there without reimplementing the host libm, which would pin the answer key to one
 machine. The page therefore claims **identical verdicts**, never "bit-identical",
 and the falsifier fails if a discrete field ever moves.
+
+The third piece adds a **second** declared tier, because its quantities are worse
+conditioned than piece 2's. Its 16 profile fields per case are compared **bit for
+bit** — 80 of 80 exact, 0 ULP — and its 108 gates are compared as exact integers.
+But three of its diagnostics are a quotient of a difference that cancels:
+`τ = |div_central − div_exacta|`, so a single ULP in `div` becomes a large relative
+error in `τ`, and `τ̂/τ` amplifies it. `Math.exp` (V8/fdlibm) and `np.exp` (libm)
+differ on 908 of 9 216 nodes by exactly 1 ULP; the quotient lands at **5.6e-13
+measured, 1e-11 declared**. That is not drift in the port — it is the
+conditioning of the quantity — and the page says so instead of hiding a fudge
+factor. What makes the numbers a visitor reads trustworthy is separate and
+checkable: in all 108 frozen gates **no node sits within 1e-9 relative of its
+threshold** (`cerca_del_umbral == 0`), so every count the page displays is exact
+across implementations, not merely close.
+
+Two of this piece's defects were invisible to it until the page was opened in a
+browser. A slider declared `step="0.02"` **rounded the preset `δ = 0.25` to `0.26`**:
+the number on screen was consistent with the picture and both were wrong about the
+preset's name. And the canvas axis label plus every row label of the measurements
+table stayed in Spanish in the English view — the same defect piece 1 had, one layer
+down. Both are assertions now: the DOM stub applies the browser's step-snapping
+rule, and any painted string or table cell containing prose must exist in the
+active language's dictionary. **Ten mutations, one per assertion, must each return
+`RC 1`** — a verifier that has never failed is a decoration.
 
 ---
 
