@@ -1,4 +1,10 @@
 # auditar_supply_chain.py no reimplementa el parseo de YAML: el gate lo necesita para leer
 # workflows. Sin PyYAML el auditor se detiene con UNVERIFIABLE, no adivina.
 PyYAML>=6.0
+# pytest no lo usa el auditor: lo invoca el aparato que declara
+# .github/ci-apparatus (mide: tests). La plantilla fail-closed v10 instala solo
+# lo que este manifiesto declara y falla con DEPENDENCIA_NO_DECLARADA si falta,
+# asi que la dependencia de test vive aqui y no en un requirements-dev.txt que
+# el runner no lee.
+pytest>=8.0
 # HUELLA-PORT-SUPPLY-AUDITOR-TOOLKIT-20261031
