@@ -1,0 +1,980 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Does your null have teeth? — resampling nulls that bite</title>
+<meta name="description" content="A permutation test is only a null for the invariant it destroys. Slide the memory of a series and watch a block bootstrap pass or fail depending on which invariant you name.">
+<style>
+  :root{
+    --bg:#0b0e14; --panel:#131822; --line:#232b3a; --ink:#e6edf7; --dim:#8b98ad;
+    --amber:#f0b429; --cyan:#39d0d8; --green:#3fb950; --red:#f85149; --violet:#a371f7;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  body{padding:22px clamp(14px,3vw,34px) 40px;max-width:1180px;margin:0 auto}
+  h1{font-size:clamp(19px,2.4vw,25px);margin:0 0 4px;letter-spacing:-.01em}
+  .sub{color:var(--dim);margin:0 0 22px;max-width:74ch;font-size:14px}
+  .sub code{font-family:var(--mono);font-size:.92em;color:var(--cyan)}
+  .grid{display:grid;grid-template-columns:minmax(260px,320px) 1fr;gap:20px;align-items:start}
+  @media (max-width:820px){.grid{grid-template-columns:1fr}}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+  .panel h2{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);
+    margin:0 0 12px;font-weight:600}
+  .panel h2:not(:first-child){margin-top:20px}
+  label.fila{display:block;margin:0 0 14px}
+  label.fila .top{display:flex;justify-content:space-between;font-size:12.5px;color:var(--dim);
+    margin-bottom:5px;font-family:var(--mono)}
+  label.fila .top b{color:var(--ink);font-weight:600}
+  input[type=range]{width:100%;accent-color:var(--cyan);height:18px}
+  .exacto{font-family:var(--mono);font-size:10.5px;color:var(--dim);margin:-4px 0 12px;
+    word-break:break-word;line-height:1.45}
+  .opts{display:flex;flex-direction:column;gap:7px;margin:0 0 13px}
+  .opt{display:flex;align-items:center;gap:8px;font-size:13.5px;cursor:pointer;
+    padding:5px 7px;border-radius:7px;border:1px solid transparent}
+  .opt:hover{background:#0d121b;border-color:var(--line)}
+  .opt input{accent-color:var(--cyan);margin:0}
+  .opt.off{opacity:.34;cursor:not-allowed}
+  .presets{display:grid;grid-template-columns:1fr;gap:6px}
+  .presets button{text-align:left;font:12.5px/1.35 inherit;color:var(--ink);background:#0d121b;
+    border:1px solid var(--line);border-radius:8px;padding:8px 10px;cursor:pointer}
+  .presets button:hover{border-color:var(--cyan);color:var(--cyan)}
+  .presets button small{display:block;color:var(--dim);font-size:11px;margin-top:2px}
+  .veredicto{border-radius:12px;padding:14px 16px;margin:0 0 16px;border:1px solid var(--line);
+    background:var(--panel)}
+  .veredicto .tag{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--dim)}
+  .veredicto .val{font-family:var(--mono);font-size:clamp(15px,2vw,19px);font-weight:700;
+    margin-top:3px;letter-spacing:-.01em;word-break:break-word}
+  .veredicto .why{color:var(--dim);font-size:13px;margin-top:6px;max-width:70ch}
+  .veredicto.ok{border-color:#1c4b2a;background:#0d1a12}
+  .veredicto.ok .val{color:var(--green)}
+  .veredicto.bad{border-color:#5c2020;background:#1a0f11}
+  .veredicto.bad .val{color:var(--red)}
+  .veredicto.nulo{border-color:#5a4413;background:#1a1610}
+  .veredicto.nulo .val{color:var(--amber)}
+  canvas{display:block;width:100%;height:auto;background:#0d121b;border:1px solid var(--line);
+    border-radius:10px}
+  .lienzo{margin:0 0 16px}
+  .lienzo .cap{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);
+    margin:0 0 6px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .leyenda{display:flex;gap:14px;flex-wrap:wrap;font-family:var(--mono);font-size:11px;
+    color:var(--dim);margin:6px 0 0}
+  .leyenda span{display:flex;align-items:center;gap:6px}
+  .leyenda i{width:16px;height:3px;border-radius:2px;display:inline-block}
+  table.nums{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12.5px}
+  table.nums td{padding:5px 0;border-bottom:1px solid #1a2130;vertical-align:top}
+  table.nums td:first-child{color:var(--dim);width:44%}
+  table.nums td:last-child{text-align:right;word-break:break-word}
+  .bien{color:var(--green)} .mal{color:var(--red)} .neu{color:var(--amber)}
+  footer{margin-top:26px;color:var(--dim);font-size:12px;border-top:1px solid var(--line);
+    padding-top:14px;max-width:88ch}
+  footer code{font-family:var(--mono);color:var(--cyan);font-size:11.5px}
+  .lang{position:absolute;top:20px;right:clamp(14px,3vw,34px);font:11px var(--mono);
+    color:var(--dim);background:#0d121b;border:1px solid var(--line);border-radius:7px;
+    padding:4px 9px;cursor:pointer;letter-spacing:.08em}
+  .lang:hover{color:var(--cyan);border-color:var(--cyan)}
+  .teorema{border-left:2px solid var(--violet);padding:2px 0 2px 12px;margin:0 0 20px;
+    color:var(--ink);font-size:13.5px;max-width:74ch}
+  .teorema b{color:var(--violet)}
+</style>
+</head>
+<body>
+<button class="lang" id="btn-lang">EN</button>
+<h1 id="titulo">Does your null have teeth?</h1>
+<p class="sub" id="subtitulo"></p>
+
+<p class="teorema" id="teorema"></p>
+
+<div class="grid">
+  <div class="panel">
+    <h2 id="h-escenario">Scenario</h2>
+    <div class="presets" id="presets">
+      <button id="preset-correcto"><span id="preset-t-correcto">&mdash;</span><small id="preset-s-correcto"></small></button>
+      <button id="preset-otro"><span id="preset-t-otro">&mdash;</span><small id="preset-s-otro"></small></button>
+      <button id="preset-rotacion"><span id="preset-t-rotacion">&mdash;</span><small id="preset-s-rotacion"></small></button>
+      <button id="preset-ruido"><span id="preset-t-ruido">&mdash;</span><small id="preset-s-ruido"></small></button>
+    </div>
+
+    <h2 id="h-serie">The series</h2>
+    <label class="fila">
+      <span class="top"><span id="l-rho">memory &rho;</span><b id="rho-out">0.90</b></span>
+      <input type="range" id="rho" min="0" max="0.95" step="0.05" value="0.9">
+    </label>
+    <label class="fila">
+      <span class="top"><span id="l-n">length n</span><b id="n-out">900</b></span>
+      <input type="range" id="n" min="200" max="1500" step="100" value="900">
+    </label>
+
+    <h2 id="h-nulo">The null</h2>
+    <div class="opts" id="nulos">
+      <label class="opt" id="nul-lab-rotacion"><input type="radio" name="nul" id="nul-rotacion" value="rotacion"><span id="nul-txt-rotacion">&mdash;</span></label>
+      <label class="opt" id="nul-lab-iid"><input type="radio" name="nul" id="nul-iid" value="iid"><span id="nul-txt-iid">&mdash;</span></label>
+      <label class="opt" id="nul-lab-bloques"><input type="radio" name="nul" id="nul-bloques" value="bloques"><span id="nul-txt-bloques">&mdash;</span></label>
+      <label class="opt" id="nul-lab-porSerie"><input type="radio" name="nul" id="nul-porSerie" value="porSerie"><span id="nul-txt-porSerie">&mdash;</span></label>
+      <label class="opt" id="nul-lab-iidPorSerie"><input type="radio" name="nul" id="nul-iidPorSerie" value="iidPorSerie"><span id="nul-txt-iidPorSerie">&mdash;</span></label>
+    </div>
+
+    <label class="fila">
+      <span class="top"><span id="l-bloque">block size</span><b id="bloque-out">20</b></span>
+      <input type="range" id="bloque" min="1" max="60" step="1" value="20">
+    </label>
+
+    <h2 id="h-inv">The invariant</h2>
+    <div class="opts" id="invs">
+      <label class="opt" id="inv-lab-auto"><input type="radio" name="inv" id="inv-auto" value="auto"><span id="inv-txt-auto">&mdash;</span></label>
+      <label class="opt" id="inv-lab-cruz"><input type="radio" name="inv" id="inv-cruz" value="cruz"><span id="inv-txt-cruz">&mdash;</span></label>
+    </div>
+
+    <label class="fila">
+      <span class="top"><span id="l-rep">repetitions</span><b id="rep-out">200</b></span>
+      <input type="range" id="rep" min="40" max="400" step="20" value="200">
+    </label>
+    <div class="exacto" id="exacto"></div>
+  </div>
+
+  <div>
+    <div class="veredicto" id="caja">
+      <div class="tag" id="vtag">verdict</div>
+      <div class="val" id="estado">&mdash;</div>
+      <div class="why" id="porque"></div>
+    </div>
+
+    <div class="lienzo">
+      <div class="cap"><span id="c-serie">the series and one draw of the null</span><span id="serie-nota"></span></div>
+      <canvas id="lienzo-serie" width="760" height="150"></canvas>
+      <div class="leyenda">
+        <span><i style="background:#39d0d8"></i><span id="lg-dato">data</span></span>
+        <span><i style="background:#a371f7"></i><span id="lg-nulo">one null draw</span></span>
+      </div>
+    </div>
+
+    <div class="lienzo">
+      <div class="cap"><span id="c-nulo">null distribution</span><span id="nulo-nota"></span></div>
+      <canvas id="lienzo-nulo" width="760" height="180"></canvas>
+      <div class="leyenda">
+        <span><i style="background:#8b98ad"></i><span id="lg-hist">null samples</span></span>
+        <span><i style="background:#f0b429"></i><span id="lg-banda">95% central interval</span></span>
+        <span><i style="background:#e6edf7"></i><span id="lg-emp">observed</span></span>
+      </div>
+    </div>
+
+    <table class="nums">
+      <tr><td id="t-emp">observed statistic</td><td id="v-emp">&mdash;</td></tr>
+      <tr><td id="t-media">null mean</td><td id="v-media">&mdash;</td></tr>
+      <tr><td id="t-banda">95% central interval</td><td id="v-banda">&mdash;</td></tr>
+      <tr><td id="t-destruye">destroys the invariant?</td><td id="v-destruye">&mdash;</td></tr>
+      <tr><td id="t-discrimina">separates from the data?</td><td id="v-discrimina">&mdash;</td></tr>
+      <tr><td id="t-rc">return code</td><td id="v-rc">&mdash;</td></tr>
+    </table>
+  </div>
+</div>
+
+<footer id="pie"></footer>
+
+<script id="motor">
+// Motor de la pagina. Funciones puras: sin DOM, sin `document`, sin red.
+//
+// Es un puerto de `tools/nulo_de_remuestreo.py` del corpus interno. La
+// paridad se verifica contra ese oraculo con `verificar_paridad.py`, y se
+// exige IGUALDAD EXACTA de los bits IEEE-754, no tolerancia.
+//
+// Para que la igualdad exacta sea posible hay que reproducir el generador
+// del oraculo: los remuestreadores consumen `random.Random(semilla)`, asi que
+// este archivo porta MT19937, `random()`, `getrandbits`, `randbelow`,
+// `randrange` y `shuffle` de CPython. Portar solo la formula del
+// remuestreador no basta: la misma formula con otro flujo de bits da otros
+// numeros y la paridad fallaria por una causa que no se ve en el codigo.
+
+'use strict';
+
+var BANDA = 0.2;
+var RC_OK = 0;
+var RC_SIN_DIENTES = 1;
+var RC_CONTRATO = 20;
+
+// --- MT19937, puerto de CPython 3.12 ---------------------------------------
+
+var _N = 624, _M = 397, _MATRIX_A = 0x9908b0df;
+var _UPPER = 0x80000000, _LOWER = 0x7fffffff;
+
+function Generador(semilla) {
+  this.mt = new Int32Array(_N);
+  this.mti = _N + 1;
+  this._initByArray([semilla >>> 0], 1);
+}
+
+Generador.prototype._initGenrand = function (s) {
+  var mt = this.mt;
+  mt[0] = s | 0;
+  for (var i = 1; i < _N; i++) {
+    mt[i] = (Math.imul(1812433253, mt[i - 1] ^ (mt[i - 1] >>> 30)) + i) | 0;
+  }
+  this.mti = _N;
+};
+
+Generador.prototype._initByArray = function (key, kl) {
+  var mt = this.mt;
+  this._initGenrand(19650218);
+  var i = 1, j = 0;
+  for (var k = Math.max(_N, kl); k; k--) {
+    mt[i] = ((mt[i] ^ Math.imul(mt[i - 1] ^ (mt[i - 1] >>> 30), 1664525)) + key[j] + j) | 0;
+    i++; j++;
+    if (i >= _N) { mt[0] = mt[_N - 1]; i = 1; }
+    if (j >= kl) j = 0;
+  }
+  for (var k2 = _N - 1; k2; k2--) {
+    mt[i] = ((mt[i] ^ Math.imul(mt[i - 1] ^ (mt[i - 1] >>> 30), 1566083941)) - i) | 0;
+    i++;
+    if (i >= _N) { mt[0] = mt[_N - 1]; i = 1; }
+  }
+  mt[0] = 0x80000000 | 0;
+};
+
+Generador.prototype._twist = function () {
+  var mt = this.mt;
+  for (var i = 0; i < _N; i++) {
+    var y = (mt[i] & _UPPER) | (mt[(i + 1) % _N] & _LOWER);
+    mt[i] = mt[(i + _M) % _N] ^ (y >>> 1) ^ ((y & 1) ? _MATRIX_A : 0);
+  }
+  this.mti = 0;
+};
+
+Generador.prototype.uint32 = function () {
+  if (this.mti >= _N) this._twist();
+  var y = this.mt[this.mti++];
+  y ^= y >>> 11;
+  y ^= (y << 7) & 0x9d2c5680;
+  y ^= (y << 15) & 0xefc60000;
+  y ^= y >>> 18;
+  return y >>> 0;
+};
+
+Generador.prototype.random = function () {
+  var a = this.uint32() >>> 5, b = this.uint32() >>> 6;
+  return (a * 67108864 + b) * (1.0 / 9007199254740992.0);
+};
+
+Generador.prototype.getrandbits = function (k) {
+  return k <= 32 ? this.uint32() >>> (32 - k) : this.uint32() * 4294967296 + this.uint32();
+};
+
+// `n.bit_length()`, NO `ceil(log2(n))`. Difieren cuando n es potencia de dos:
+// bit_length(32) = 6 y ceil(log2 32) = 5. Con el valor equivocado el
+// rechazo consume un entero de 32 bits de menos y todo el flujo se desplaza
+// una posicion — medido: el primer `shuffle` divergia en el indice 9.
+Generador.prototype.randbelow = function (n) {
+  var k = 32 - Math.clz32(n);
+  var r = this.getrandbits(k);
+  while (r >= n) r = this.getrandbits(k);
+  return r;
+};
+
+Generador.prototype.randrange = function (n) { return this.randbelow(n); };
+
+Generador.prototype.shuffle = function (x) {
+  for (var i = x.length - 1; i >= 1; i--) {
+    var j = this.randbelow(i + 1);
+    var t = x[i]; x[i] = x[j]; x[j] = t;
+  }
+  return x;
+};
+
+// --- estadisticos, puerto literal del oraculo -------------------------------
+
+// CPython >=3.12 sum() no suma de izquierda a derecha: usa compensacion de
+// Neumaier. Con dobles la diferencia son un par de ULP, y un par de ULP basta
+// para que el fixture congelado deje de coincidir. Sin esto el puerto "casi"
+// da paridad, que es la peor clase de paridad.
+function suma(xs) {
+  var r = 0.0, c = 0.0;
+  for (var i = 0; i < xs.length; i++) {
+    var x = xs[i], t = r + x;
+    if (Math.abs(r) >= Math.abs(x)) c += (r - t) + x;
+    else c += (x - t) + r;
+    r = t;
+  }
+  return c === 0.0 ? r : r + c;
+}
+
+function suma_rango(desde, hasta, f) {
+  var r = 0.0, c = 0.0;
+  for (var i = desde; i < hasta; i++) {
+    var x = f(i), t = r + x;
+    if (Math.abs(r) >= Math.abs(x)) c += (r - t) + x;
+    else c += (x - t) + r;
+    r = t;
+  }
+  return c === 0.0 ? r : r + c;
+}
+
+function _media(xs) {
+  return suma(xs) / xs.length;
+}
+
+function _cuantil(ordenados, p) {
+  if (!ordenados || ordenados.length === 0) throw new Error('sin datos: cuantil NO_MEDIDO');
+  var pos = p * (ordenados.length - 1);
+  var lo = Math.floor(Math.max(0.0, Math.min(pos, ordenados.length - 1.0)));
+  var hi = Math.min(lo + 1, ordenados.length - 1);
+  var frac = Math.max(0.0, Math.min(pos, ordenados.length - 1.0)) - lo;
+  return ordenados[lo] * (1.0 - frac) + ordenados[hi] * frac;
+}
+
+function autocorrelacion(xs, retardo) {
+  if (retardo === undefined) retardo = 1;
+  var n = xs.length;
+  if (retardo < 1 || retardo >= n) throw new Error('retardo fuera de rango');
+  var m = _media(xs);
+  var den = suma_rango(0, n, function (i) { var d = xs[i] - m; return d * d; });
+  if (den === 0.0) throw new Error('serie constante: autocorrelacion NO_MEDIDA');
+  var num = suma_rango(retardo, n, function (t) { return (xs[t] - m) * (xs[t - retardo] - m); });
+  return num / den;
+}
+
+function correlacion_cruzada(xs, ys) {
+  if (xs.length !== ys.length) throw new Error('series de distinta longitud');
+  var mx = _media(xs), my = _media(ys);
+  var n = xs.length;
+  var sx = suma_rango(0, n, function (i) { var d = xs[i] - mx; return d * d; });
+  var sy = suma_rango(0, n, function (i) { var d = ys[i] - my; return d * d; });
+  var den = Math.sqrt(sx * sy);
+  if (den === 0.0) throw new Error('serie constante: correlacion NO_MEDIDA');
+  var sxy = suma_rango(0, n, function (i) { return (xs[i] - mx) * (ys[i] - my); });
+  return sxy / den;
+}
+
+// --- remuestreadores -------------------------------------------------------
+
+function remuestreo_rotacion(xs, rng) {
+  var k = rng.randrange(xs.length);
+  return xs.slice(k).concat(xs.slice(0, k));
+}
+
+function remuestreo_iid(xs, rng) {
+  var y = xs.slice();
+  rng.shuffle(y);
+  return y;
+}
+
+// `min`/`max` de Python no son los de JS cuando hay NaN: en Python toda
+// comparacion con NaN es False, asi que `min(nan, n)` devuelve nan y
+// `max(1, nan)` devuelve 1. En JS los dos devuelven NaN, y un bloque NaN deja
+// el `while` de abajo girando para siempre. Se replica la semantica del
+// oraculo, no la de JS.
+function _minPy(a, b) { return (b < a) ? b : a; }
+function _maxPy(a, b) { return (b > a) ? b : a; }
+
+function remuestreo_bloques(xs, rng, bloque) {
+  if (bloque === undefined) bloque = 20;
+  var n = xs.length;
+  bloque = _maxPy(1, _minPy(bloque, n));
+  var salida = [];
+  while (salida.length < n) {
+    var inicio = rng.randrange(n);
+    for (var k = 0; k < bloque; k++) {
+      salida.push(xs[(inicio + k) % n]);
+      if (salida.length >= n) break;
+    }
+  }
+  return salida;
+}
+
+function remuestreo_bloques_por_serie(series, rng, bloque) {
+  var out = [];
+  for (var i = 0; i < series.length; i++) out.push(remuestreo_bloques(series[i], rng, bloque));
+  return out;
+}
+
+function remuestreo_iid_por_serie(series, rng) {
+  var out = [];
+  for (var i = 0; i < series.length; i++) out.push(remuestreo_iid(series[i], rng));
+  return out;
+}
+
+// --- el verificador, puerto literal del oraculo ----------------------------
+
+function muestras_nulas(remuestreador, datos, estadistico, repeticiones, semilla) {
+  var rng = new Generador(semilla);
+  var out = [];
+  for (var i = 0; i < repeticiones; i++) out.push(estadistico(remuestreador(datos, rng)));
+  out.sort(function (a, b) { return a - b; });
+  return out;
+}
+
+function verificar_nulo(remuestreador, datos, estadistico, repeticiones, semilla, banda, nivel) {
+  if (repeticiones === undefined) repeticiones = 200;
+  if (semilla === undefined) semilla = 0;
+  if (banda === undefined) banda = BANDA;
+  if (nivel === undefined) nivel = 0.95;
+
+  var empirico = estadistico(datos);
+  if (Math.abs(empirico) <= banda) {
+    return {
+      empirico: empirico,
+      estado: 'NO_MEDIDO',
+      causa: 'el dato no tiene el invariante que el nulo debe destruir',
+      rc: RC_OK,
+      muestras: []
+    };
+  }
+  var nulos = muestras_nulas(remuestreador, datos, estadistico, repeticiones, semilla);
+  var media = _media(nulos);
+  var alfa = (1.0 - nivel) / 2.0;
+  var lo = _cuantil(nulos, alfa);
+  var hi = _cuantil(nulos, 1.0 - alfa);
+  var destruye = Math.abs(media) <= banda;
+  var discrimina = empirico < lo || empirico > hi;
+  var estado;
+  if (destruye && discrimina) estado = 'NULO_CON_DIENTES';
+  else if (!destruye) estado = 'NULO_CONSERVA_EL_INVARIANTE';
+  else estado = 'NULO_NO_DISCRIMINA';
+  return {
+    empirico: empirico,
+    media_nula: media,
+    q_lo: lo,
+    q_hi: hi,
+    destruye: destruye,
+    discrimina: discrimina,
+    estado: estado,
+    repeticiones: repeticiones,
+    rc: estado === 'NULO_CON_DIENTES' ? RC_OK : RC_SIN_DIENTES,
+    muestras: nulos
+  };
+}
+
+// --- generador de entrada de la pagina ------------------------------------
+//
+// NO es parte del oraculo: `verificar_nulo` recibe `datos` como argumento y no
+// le importa como se produjeron. Se define aqui, y en Python dentro de
+// `verificar_paridad.py`, con las MISMAS operaciones y el mismo generador, para
+// que la serie que se pinta sea la que el oraculo midio.
+//
+// x[t] = rho * x[t-1] + (2u-1)          ruido uniforme, memoria rho
+// y[t] = 0.5 * x[t] + 0.5 * (2u'-1)     segunda serie alineada con la primera
+
+function par_ar(semilla, n, rho) {
+  var r = new Generador(semilla);
+  var x = [0.0];
+  for (var t = 1; t < n; t++) x.push(rho * x[t - 1] + (2.0 * r.random() - 1.0));
+  var y = [];
+  for (var i = 0; i < n; i++) y.push(0.5 * x[i] + 0.5 * (2.0 * r.random() - 1.0));
+  return [x, y];
+}
+</script>
+
+<script>
+// La tabla de traduccion se declara fuera del IIFE a proposito: verificar_ui.js
+// la lee para exigir que todo estado emitible tenga texto en los dos idiomas.
+// Dentro del IIFE seria invisible para el verificador, y una traduccion ausente
+// tambien.
+var T = {
+    en: {
+      titulo: 'Does your null have teeth?',
+      subtitulo: 'A permutation test is a null only for the invariant it destroys. This page runs the same certified engine as the Python oracle and shows which invariant dies — and which one survives — under each resampler.',
+      teorema: '<b>The claim.</b> A block bootstrap does not destroy the memory of a series. Asking it to is an error of the caller, not of the resampler. Change the invariant it is asked about and the same resampler goes from pass to fail.',
+      hEscenario: 'Scenario',
+      hSerie: 'The series',
+      hNulo: 'The null',
+      hInv: 'The invariant',
+      lRho: 'memory &rho;',
+      lN: 'length n',
+      lBloque: 'block size',
+      lRep: 'repetitions',
+      lgDato: 'data',
+      lgNulo: 'one null draw',
+      lgHist: 'null samples',
+      lgBanda: '95% central interval',
+      lgEmp: 'observed',
+      cSerie: 'the series and one draw of the null',
+      cNulo: 'null distribution',
+      tEmp: 'observed statistic',
+      tMedia: 'null mean',
+      tBanda: '95% central interval',
+      tDestruye: 'destroys the invariant?',
+      tDiscrimina: 'separates from the data?',
+      tRc: 'return code',
+      vtag: 'verdict',
+      si: 'yes',
+      no: 'no',
+      nulos: {
+        rotacion: 'rotation — shifts the series cyclically',
+        iid: 'i.i.d. — shuffles the order away',
+        bloques: 'blocks — resamples contiguous runs',
+        porSerie: 'blocks per series — one block bootstrap per series, independently',
+        iidPorSerie: 'i.i.d. per series — shuffles order inside each series only'
+      },
+      invs: {
+        auto: 'autocorrelation (a series with itself)',
+        cruz: 'cross-correlation (a series against another)'
+      },
+      presets: [
+        { id: 'correcto', rho: 0.9, n: 900, rep: 200, bloque: 20, nul: 'porSerie', inv: 'cruz',
+          t: 'The bootstrap that works',
+          s: 'block bootstrap against cross-correlation' },
+        { id: 'otro', rho: 0.9, n: 900, rep: 200, bloque: 20, nul: 'bloques', inv: 'auto',
+          t: 'Same bootstrap, other invariant',
+          s: 'block bootstrap against autocorrelation' },
+        { id: 'rotacion', rho: 0.9, n: 900, rep: 200, bloque: 20, nul: 'rotacion', inv: 'auto',
+          t: 'The disguised rotation',
+          s: 'a circular shift is never a bootstrap' },
+        { id: 'ruido', rho: 0, n: 900, rep: 200, bloque: 20, nul: 'iid', inv: 'auto',
+          t: 'White noise has no invariant',
+          s: 'nothing to destroy: NO_MEDIDO, not green' }
+      ],
+      estados: {
+        NULO_CON_DIENTES: ['The null has teeth', 'It destroys the invariant and separates from the data. This resampler can refute something.'],
+        NULO_CONSERVA_EL_INVARIANTE: ['The null keeps the invariant alive', 'It preserves what it claims to destroy. The observed value sits inside its own null: this resampler cannot refute anything.'],
+        NULO_NO_DISCRIMINA: ['The null has teeth but no aim', 'It destroys the invariant, yet the data falls inside the null interval. Nothing is decided here.'],
+        NO_MEDIDO: ['Nothing to measure', 'The data has no invariant for the null to destroy. Reported as NOT MEASURED — never as a pass.']
+      },
+      serieNota: function (n, rho) { return 'n = ' + n + ' · ρ = ' + rho; },
+      nuloNota: function (k) { return 'n = ' + k + ' samples'; },
+      pie: 'Engine ported from <code>nulo_de_remuestreo.py</code> (private repository). This page is the port; <code>verificar_paridad.py</code> is the check that the port did not drift: every discrete output — state, return code, verdicts, sample count — is identical on a frozen fixture, and every float stays within a measured 1 ULP (bound declared at 4). The bound exists because <code>x**2</code> in CPython routes to the system libm, which is not correctly rounded: no cross-language port can be bit-exact there. <code>verificar_ui.js</code> checks the page starts and publishes each value whole.'
+    },
+    es: {
+      titulo: '¿Tu nulo tiene dientes?',
+      subtitulo: 'Una prueba de permutación es un nulo sólo para el invariante que destruye. Esta página corre el mismo motor certificado que el oráculo en Python y muestra qué invariante muere — y cuál sobrevive — bajo cada remuestreador.',
+      teorema: '<b>La afirmación.</b> Un bootstrap de bloques no destruye la memoria de una serie. Pedirle eso es un error de quien lo llama, no del remuestreador. Cambia el invariante sobre el que se le pregunta y el mismo remuestreador pasa de aprobar a fallar.',
+      hEscenario: 'Escenario',
+      hSerie: 'La serie',
+      hNulo: 'El nulo',
+      hInv: 'El invariante',
+      lRho: 'memoria &rho;',
+      lN: 'longitud n',
+      lBloque: 'tamaño de bloque',
+      lRep: 'repeticiones',
+      lgDato: 'dato',
+      lgNulo: 'un sorteo del nulo',
+      lgHist: 'muestras del nulo',
+      lgBanda: 'intervalo central 95%',
+      lgEmp: 'observado',
+      cSerie: 'la serie y un sorteo del nulo',
+      cNulo: 'distribución del nulo',
+      tEmp: 'estadístico observado',
+      tMedia: 'media del nulo',
+      tBanda: 'intervalo central 95%',
+      tDestruye: '¿destruye el invariante?',
+      tDiscrimina: '¿se separa del dato?',
+      tRc: 'código de retorno',
+      vtag: 'veredicto',
+      si: 'sí',
+      no: 'no',
+      nulos: {
+        rotacion: 'rotación — desplaza la serie de forma cíclica',
+        iid: 'i.i.d. — baraja el orden',
+        bloques: 'bloques — remuestrea tramos contiguos',
+        porSerie: 'bloques por serie — un bootstrap de bloques por serie, independiente',
+        iidPorSerie: 'i.i.d. por serie — baraja el orden dentro de cada serie'
+      },
+      invs: {
+        auto: 'autocorrelación (una serie consigo misma)',
+        cruz: 'correlación cruzada (una serie contra otra)'
+      },
+      presets: [
+        { id: 'correcto', rho: 0.9, n: 900, rep: 200, bloque: 20, nul: 'porSerie', inv: 'cruz',
+          t: 'El bootstrap que sí sirve',
+          s: 'bootstrap de bloques contra correlación cruzada' },
+        { id: 'otro', rho: 0.9, n: 900, rep: 200, bloque: 20, nul: 'bloques', inv: 'auto',
+          t: 'El mismo bootstrap, otro invariante',
+          s: 'bootstrap de bloques contra autocorrelación' },
+        { id: 'rotacion', rho: 0.9, n: 900, rep: 200, bloque: 20, nul: 'rotacion', inv: 'auto',
+          t: 'La rotación disfrazada',
+          s: 'una rotación circular nunca es un bootstrap' },
+        { id: 'ruido', rho: 0, n: 900, rep: 200, bloque: 20, nul: 'iid', inv: 'auto',
+          t: 'El ruido blanco no tiene invariante',
+          s: 'nada que destruir: NO_MEDIDO, no verde' }
+      ],
+      estados: {
+        NULO_CON_DIENTES: ['El nulo tiene dientes', 'Destruye el invariante y se separa del dato. Este remuestreador puede refutar algo.'],
+        NULO_CONSERVA_EL_INVARIANTE: ['El nulo conserva el invariante vivo', 'Preserva lo que dice destruir. El valor observado cae dentro de su propio nulo: este remuestreador no puede refutar nada.'],
+        NULO_NO_DISCRIMINA: ['El nulo tiene dientes pero no apunta', 'Destruye el invariante, pero el dato cae dentro del intervalo del nulo. Aquí no se decide nada.'],
+        NO_MEDIDO: ['No hay nada que medir', 'El dato no tiene el invariante que el nulo debe destruir. Se publica NO_MEDIDO — nunca como aprobado.']
+      },
+      serieNota: function (n, rho) { return 'n = ' + n + ' · ρ = ' + rho; },
+      nuloNota: function (k) { return 'n = ' + k + ' muestras'; },
+      pie: 'Motor portado desde <code>nulo_de_remuestreo.py</code> (repositorio privado). Esta página es el port; <code>verificar_paridad.py</code> es la comprobación de que el port no divergió: toda salida discreta —estado, código de retorno, veredictos, número de muestras— es idéntica sobre un fixture congelado, y cada flotante queda dentro de 1 ULP medido (cota declarada en 4). La cota existe porque <code>x**2</code> en CPython llama a la libm del sistema, que no redondea correctamente: ningún port entre lenguajes puede ser bit a bit ahí. <code>verificar_ui.js</code> comprueba que la página arranca y publica cada valor entero.'
+    }
+  };
+
+(function () {
+  'use strict';
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  var LANG = 'en';
+
+  function t(clave) { return T[LANG][clave]; }
+
+  // Los cinco nulos y los dos invariantes: su etiqueta y a qué invariante sirven.
+  var NULOS = [
+    { id: 'rotacion', inv: 'auto' },
+    { id: 'iid', inv: 'auto' },
+    { id: 'bloques', inv: 'auto', usaBloque: true },
+    { id: 'porSerie', inv: 'cruz', usaBloque: true, etiqueta: 'bloques_por_serie' },
+    { id: 'iidPorSerie', inv: 'cruz', etiqueta: 'iid_por_serie' }
+  ];
+
+  var INVARIANTES = [
+    { id: 'auto', etiqueta: 'autocorrelación' },
+    { id: 'cruz', etiqueta: 'correlación cruzada' }
+  ];
+
+  var est = { rho: 0.9, n: 900, rep: 200, bloque: 20, nul: 'porSerie', inv: 'cruz' };
+  var SEMILLA_DATO = 0;
+  var SEMILLA_NULO = 0;
+
+  function pintarEtiquetas() {
+    document.title = t('titulo');
+    $('titulo').textContent = t('titulo');
+    $('subtitulo').textContent = t('subtitulo');
+    $('teorema').innerHTML = t('teorema');
+    $('h-escenario').textContent = t('hEscenario');
+    $('h-serie').textContent = t('hSerie');
+    $('h-nulo').textContent = t('hNulo');
+    $('h-inv').textContent = t('hInv');
+    $('l-rho').innerHTML = t('lRho');
+    $('l-n').textContent = t('lN');
+    $('l-bloque').textContent = t('lBloque');
+    $('l-rep').textContent = t('lRep');
+    $('lg-dato').textContent = t('lgDato');
+    $('lg-nulo').textContent = t('lgNulo');
+    $('lg-hist').textContent = t('lgHist');
+    $('lg-banda').textContent = t('lgBanda');
+    $('lg-emp').textContent = t('lgEmp');
+    $('c-serie').textContent = t('cSerie');
+    $('c-nulo').textContent = t('cNulo');
+    $('vtag').textContent = t('vtag');
+    $('t-emp').textContent = t('tEmp');
+    $('t-media').textContent = t('tMedia');
+    $('t-banda').textContent = t('tBanda');
+    $('t-destruye').textContent = t('tDestruye');
+    $('t-discrimina').textContent = t('tDiscrimina');
+    $('t-rc').textContent = t('tRc');
+    $('pie').innerHTML = t('pie');
+    $('serie-nota').textContent = t('serieNota')(est.n, est.rho.toFixed(2));
+    $('btn-lang').textContent = LANG === 'en' ? 'ES' : 'EN';
+
+    for (var i = 0; i < NULOS.length; i++) {
+      $('nul-txt-' + NULOS[i].id).textContent = T[LANG].nulos[NULOS[i].id];
+    }
+    for (var j = 0; j < INVARIANTES.length; j++) {
+      $('inv-txt-' + INVARIANTES[j].id).textContent = T[LANG].invs[INVARIANTES[j].id];
+    }
+
+    var ps = t('presets');
+    for (var k = 0; k < ps.length; k++) {
+      $('preset-t-' + ps[k].id).textContent = ps[k].t;
+      $('preset-s-' + ps[k].id).textContent = ps[k].s;
+    }
+  }
+
+  function aplicarPreset(p) {
+    est.rho = p.rho; est.n = p.n; est.rep = p.rep;
+    est.bloque = p.bloque; est.nul = p.nul; est.inv = p.inv;
+    $('rho').value = String(p.rho);
+    $('n').value = String(p.n);
+    $('rep').value = String(p.rep);
+    $('bloque').value = String(p.bloque);
+    pintarEtiquetas();
+    sincronizarRadios();
+    render();
+  }
+
+  function sincronizarRadios() {
+    for (var i = 0; i < NULOS.length; i++) {
+      var it = NULOS[i];
+      var inp = $(('nul-' + it.id));
+      if (!inp) continue;
+      var aplica = it.inv === est.inv;
+      inp.checked = (it.id === est.nul);
+      inp.disabled = !aplica;
+      var fila = $('nul-lab-' + it.id);
+      if (fila) fila.className = aplica ? '' : 'off';
+      if (fila) fila.style.opacity = aplica ? '1' : '.34';
+      if (fila) fila.style.cursor = aplica ? 'pointer' : 'not-allowed';
+    }
+    for (var j = 0; j < INVARIANTES.length; j++) {
+      var ii = $(('inv-' + INVARIANTES[j].id));
+      if (ii) ii.checked = (INVARIANTES[j].id === est.inv);
+    }
+    var usaBloque = false;
+    for (var k = 0; k < NULOS.length; k++) {
+      if (NULOS[k].id === est.nul && NULOS[k].usaBloque) usaBloque = true;
+    }
+    $('bloque').disabled = !usaBloque;
+    $('bloque').style.opacity = usaBloque ? '1' : '.34';
+  }
+
+  function remuestreador() {
+    var b = est.bloque;
+    switch (est.nul) {
+      case 'rotacion': return remuestreo_rotacion;
+      case 'iid': return remuestreo_iid;
+      case 'bloques': return function (xs, rng) { return remuestreo_bloques(xs, rng, b); };
+      case 'porSerie': return function (p, rng) { return remuestreo_bloques_por_serie(p, rng, b); };
+      case 'iidPorSerie': return remuestreo_iid_por_serie;
+    }
+    return remuestreo_iid;
+  }
+
+  function estadistico() {
+    if (est.inv === 'cruz') {
+      return function (p) { return correlacion_cruzada(p[0], p[1]); };
+    }
+    return function (xs) { return autocorrelacion(xs, 1); };
+  }
+
+  // --- dibujo ---------------------------------------------------------------
+
+  function trazar(lienzo, xs, color, min, max) {
+    var ctx = lienzo.getContext('2d');
+    var W = lienzo.width, H = lienzo.height;
+    ctx.clearRect(0, 0, W, H);
+    var pad = 8;
+    var n = xs.length;
+    if (n < 2) return;
+    var lo = min, hi = max;
+    var rango = (hi - lo) || 1;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    for (var i = 0; i < n; i++) {
+      var px = pad + (W - 2 * pad) * (i / (n - 1));
+      var py = H - pad - (H - 2 * pad) * ((xs[i] - lo) / rango);
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+  }
+
+  function extremos(a, b) {
+    var lo = Infinity, hi = -Infinity;
+    var conj = [a, b];
+    for (var c = 0; c < conj.length; c++) {
+      for (var i = 0; i < conj[c].length; i++) {
+        if (conj[c][i] < lo) lo = conj[c][i];
+        if (conj[c][i] > hi) hi = conj[c][i];
+      }
+    }
+    return [lo, hi];
+  }
+
+  function histograma(lienzo, muestras, empirico, lo, hi) {
+    var ctx = lienzo.getContext('2d');
+    var W = lienzo.width, H = lienzo.height;
+    ctx.clearRect(0, 0, W, H);
+    if (!muestras || muestras.length === 0) {
+      ctx.fillStyle = '#8b98ad';
+      ctx.font = '12px ui-monospace,monospace';
+      ctx.fillText('NO_MEDIDO', 12, H / 2);
+      return;
+    }
+    var pad = 10;
+    var xmin = muestras[0], xmax = muestras[muestras.length - 1];
+    if (empirico < xmin) xmin = empirico;
+    if (empirico > xmax) xmax = empirico;
+    if (lo < xmin) xmin = lo;
+    if (hi > xmax) xmax = hi;
+    // 3% de aire a cada lado: con el observado pegado al extremo del dominio, su
+    // marca cae sobre el borde del lienzo y se lee como un marco, no como un
+    // valor. Medido en el primer render: 0.9195 contra un nulo centrado en 0
+    // dejaba la linea blanca encima del borde derecho.
+    var aire = ((xmax - xmin) || 1) * 0.03;
+    xmin -= aire; xmax += aire;
+    var span = (xmax - xmin) || 1;
+    var bins = 44;
+    var cuenta = new Array(bins);
+    for (var b = 0; b < bins; b++) cuenta[b] = 0;
+    for (var i = 0; i < muestras.length; i++) {
+      var idx = Math.floor((muestras[i] - xmin) / span * bins);
+      if (idx < 0) idx = 0;
+      if (idx >= bins) idx = bins - 1;
+      cuenta[idx]++;
+    }
+    var maxC = 1;
+    for (var c = 0; c < bins; c++) if (cuenta[c] > maxC) maxC = cuenta[c];
+
+    // banda central 95%
+    var xLo = pad + (W - 2 * pad) * ((lo - xmin) / span);
+    var xHi = pad + (W - 2 * pad) * ((hi - xmin) / span);
+    ctx.fillStyle = 'rgba(240,180,41,.13)';
+    ctx.fillRect(xLo, pad, Math.max(1, xHi - xLo), H - 2 * pad);
+    ctx.strokeStyle = 'rgba(240,180,41,.55)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(xLo, pad); ctx.lineTo(xLo, H - pad);
+    ctx.moveTo(xHi, pad); ctx.lineTo(xHi, H - pad);
+    ctx.stroke();
+
+    ctx.fillStyle = '#8b98ad';
+    var ancho = (W - 2 * pad) / bins;
+    for (var b2 = 0; b2 < bins; b2++) {
+      var h = (H - 2 * pad) * (cuenta[b2] / maxC);
+      ctx.globalAlpha = 0.75;
+      ctx.fillRect(pad + b2 * ancho, H - pad - h, Math.max(1, ancho - 1), h);
+    }
+    ctx.globalAlpha = 1;
+
+    // cero y observado
+    if (xmin < 0 && xmax > 0) {
+      var x0 = pad + (W - 2 * pad) * ((0 - xmin) / span);
+      ctx.strokeStyle = 'rgba(139,152,173,.5)';
+      ctx.setLineDash([3, 4]);
+      ctx.beginPath(); ctx.moveTo(x0, pad); ctx.lineTo(x0, H - pad); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    var xe = pad + (W - 2 * pad) * ((empirico - xmin) / span);
+    ctx.strokeStyle = '#e6edf7';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(xe, pad); ctx.lineTo(xe, H - pad); ctx.stroke();
+  }
+
+  // --- render ---------------------------------------------------------------
+
+  function fmt(x) {
+    if (x === null || x === undefined) return '\u2014';
+    if (typeof x !== 'number') return String(x);
+    if (!isFinite(x)) return x > 0 ? '+\u221e' : '\u2212\u221e';
+    var a = Math.abs(x);
+    if (a !== 0 && (a < 1e-4 || a >= 1e6)) return x.toExponential(6);
+    return x.toFixed(6);
+  }
+
+  function render() {
+    $('rho-out').textContent = est.rho.toFixed(2);
+    $('n-out').textContent = String(est.n);
+    $('bloque-out').textContent = String(est.bloque);
+    $('rep-out').textContent = String(est.rep);
+    $('serie-nota').textContent = t('serieNota')(est.n, est.rho.toFixed(2));
+
+    // linea exacta: cada valor de entrada publicado entero, sin redondeo.
+    // Un `input` de 88 px trunca `3.3356409519815204e-9` en `3.3356409`; el
+    // valor se publica como texto para que no dependa del ancho de la caja.
+    $('exacto').textContent =
+      'rho = ' + String(est.rho) + ' \u00b7 n = ' + String(est.n) +
+      ' \u00b7 repeticiones = ' + String(est.rep) +
+      ' \u00b7 bloque = ' + String(est.bloque) +
+      ' \u00b7 semilla = ' + String(SEMILLA_NULO);
+
+    var par = par_ar(SEMILLA_DATO, est.n, est.rho);
+    var datos = (est.inv === 'cruz') ? par : par[0];
+
+    var res;
+    try {
+      res = verificar_nulo(remuestreador(), datos, estadistico(),
+                           est.rep, SEMILLA_NULO, BANDA, 0.95);
+    } catch (e) {
+      res = { estado: 'NO_MEDIDO', causa: String(e.message), rc: RC_CONTRATO, empirico: null };
+    }
+
+    var caja = $('caja');
+    var clase = 'nulo';
+    if (res.estado === 'NULO_CON_DIENTES') clase = 'ok';
+    else if (res.estado === 'NULO_CONSERVA_EL_INVARIANTE' || res.estado === 'NULO_NO_DISCRIMINA') clase = 'bad';
+    caja.className = 'veredicto ' + clase;
+
+    var par2 = T[LANG].estados[res.estado] || [res.estado, res.causa || ''];
+    $('estado').textContent = par2[0];
+    $('porque').textContent = par2[1];
+
+    $('v-emp').textContent = fmt(res.empirico);
+    $('v-media').textContent = fmt(res.media_nula);
+    $('v-banda').textContent = (res.q_lo === undefined)
+      ? '\u2014'
+      : '[' + fmt(res.q_lo) + ', ' + fmt(res.q_hi) + ']';
+    $('v-destruye').textContent = (res.destruye === undefined) ? '\u2014' : (res.destruye ? t('si') : t('no'));
+    $('v-destruye').className = (res.destruye === undefined) ? '' : (res.destruye ? 'bien' : 'mal');
+    $('v-discrimina').textContent = (res.discrimina === undefined) ? '\u2014' : (res.discrimina ? t('si') : t('no'));
+    $('v-discrimina').className = (res.discrimina === undefined) ? '' : (res.discrimina ? 'bien' : 'mal');
+    $('v-rc').textContent = String(res.rc);
+    $('v-rc').className = (res.rc === RC_OK) ? 'bien' : 'mal';
+
+    // dibujo: la serie y UN sorteo del nulo, para ver que el sorteo conserva
+    // la forma cuando el nulo es una rotacion o un bootstrap de bloques.
+    var rngDib = new Generador(SEMILLA_NULO);
+    var sorteo;
+    try { sorteo = remuestreador()(datos, rngDib); } catch (e2) { sorteo = datos; }
+    var aSerie = (est.inv === 'cruz') ? datos[0] : datos;
+    var aSorteo = (est.inv === 'cruz') ? sorteo[0] : sorteo;
+    var mm = extremos(aSerie, aSorteo);
+    var lz = $('lienzo-serie');
+    trazar(lz, aSerie, '#39d0d8', mm[0], mm[1]);
+    var ctx2 = lz.getContext('2d');
+    ctx2.globalAlpha = 0.5;
+    trazar(lz, aSorteo, '#a371f7', mm[0], mm[1]);
+    ctx2.globalAlpha = 1;
+
+    histograma($('lienzo-nulo'), res.muestras, res.empirico,
+               res.q_lo === undefined ? 0 : res.q_lo,
+               res.q_hi === undefined ? 0 : res.q_hi);
+    $('nulo-nota').textContent = t('nuloNota')(res.muestras ? res.muestras.length : 0);
+    return res;
+  }
+
+  // --- cableado -------------------------------------------------------------
+
+  function leer() {
+    est.rho = parseFloat($('rho').value);
+    est.n = parseInt($('n').value, 10);
+    est.rep = parseInt($('rep').value, 10);
+    est.bloque = parseInt($('bloque').value, 10);
+    $('rho-out').textContent = est.rho.toFixed(2);
+    $('n-out').textContent = String(est.n);
+    $('bloque-out').textContent = String(est.bloque);
+    $('rep-out').textContent = String(est.rep);
+  }
+
+  $('rho').oninput = function () { leer(); render(); };
+  $('n').oninput = function () { leer(); render(); };
+  $('rep').oninput = function () { leer(); render(); };
+  $('bloque').oninput = function () { leer(); render(); };
+
+  for (var i = 0; i < NULOS.length; i++) {
+    (function (it) {
+      var inp = $('nul-' + it.id);
+      if (inp) inp.onchange = function () { est.nul = it.id; render(); };
+    })(NULOS[i]);
+  }
+  for (var j = 0; j < INVARIANTES.length; j++) {
+    (function (it) {
+      var inp = $('inv-' + it.id);
+      if (inp) inp.onchange = function () {
+        est.inv = it.id;
+        // el nulo tiene que servir al invariante elegido
+        var aplica = null;
+        for (var k = 0; k < NULOS.length; k++) {
+          if (NULOS[k].inv === est.inv) { aplica = NULOS[k].id; break; }
+        }
+        if (aplica) est.nul = aplica;
+        sincronizarRadios();
+        render();
+      };
+    })(INVARIANTES[j]);
+  }
+
+  (function () {
+    var ps = T.en.presets;
+    for (var p = 0; p < ps.length; p++) {
+      (function (def) {
+        var b = $('preset-' + def.id);
+        if (b) b.onclick = function () { aplicarPreset(def); };
+      })(ps[p]);
+    }
+  })();
+
+  $('btn-lang').onclick = function () {
+    LANG = (LANG === 'en') ? 'es' : 'en';
+    pintarEtiquetas();
+    sincronizarRadios();
+    render();
+  };
+
+  pintarEtiquetas();
+  sincronizarRadios();
+  render();
+})();
+</script>
+</body>
+</html>

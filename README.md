@@ -48,14 +48,30 @@ the port never drifted from it. No network calls, no build step, no dependencies
 | Demo | What it answers | Answer key |
 |---|---|---|
 | [Electromagnetic field classifier](https://alexisromtz-lab.github.io/auditor-toolkit/demo/clasificador-de-campos/) | Which algebraic class does a field `(E, B)` belong to — and what survives every change of frame? | 66 cases + 8 border controls |
+| [Does your null have teeth?](https://alexisromtz-lab.github.io/auditor-toolkit/demo/nulo-con-dientes/) | Is this permutation test a null for the invariant it claims to destroy? Five resamplers, two invariants, four states. | 140 cases |
 
-The engine the port was taken from lives in a private repository. What is public —
-and enough — is the answer key and the check that re-runs the port against it:
+The engines the ports were taken from live in a private repository. What is public —
+and enough — is the answer key and the check that re-runs each port against it:
 
 ```
 python3 demo/clasificador-de-campos/verificar_paridad.py   # parity against the frozen key
 node    demo/clasificador-de-campos/verificar_ui.js        # the page actually starts
+python3 demo/nulo-con-dientes/verificar_paridad.py         # same, for the resampling null
+node    demo/nulo-con-dientes/verificar_ui.js
+python3 -m pytest tests/ -q                                # all of the above, plus the mutants
 ```
+
+### What "did not drift" means, exactly
+
+The second piece states its own limit instead of claiming more than it can prove.
+Every **discrete** output — state, return code, both verdicts, sample count — is
+identical on all 140 frozen cases. Floats are compared by ULP distance and stay
+within **1 ULP measured, 4 declared**. The bound is not a fudge: CPython routes
+`x**2` to the system `libm`, which is not correctly rounded, so `x**2 != x*x` for
+about 1 in 800 doubles on this machine — no cross-language port can be bit-exact
+there without reimplementing the host libm, which would pin the answer key to one
+machine. The page therefore claims **identical verdicts**, never "bit-identical",
+and the falsifier fails if a discrete field ever moves.
 
 ---
 

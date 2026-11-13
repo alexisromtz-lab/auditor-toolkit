@@ -30,15 +30,32 @@ de compilación, sin dependencias.
 | Demo | Qué contesta | Banco de respuestas |
 |---|---|---|
 | [Clasificador de campos electromagnéticos](https://alexisromtz-lab.github.io/auditor-toolkit/demo/clasificador-de-campos/) | ¿A qué clase algebraica pertenece un campo `(E, B)` — y qué sobrevive a todo cambio de marco? | 66 casos + 8 controles de borde |
+| [¿Tu nulo tiene dientes?](https://alexisromtz-lab.github.io/auditor-toolkit/demo/nulo-con-dientes/) | ¿Este test de permutación es un nulo para el invariante que dice destruir? Cinco remuestreadores, dos invariantes, cuatro estados. | 140 casos |
 
-El motor del que se tomó el port vive en un repositorio privado. Lo que sí es
-público —y suficiente— es el banco de respuestas y la comprobación que vuelve a
-correr el port contra él:
+Los motores de los que se tomaron los ports viven en un repositorio privado. Lo
+que sí es público —y suficiente— es el banco de respuestas y la comprobación que
+vuelve a correr cada port contra él:
 
 ```
 python3 demo/clasificador-de-campos/verificar_paridad.py   # paridad contra el banco congelado
 node    demo/clasificador-de-campos/verificar_ui.js        # la página arranca de verdad
+python3 demo/nulo-con-dientes/verificar_paridad.py         # lo mismo, para el nulo de remuestreo
+node    demo/nulo-con-dientes/verificar_ui.js
+python3 -m pytest tests/ -q                                # todo lo anterior, más los mutantes
 ```
+
+### Qué significa «no se desvió», exactamente
+
+La segunda pieza declara su límite en vez de prometer de más. Toda salida
+**discreta** —estado, código de retorno, los dos veredictos, número de muestras—
+es idéntica en los 140 casos congelados. Los flotantes se comparan por distancia
+en ULP y quedan dentro de **1 ULP medido, 4 declarados**. La cota no es un
+apaño: CPython manda `x**2` a la `libm` del sistema, que no redondea
+correctamente, así que `x**2 != x*x` en uno de cada ~800 dobles de esta máquina —
+ningún port entre lenguajes puede ser bit a bit ahí sin reimplementar la libm del
+anfitrión, y eso ataría el banco de respuestas a una sola máquina. Por eso la
+página afirma **veredictos idénticos**, nunca «bit a bit», y el falsificador falla
+si un campo discreto se mueve.
 
 ---
 
