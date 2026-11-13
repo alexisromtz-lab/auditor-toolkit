@@ -29,6 +29,8 @@
     color:var(--ink);font-family:var(--mono);font-size:13px;padding:7px 8px}
   .vec input:focus{outline:none;border-color:var(--violet)}
   .axis-hint{grid-column:2 / -1;font-family:var(--mono);font-size:11px;color:var(--dim);margin-top:-4px}
+  .exacto{grid-column:2 / -1;font-family:var(--mono);font-size:10.5px;color:#7f8da0;
+    line-height:1.5;margin-top:-2px;word-break:break-word}
   .presets{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 4px}
   button{background:#1b2130;border:1px solid var(--line);color:var(--ink);border-radius:7px;
     padding:6px 10px;font-size:12.5px;cursor:pointer;font-family:inherit;transition:.12s}
@@ -87,6 +89,7 @@
       <input id="e1" type="text" inputmode="decimal" value="0">
       <input id="e2" type="text" inputmode="decimal" value="0">
       <div class="axis-hint">x&nbsp;&nbsp;&nbsp;&nbsp;y&nbsp;&nbsp;&nbsp;&nbsp;z &nbsp;· V/m</div>
+      <div class="exacto" id="exacto-e"></div>
     </div>
     <div class="vec">
       <label>B</label>
@@ -94,6 +97,7 @@
       <input id="b1" type="text" inputmode="decimal" value="3.3356409519815204e-9">
       <input id="b2" type="text" inputmode="decimal" value="0">
       <div class="axis-hint">x&nbsp;&nbsp;&nbsp;&nbsp;y&nbsp;&nbsp;&nbsp;&nbsp;z &nbsp;· T</div>
+      <div class="exacto" id="exacto-b"></div>
     </div>
 
     <div class="presets">
@@ -574,6 +578,17 @@ if (typeof module !== 'undefined' && module.exports) {
 
     const rep = clasificar(E2, B2);
     $('betaOut').textContent = beta[axis].toFixed(3);
+
+    // La caja mide 88 px: `3.3356409519815204e-9` no cabe y el exponente queda
+    // fuera, asi que el campo se leia 1e9 veces mas grande de lo que es. El valor
+    // exacto se publica en la linea de abajo; los inputs siguen siendo la unica
+    // fuente que el motor lee.
+    [['exacto-e', 'E', ['e0', 'e1', 'e2'], 'V/m'],
+     ['exacto-b', 'B', ['b0', 'b1', 'b2'], 'T']].forEach(([box, nombre, ids, unidad]) => {
+      $(box).textContent = nombre + ' = (' +
+        ids.map(i => $(i).value.trim()).join(', ') + ') ' + unidad;
+      ids.forEach(i => { $(i).title = $(i).value.trim() + ' ' + unidad; });
+    });
 
     const badge = $('badge');
     badge.className = 'class-badge ' + (

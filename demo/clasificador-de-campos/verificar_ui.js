@@ -259,6 +259,29 @@ if (!casoNulo) {
   }
 }
 
+// Un numero que no cabe en su caja no se ve. Medido en el sitio publicado el
+// 13-Nov-2026: el input de 88 px mostraba `3.3356409` y el exponente `e-9`
+// caia fuera de la caja, asi que el campo nulo se leia 1e9 veces mas grande de
+// lo que es. El ancho no se puede medir sin layout; lo que SI se puede exigir
+// es que el valor completo se publique en algun sitio visible.
+if (!errores.length) {
+  for (const [ids, caja] of [[['e0', 'e1', 'e2'], 'exacto-e'],
+                             [['b0', 'b1', 'b2'], 'exacto-b']]) {
+    const publicado = (escrituras.get(caja) || new Map()).get('textContent') || '';
+    if (!publicado) {
+      fallas.push(`el vector ${ids[0][0].toUpperCase()} no publica su valor exacto: ${caja} quedo vacio`);
+      continue;
+    }
+    for (const id of ids) {
+      const el = cache.get(id);
+      const v = el ? String(el.value).trim() : '';
+      if (v && !publicado.includes(v)) {
+        fallas.push(`el valor de ${id} (${v}) no aparece completo en ${caja}: ${JSON.stringify(publicado)}`);
+      }
+    }
+  }
+}
+
 // ------------------------------------------------------------------ reporte
 if (fallas.length) {
   for (const f of fallas) console.error(`FALLA ${f}`);

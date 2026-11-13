@@ -74,6 +74,35 @@ class DemoClasificadorTests(unittest.TestCase):
             self.assertEqual(p.returncode, 1, f"esperaba RC 1, dio {p.returncode}")
             self.assertIn("rI1_que_no_existe", p.stderr)
 
+    @unittest.skipUnless(shutil.which("node"), "sin node no se ejecuta el motor")
+    def test_el_verificador_de_ui_muerde_si_un_valor_no_se_publica(self) -> None:
+        """Un input estrecho esconde el exponente; el valor completo debe salir en texto.
+
+        Medido en el sitio publicado el 13-Nov-2026: la caja mostraba
+        `3.3356409` y el `e-9` caia fuera de ella, asi que el campo nulo se leia
+        1e9 veces mas grande de lo que es. La asercion vive en `verificar_ui.js`;
+        aqui se falsa, para que no se quede como una promesa del comentario.
+        """
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            copia = Path(tmp) / "demo"
+            copia.mkdir()
+            for nombre in ("index.html", "casos.json", "verificar_ui.js"):
+                shutil.copy2(DEMO / nombre, copia / nombre)
+            html = (copia / "index.html").read_text(encoding="utf-8")
+            marcador = ("    [['exacto-e', 'E', ['e0', 'e1', 'e2'], 'V/m'],\n"
+                        "     ['exacto-b', 'B', ['b0', 'b1', 'b2'], 'T']].forEach")
+            self.assertIn(marcador, html, "la mutacion no aplica: cambio la forma del bloque")
+            (copia / "index.html").write_text(html.replace(marcador, "    [].forEach"),
+                                              encoding="utf-8")
+            p = subprocess.run(
+                ["node", str(copia / "verificar_ui.js")],
+                capture_output=True, text=True, cwd=str(copia),
+            )
+            self.assertEqual(p.returncode, 1, f"esperaba RC 1, dio {p.returncode}")
+            self.assertIn("exacto", p.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()
