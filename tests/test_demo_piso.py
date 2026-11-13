@@ -25,6 +25,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import warnings
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -42,11 +43,26 @@ def _copia_temporal(tmp: str) -> Path:
     return copia
 
 
-def _correr_ui(carpeta: Path, timeout: float = 120) -> subprocess.CompletedProcess:
-    return subprocess.run(
-        ["node", str(carpeta / "verificar_ui.js")],
-        capture_output=True, text=True, cwd=str(carpeta), timeout=timeout,
-    )
+def _correr_ui(carpeta: Path, timeout: float = 30, reintentos: int = 1) -> subprocess.CompletedProcess:
+    """Un cuelgue de `node` al apagarse no es un veredicto del verificador.
+
+    Medido en este portatil (node 24.15.0, macOS 26.5.2): 3 de 150 corridas de
+    una pagina mutada no terminaron nunca, y `sample` del proceso vivo lo deja
+    clavado en `WorkerThreadsTaskRunner::Shutdown()` —despues de imprimir el
+    fallo, dentro de `process.exit()`—, no en el codigo que se mide. La pagina
+    intacta: 0 de 200. Se reintenta una vez y se avisa; un cuelgue de verdad
+    cuelga tambien el reintento y el test sigue rojo.
+    """
+    for intento in range(reintentos + 1):
+        try:
+            return subprocess.run(
+                ["node", str(carpeta / "verificar_ui.js")],
+                capture_output=True, text=True, cwd=str(carpeta), timeout=timeout,
+            )
+        except subprocess.TimeoutExpired:
+            if intento == reintentos:
+                raise
+            warnings.warn(f"node no termino en {timeout:.0f}s al apagar; se reintenta una vez")
 
 
 @unittest.skipUnless(DEMO.is_dir(), "la demo no esta en este arbol")

@@ -123,6 +123,46 @@ class DemoUmbralTests(unittest.TestCase):
         self.assertEqual(len(pegados), promesas["cerca_del_umbral"],
                          "la frontera dejó de estar donde la pieza dice que está")
 
+    def test_el_check_ignora_solo_al_observador(self) -> None:
+        """`procedencia.python` es el recibo, no el sujeto: fuera del sujeto y nada más.
+
+        Medido: el mismo oráculo da los mismos 4 270 valores en 3.9.6 y en
+        3.12.13, pero el intérprete se nombra en el fixture. Compararlo byte a
+        byte puso la CI en rojo sobre un oráculo correcto (RC 5 en 3.12, RC 0 en
+        3.9.6, 2 bytes de diferencia). Este test fija las dos mitades: el campo
+        del observador no muerde, y cualquier otro campo del mismo bloque sí.
+        """
+        def check(carpeta: Path) -> subprocess.CompletedProcess:
+            return subprocess.run(
+                [sys.executable, "generar_fixture.py", "--check"],
+                capture_output=True, text=True, cwd=str(carpeta), timeout=600,
+            )
+
+        def pisa(carpeta: Path, ruta: tuple, valor) -> None:
+            datos = json.loads((carpeta / "fixture.json").read_text(encoding="utf-8"))
+            datos[ruta[0]][ruta[1]] = valor
+            (carpeta / "fixture.json").write_text(
+                json.dumps(datos, sort_keys=True, ensure_ascii=False, separators=(",", ":")) + "\n",
+                encoding="utf-8")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            carpeta = _copia_completa(tmp)
+            self.assertEqual(check(carpeta).returncode, 0, "la copia limpia ya no cuadra")
+
+            pisa(carpeta, ("procedencia", "python"), "0.0.0")
+            blanco = check(carpeta)
+            self.assertEqual(blanco.returncode, 0,
+                             f"el intérprete del observador volvió a mandar: {blanco.stderr[:400]}")
+            self.assertIn("procedencia/python=0.0.0", blanco.stdout,
+                          "el check no declara qué dejó fuera del sujeto")
+
+            pisa(carpeta, ("procedencia", "semilla"), 1)
+            sujeto = check(carpeta)
+            self.assertEqual(sujeto.returncode, 5,
+                             f"un campo del sujeto dejó de morder: {sujeto.stdout[:400]}")
+            self.assertIn("cambió el contrato del Monte Carlo", sujeto.stderr,
+                          "el RC 5 dejó de decir qué se movió")
+
     def test_la_pagina_no_toca_el_corpus_privado(self) -> None:
         """Cero enlaces a repositorios privados: el 404 se midió en vivo y se corrigió."""
         html = (DEMO / "index.html").read_text(encoding="utf-8")

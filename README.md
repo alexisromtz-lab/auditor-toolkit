@@ -159,6 +159,27 @@ its own footer. `verificar_paridad.py` now reads the number printed in each lang
 and compares it with the count it just made: **RC 8**, *the footer announces figures
 nobody counted*.
 
+#### What CI found that the local run could not
+
+The first push went red on `ubuntu-latest` / Python 3.12 while the same suite was green
+on the laptop, and the failure was not a defect of the engine: `procedencia.python` —the
+interpreter that recorded the fixture— was part of the bytes being compared. Measured:
+**3.9.6 and 3.12.13 produce the same 4 270 values, bit for bit**; the only difference
+between the two files is the string `3.9.6` → `3.12.13`, two bytes. The falsifier was
+measuring the observer.
+
+`--check` now compares the **subject** — everything except the fields that only describe
+who measured — and prints what it left out, so the exemption is visible instead of
+implied. A test pins both halves: crossing the interpreter stays green, and moving the
+seed is `RC 5` naming `cambió el contrato del Monte Carlo`.
+
+The same session caught a harness flake: `node` (24.15.0, macOS 26.5.2) hangs on
+shutdown in 3 of 150 runs of one *mutated* page — `sample` finds it inside
+`WorkerThreadsTaskRunner::Shutdown()`, after the failure was already printed. Pristine
+page: 0 of 200. The mutation bench of piece 3 now retries once and warns; a real hang
+hangs the retry too. The retry has already fired once on a real run — the suite ended
+green with one `UserWarning`, which is the whole point: the claim is not "it never hangs".
+
 #### What the fourth piece cost
 
 Hand-written lines, generated data excluded, same measure for all four:
@@ -184,6 +205,11 @@ proof that the page is right is not.
 
 Elapsed time is **not measured** here: the sessions were not instrumented, and a
 number typed from memory would be the same defect the footer had.
+
+The first CI run, after publishing, cost **121 more lines** that no column above
+records: 43 prose, 40 test, 38 code — none in the page. A defect in the falsifier does
+not make the piece expensive; it makes the proof expensive, which is what this showcase
+sells.
 
 ---
 

@@ -12,6 +12,13 @@ había un motor interno que portar: el motor se escribió dos veces desde cero.
 Regenerarlo a mano después de tocar el oráculo es el único modo de que un cambio
 de motor no se cuele: `verificar_paridad.py` compara el archivo con lo que el
 oráculo produce ahora, y falla en RC 5 si divergen.
+
+`--check` compara el **sujeto**, no el recibo: `procedencia.python` queda fuera
+porque es estado del observador. La misma semilla da los mismos 4 270 valores
+en 3.9.6 y en 3.12.13 — medido, cero valores distintos — pero el intérprete se
+nombra en el archivo, y compararlo byte a byte convertía un oráculo correcto en
+RC 5 en cuanto corría en otro Python (CI en 3.12, local en 3.9.6: 2 bytes de
+diferencia). Un falsificador que muerde al intérprete no mide el motor.
 """
 from __future__ import annotations
 
@@ -130,6 +137,22 @@ def serializa(datos: dict) -> str:
     return json.dumps(datos, sort_keys=True, ensure_ascii=False, separators=(",", ":")) + "\n"
 
 
+# Campos que describen a quien midió, no a lo medido. Se publican —saber con qué
+# intérprete se congeló el fixture es procedencia— pero no entran en la
+# comparación: el sujeto es la llave de respuestas, no el recibo.
+CAMPOS_DEL_OBSERVADOR = ("procedencia/python",)
+
+
+def _sujeto(datos: dict) -> dict:
+    """El documento sin los campos del observador, para comparar lo comparable."""
+    limpio = json.loads(json.dumps(datos))
+    for ruta in CAMPOS_DEL_OBSERVADOR:
+        cabeza, hoja = ruta.split("/")
+        if isinstance(limpio.get(cabeza), dict):
+            limpio[cabeza].pop(hoja, None)
+    return limpio
+
+
 def _motivos(actual: dict, datos: dict) -> list:
     """Nombra qué se movió. Un RC que no dice qué cambió obliga a adivinar."""
     motivos = []
@@ -157,9 +180,13 @@ def main(argv) -> int:
             print("RC 5 · no hay fixture congelado: corre sin --check para crearlo", file=sys.stderr)
             return 5
         actual = io.open(RUTA_FIXTURE, encoding="utf-8").read()
-        if actual != texto:
+        try:
+            congelado = json.loads(actual)
+        except ValueError:
+            congelado = None
+        if congelado is None or serializa(_sujeto(congelado)) != serializa(_sujeto(datos)):
             try:
-                motivos = _motivos(json.loads(actual), datos)
+                motivos = _motivos(json.loads(actual), datos) if congelado is not None else []
             except ValueError:
                 motivos = ["el fixture congelado no es JSON válido"]
             print("RC 5 · el fixture congelado ya no es lo que el oráculo produce", file=sys.stderr)
@@ -167,7 +194,10 @@ def main(argv) -> int:
                 print("       · " + m, file=sys.stderr)
             print("       regenera con: python3 generar_fixture.py", file=sys.stderr)
             return 5
-        print("RC 0 · fixture congelado == oráculo (%d bytes)" % len(texto.encode("utf-8")))
+        print("RC 0 · fixture congelado == oráculo (%d bytes) · fuera del sujeto: %s"
+              % (len(actual.encode("utf-8")),
+                 ", ".join("%s=%s" % (c, congelado["procedencia"].get(c.split("/")[1], "?"))
+                           for c in CAMPOS_DEL_OBSERVADOR)))
         return 0
     io.open(RUTA_FIXTURE, "w", encoding="utf-8").write(texto)
     print("fixture.json · %d bytes · %d estados · %d en banda" % (

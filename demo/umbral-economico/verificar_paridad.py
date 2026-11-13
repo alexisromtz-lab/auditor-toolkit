@@ -116,6 +116,9 @@ def main() -> int:
     if p.returncode != 0:
         sys.stderr.write(p.stderr or p.stdout)
         return RC_ORACULO_MOVIDO
+    # El check deja fuera del sujeto lo que sólo describe al observador; que se
+    # lea en el reporte, o el lector creería que comparó el archivo entero.
+    linea_oraculo = (p.stdout or "").strip().splitlines()[-1]
 
     # 2 · la página embebe exactamente el motor canónico
     cuerpo = cuerpo_portable()
@@ -227,6 +230,7 @@ def main() -> int:
     print("  cifra publicada en el pie: ES y EN dicen %d · %d · %d" % tuple(medido))
     print("  oráculo público: %s (%s…)" % (datos["procedencia"]["oraculo"],
                                            datos["procedencia"]["sha256_oraculo"][:12]))
+    print("  " + linea_oraculo)
     print("  " + p.stdout.strip().splitlines()[0])
     return 0
 

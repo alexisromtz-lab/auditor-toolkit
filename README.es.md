@@ -146,6 +146,28 @@ mentir en su propio pie. `verificar_paridad.py` ahora lee el número impreso en 
 idioma y lo compara con el conteo que acaba de hacer: **RC 8**, *el pie anuncia cifras
 que nadie contó*.
 
+#### Lo que encontró la CI y la corrida local no podía
+
+El primer push salió rojo en `ubuntu-latest` / Python 3.12 mientras la misma batería
+estaba verde en el portátil, y el fallo no era del motor: `procedencia.python` —el
+intérprete que registró el fixture— estaba dentro de los bytes que se comparaban.
+Medido: **3.9.6 y 3.12.13 producen los mismos 4 270 valores, bit a bit**; la única
+diferencia entre los dos archivos es la cadena `3.9.6` → `3.12.13`, dos bytes. El
+falsificador estaba midiendo al observador.
+
+`--check` ahora compara el **sujeto** —todo menos los campos que sólo describen a quien
+midió— y publica qué dejó fuera, para que la excepción se lea en vez de suponerse. Un
+test fija las dos mitades: cruzar el intérprete sigue verde, y mover la semilla es `RC 5`
+nombrando `cambió el contrato del Monte Carlo`.
+
+La misma sesión cazó una intermitencia del arnés: `node` (24.15.0, macOS 26.5.2) se
+cuelga al apagarse en 3 de 150 corridas de *una* página mutada — `sample` lo encuentra
+dentro de `WorkerThreadsTaskRunner::Shutdown()`, después de haber impreso el fallo. La
+página intacta: 0 de 200. El banco de mutaciones de la pieza 3 reintenta una vez y avisa;
+un cuelgue de verdad cuelga también el reintento. El reintento ya se disparó en una
+corrida real: la batería terminó verde con un `UserWarning`, que es justo el punto —la
+afirmación no es «nunca se cuelga».
+
 #### Lo que costó la cuarta pieza
 
 Líneas escritas a mano, sin datos generados, con la misma medida para las cuatro:
@@ -171,6 +193,11 @@ a propósito: la página es barata, la prueba de que la página está bien no lo
 
 El tiempo transcurrido **no se mide** aquí: las sesiones no estaban instrumentadas, y
 un número dictado de memoria sería el mismo defecto que tenía el pie.
+
+La primera corrida de CI, ya publicado, costó **121 líneas** más que ninguna columna de
+arriba recoge: 43 de prosa, 40 de test y 38 de código, ninguna en la página. Un defecto
+del falsificador no encarece la pieza; encarece la prueba —que es lo que este escaparate
+vende.
 
 ---
 
