@@ -1,0 +1,3275 @@
+{
+ "procedencia": {
+  "oraculo": "clasificador_campo_algebraico.py",
+  "commit": "11a567f0c0929c7cc40535e01ab246f432eeb8fb",
+  "blob": "c5713935234b1c26d728c718c51caf022996bc56",
+  "remoto": "https://github.com/alexisromtz-lab/platino-labs.git",
+  "generado_por": "demo/clasificador-de-campos/verificar_paridad.py --oraculo"
+ },
+ "control_sintetico": [
+  {
+   "I1": 0.0,
+   "I2": 1.1368683772161604e-14,
+   "escala": 1.0,
+   "esperado": "SIN_MARCO_DE_REPOSO"
+  },
+  {
+   "I1": 0.0,
+   "I2": 5.684341886080802e-15,
+   "escala": 1.0,
+   "esperado": "NULO_RADIACION"
+  },
+  {
+   "I1": 0.0,
+   "I2": 8.526512829121202e-15,
+   "escala": 1.0,
+   "esperado": "SIN_MARCO_DE_REPOSO"
+  },
+  {
+   "I1": 4.263256414560601e-15,
+   "I2": 5.684341886080802e-15,
+   "escala": 1.0,
+   "esperado": "NULO_RADIACION"
+  },
+  {
+   "I1": -7.105427357601002e-15,
+   "I2": 0.0,
+   "escala": 1.0,
+   "esperado": "NULO_RADIACION"
+  },
+  {
+   "I1": 0.0,
+   "I2": 0.0,
+   "escala": 0.0,
+   "esperado": "VACIO"
+  },
+  {
+   "I1": 2.842170943040401e-14,
+   "I2": 0.0,
+   "escala": 1.0,
+   "esperado": "TIPO_ELECTRICO"
+  },
+  {
+   "I1": -2.842170943040401e-14,
+   "I2": 0.0,
+   "escala": 1.0,
+   "esperado": "TIPO_MAGNETICO"
+  }
+ ],
+ "casos": [
+  {
+   "nombre": "nulo",
+   "E": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "B": [
+    0.0,
+    3.3356409519815204e-09,
+    0.0
+   ],
+   "beta": null,
+   "esperado": {
+    "clase": "NULO_RADIACION",
+    "estado": "MEDIDO",
+    "E": [
+     1.0,
+     0.0,
+     0.0
+    ],
+    "cB": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "escala": 1.0,
+    "I1_algebra": 0.0,
+    "I2_algebra": 0.0,
+    "I1_vector": 0.0,
+    "I2_vector": 0.0,
+    "deriva_relativa": 0.0,
+    "eps": 1e-09,
+    "piso_nulo": 1.4210854715202004e-14,
+    "margen_de_clase": 0.0,
+    "marco_sin_b": {
+     "estado": "SINGULARIDAD_DE_MARCO",
+     "beta": [
+      0.0,
+      0.0,
+      1.0
+     ],
+     "norma_beta": 1.0,
+     "gamma": null,
+     "motivo": "|beta| >= 1: el marco que quitaria B no existe, esta en el cono de luz",
+     "gamma_infinita": true
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": ""
+   }
+  },
+  {
+   "nombre": "electrico",
+   "E": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "B": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "beta": null,
+   "esperado": {
+    "clase": "TIPO_ELECTRICO",
+    "estado": "MEDIDO",
+    "E": [
+     1.0,
+     0.0,
+     0.0
+    ],
+    "cB": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "escala": 1.0,
+    "I1_algebra": 1.0,
+    "I2_algebra": 0.0,
+    "I1_vector": 1.0,
+    "I2_vector": 0.0,
+    "deriva_relativa": 0.0,
+    "eps": 1e-09,
+    "piso_nulo": 1.4210854715202004e-14,
+    "margen_de_clase": 1.0,
+    "marco_sin_b": {
+     "estado": "MEDIDO",
+     "beta": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "norma_beta": 0.0,
+     "gamma": 1.0
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": ""
+   }
+  },
+  {
+   "nombre": "magnetico",
+   "E": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "B": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "beta": null,
+   "esperado": {
+    "clase": "TIPO_MAGNETICO",
+    "estado": "MEDIDO",
+    "E": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "cB": [
+     0.0,
+     0.0,
+     299792458.0
+    ],
+    "escala": 299792458.0,
+    "I1_algebra": -8.987551787368176e+16,
+    "I2_algebra": 0.0,
+    "I1_vector": -8.987551787368176e+16,
+    "I2_vector": 0.0,
+    "deriva_relativa": 0.0,
+    "eps": 1e-09,
+    "piso_nulo": 1277.2079269564324,
+    "margen_de_clase": 1.0,
+    "marco_sin_b": {
+     "estado": "NO_MEDIDO",
+     "motivo": "|E| nulo: la direccion del boost no esta definida"
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": ""
+   }
+  },
+  {
+   "nombre": "oblicuo",
+   "E": [
+    1.0,
+    0.4,
+    0.0
+   ],
+   "B": [
+    0.2,
+    0.0,
+    0.9
+   ],
+   "beta": null,
+   "esperado": {
+    "clase": "TIPO_MAGNETICO",
+    "estado": "MEDIDO",
+    "E": [
+     1.0,
+     0.4,
+     0.0
+    ],
+    "cB": [
+     59958491.6,
+     0.0,
+     269813212.2
+    ],
+    "escala": 276394989.44921106,
+    "I1_algebra": -7.639419019262949e+16,
+    "I2_algebra": 59958491.6,
+    "I1_vector": -7.639419019262949e+16,
+    "I2_vector": 59958491.6,
+    "deriva_relativa": 0.0,
+    "eps": 1e-09,
+    "piso_nulo": 1085.6267379129674,
+    "margen_de_clase": 1.0,
+    "marco_sin_b": {
+     "estado": "NO_MEDIDO",
+     "motivo": "fuera del caso ortogonal (E . cB != 0): el boost no es el simple"
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": ""
+   }
+  },
+  {
+   "nombre": "antiparalelo",
+   "E": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "B": [
+    -3.3356409519815204e-09,
+    0.0,
+    0.0
+   ],
+   "beta": null,
+   "esperado": {
+    "clase": "SIN_MARCO_DE_REPOSO",
+    "estado": "MEDIDO",
+    "E": [
+     1.0,
+     0.0,
+     0.0
+    ],
+    "cB": [
+     -1.0,
+     0.0,
+     0.0
+    ],
+    "escala": 1.0,
+    "I1_algebra": 0.0,
+    "I2_algebra": -1.0,
+    "I1_vector": 0.0,
+    "I2_vector": -1.0,
+    "deriva_relativa": 0.0,
+    "eps": 1e-09,
+    "piso_nulo": 1.4210854715202004e-14,
+    "margen_de_clase": 2.0,
+    "marco_sin_b": {
+     "estado": "NO_MEDIDO",
+     "motivo": "fuera del caso ortogonal (E . cB != 0): el boost no es el simple"
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": ""
+   }
+  },
+  {
+   "nombre": "vacio",
+   "E": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "B": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "beta": null,
+   "esperado": {
+    "clase": "VACIO",
+    "estado": "MEDIDO",
+    "E": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "cB": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "escala": 0.0,
+    "I1_algebra": 0.0,
+    "I2_algebra": 0.0,
+    "I1_vector": 0.0,
+    "I2_vector": 0.0,
+    "deriva_relativa": 0.0,
+    "eps": 1e-09,
+    "piso_nulo": 0.0,
+    "margen_de_clase": 0.0,
+    "marco_sin_b": {
+     "estado": "NO_MEDIDO",
+     "motivo": "campo vacio: no hay marco que buscar"
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": ""
+   }
+  },
+  {
+   "nombre": "nulo_boost_x+",
+   "E": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "B": [
+    0.0,
+    3.3356409519815204e-09,
+    0.0
+   ],
+   "beta": [
+    0.6,
+    0.0,
+    0.0
+   ],
+   "esperado": {
+    "clase": "NULO_RADIACION",
+    "estado": "MEDIDO",
+    "E": [
+     1.0,
+     0.0,
+     0.75
+    ],
+    "cB": [
+     0.0,
+     1.25,
+     0.0
+    ],
+    "escala": 1.25,
+    "I1_algebra": 0.0,
+    "I2_algebra": 0.0,
+    "I1_vector": 0.0,
+    "I2_vector": 0.0,
+    "deriva_relativa": 0.0,
+    "eps": 1e-09,
+    "piso_nulo": 2.220446049250313e-14,
+    "margen_de_clase": 0.0,
+    "marco_sin_b": {
+     "estado": "SINGULARIDAD_DE_MARCO",
+     "beta": [
+      -0.6,
+      0.0,
+      0.8
+     ],
+     "norma_beta": 1.0,
+     "gamma": null,
+     "motivo": "|beta| >= 1: el marco que quitaria B no existe, esta en el cono de luz",
+     "gamma_infinita": true
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": "medido en el marco con beta=(0.6, 0.0, 0.0) · clase previa NULO_RADIACION · la clase se conserva"
+   }
+  },
+  {
+   "nombre": "nulo_boost_x-",
+   "E": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "B": [
+    0.0,
+    3.3356409519815204e-09,
+    0.0
+   ],
+   "beta": [
+    -0.6,
+    0.0,
+    0.0
+   ],
+   "esperado": {
+    "clase": "NULO_RADIACION",
+    "estado": "MEDIDO",
+    "E": [
+     1.0,
+     0.0,
+     -0.75
+    ],
+    "cB": [
+     0.0,
+     1.25,
+     0.0
+    ],
+    "escala": 1.25,
+    "I1_algebra": 0.0,
+    "I2_algebra": 0.0,
+    "I1_vector": 0.0,
+    "I2_vector": 0.0,
+    "deriva_relativa": 0.0,
+    "eps": 1e-09,
+    "piso_nulo": 2.220446049250313e-14,
+    "margen_de_clase": 0.0,
+    "marco_sin_b": {
+     "estado": "SINGULARIDAD_DE_MARCO",
+     "beta": [
+      0.6,
+      -0.0,
+      0.8
+     ],
+     "norma_beta": 1.0,
+     "gamma": null,
+     "motivo": "|beta| >= 1: el marco que quitaria B no existe, esta en el cono de luz",
+     "gamma_infinita": true
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": "medido en el marco con beta=(-0.6, 0.0, 0.0) · clase previa NULO_RADIACION · la clase se conserva"
+   }
+  },
+  {
+   "nombre": "nulo_boost_y+",
+   "E": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "B": [
+    0.0,
+    3.3356409519815204e-09,
+    0.0
+   ],
+   "beta": [
+    0.0,
+    0.6,
+    0.0
+   ],
+   "esperado": {
+    "clase": "NULO_RADIACION",
+    "estado": "MEDIDO",
+    "E": [
+     1.25,
+     0.0,
+     0.0
+    ],
+    "cB": [
+     0.0,
+     1.0,
+     0.75
+    ],
+    "escala": 1.25,
+    "I1_algebra": 0.0,
+    "I2_algebra": 0.0,
+    "I1_vector": 0.0,
+    "I2_vector": 0.0,
+    "deriva_relativa": 0.0,
+    "eps": 1e-09,
+    "piso_nulo": 2.220446049250313e-14,
+    "margen_de_clase": 0.0,
+    "marco_sin_b": {
+     "estado": "SINGULARIDAD_DE_MARCO",
+     "beta": [
+      0.0,
+      -0.6,
+      0.8
+     ],
+     "norma_beta": 1.0,
+     "gamma": null,
+     "motivo": "|beta| >= 1: el marco que quitaria B no existe, esta en el cono de luz",
+     "gamma_infinita": true
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": "medido en el marco con beta=(0.0, 0.6, 0.0) · clase previa NULO_RADIACION · la clase se conserva"
+   }
+  },
+  {
+   "nombre": "nulo_boost_y-",
+   "E": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "B": [
+    0.0,
+    3.3356409519815204e-09,
+    0.0
+   ],
+   "beta": [
+    0.0,
+    -0.6,
+    0.0
+   ],
+   "esperado": {
+    "clase": "NULO_RADIACION",
+    "estado": "MEDIDO",
+    "E": [
+     1.25,
+     0.0,
+     0.0
+    ],
+    "cB": [
+     0.0,
+     1.0,
+     -0.75
+    ],
+    "escala": 1.25,
+    "I1_algebra": 0.0,
+    "I2_algebra": 0.0,
+    "I1_vector": 0.0,
+    "I2_vector": 0.0,
+    "deriva_relativa": 0.0,
+    "eps": 1e-09,
+    "piso_nulo": 2.220446049250313e-14,
+    "margen_de_clase": 0.0,
+    "marco_sin_b": {
+     "estado": "SINGULARIDAD_DE_MARCO",
+     "beta": [
+      -0.0,
+      0.6,
+      0.8
+     ],
+     "norma_beta": 1.0,
+     "gamma": null,
+     "motivo": "|beta| >= 1: el marco que quitaria B no existe, esta en el cono de luz",
+     "gamma_infinita": true
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": "medido en el marco con beta=(0.0, -0.6, 0.0) · clase previa NULO_RADIACION · la clase se conserva"
+   }
+  },
+  {
+   "nombre": "nulo_boost_z+",
+   "E": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "B": [
+    0.0,
+    3.3356409519815204e-09,
+    0.0
+   ],
+   "beta": [
+    0.0,
+    0.0,
+    0.6
+   ],
+   "esperado": {
+    "clase": "NULO_RADIACION",
+    "estado": "MEDIDO",
+    "E": [
+     0.5,
+     0.0,
+     0.0
+    ],
+    "cB": [
+     0.0,
+     0.5,
+     0.0
+    ],
+    "escala": 0.5,
+    "I1_algebra": 0.0,
+    "I2_algebra": 0.0,
+    "I1_vector": 0.0,
+    "I2_vector": 0.0,
+    "deriva_relativa": 0.0,
+    "eps": 1e-09,
+    "piso_nulo": 3.552713678800501e-15,
+    "margen_de_clase": 0.0,
+    "marco_sin_b": {
+     "estado": "SINGULARIDAD_DE_MARCO",
+     "beta": [
+      0.0,
+      0.0,
+      1.0
+     ],
+     "norma_beta": 1.0,
+     "gamma": null,
+     "motivo": "|beta| >= 1: el marco que quitaria B no existe, esta en el cono de luz",
+     "gamma_infinita": true
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": "medido en el marco con beta=(0.0, 0.0, 0.6) · clase previa NULO_RADIACION · la clase se conserva"
+   }
+  },
+  {
+   "nombre": "nulo_boost_z-",
+   "E": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "B": [
+    0.0,
+    3.3356409519815204e-09,
+    0.0
+   ],
+   "beta": [
+    0.0,
+    0.0,
+    -0.6
+   ],
+   "esperado": {
+    "clase": "NULO_RADIACION",
+    "estado": "MEDIDO",
+    "E": [
+     2.0,
+     0.0,
+     0.0
+    ],
+    "cB": [
+     0.0,
+     2.0,
+     0.0
+    ],
+    "escala": 2.0,
+    "I1_algebra": 0.0,
+    "I2_algebra": 0.0,
+    "I1_vector": 0.0,
+    "I2_vector": 0.0,
+    "deriva_relativa": 0.0,
+    "eps": 1e-09,
+    "piso_nulo": 5.684341886080802e-14,
+    "margen_de_clase": 0.0,
+    "marco_sin_b": {
+     "estado": "SINGULARIDAD_DE_MARCO",
+     "beta": [
+      0.0,
+      0.0,
+      1.0
+     ],
+     "norma_beta": 1.0,
+     "gamma": null,
+     "motivo": "|beta| >= 1: el marco que quitaria B no existe, esta en el cono de luz",
+     "gamma_infinita": true
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": "medido en el marco con beta=(0.0, 0.0, -0.6) · clase previa NULO_RADIACION · la clase se conserva"
+   }
+  },
+  {
+   "nombre": "electrico_boost_x+",
+   "E": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "B": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "beta": [
+    0.6,
+    0.0,
+    0.0
+   ],
+   "esperado": {
+    "clase": "TIPO_ELECTRICO",
+    "estado": "MEDIDO",
+    "E": [
+     1.0,
+     0.0,
+     0.0
+    ],
+    "cB": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "escala": 1.0,
+    "I1_algebra": 1.0,
+    "I2_algebra": 0.0,
+    "I1_vector": 1.0,
+    "I2_vector": 0.0,
+    "deriva_relativa": 0.0,
+    "eps": 1e-09,
+    "piso_nulo": 1.4210854715202004e-14,
+    "margen_de_clase": 1.0,
+    "marco_sin_b": {
+     "estado": "MEDIDO",
+     "beta": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "norma_beta": 0.0,
+     "gamma": 1.0
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": "medido en el marco con beta=(0.6, 0.0, 0.0) · clase previa TIPO_ELECTRICO · la clase se conserva"
+   }
+  },
+  {
+   "nombre": "electrico_boost_x-",
+   "E": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "B": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "beta": [
+    -0.6,
+    0.0,
+    0.0
+   ],
+   "esperado": {
+    "clase": "TIPO_ELECTRICO",
+    "estado": "MEDIDO",
+    "E": [
+     1.0,
+     0.0,
+     0.0
+    ],
+    "cB": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "escala": 1.0,
+    "I1_algebra": 1.0,
+    "I2_algebra": 0.0,
+    "I1_vector": 1.0,
+    "I2_vector": 0.0,
+    "deriva_relativa": 0.0,
+    "eps": 1e-09,
+    "piso_nulo": 1.4210854715202004e-14,
+    "margen_de_clase": 1.0,
+    "marco_sin_b": {
+     "estado": "MEDIDO",
+     "beta": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "norma_beta": 0.0,
+     "gamma": 1.0
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": "medido en el marco con beta=(-0.6, 0.0, 0.0) · clase previa TIPO_ELECTRICO · la clase se conserva"
+   }
+  },
+  {
+   "nombre": "electrico_boost_y+",
+   "E": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "B": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "beta": [
+    0.0,
+    0.6,
+    0.0
+   ],
+   "esperado": {
+    "clase": "TIPO_ELECTRICO",
+    "estado": "MEDIDO",
+    "E": [
+     1.25,
+     0.0,
+     0.0
+    ],
+    "cB": [
+     0.0,
+     0.0,
+     0.75
+    ],
+    "escala": 1.25,
+    "I1_algebra": 1.0,
+    "I2_algebra": 0.0,
+    "I1_vector": 1.0,
+    "I2_vector": 0.0,
+    "deriva_relativa": 0.0,
+    "eps": 1e-09,
+    "piso_nulo": 2.220446049250313e-14,
+    "margen_de_clase": 0.64,
+    "marco_sin_b": {
+     "estado": "MEDIDO",
+     "beta": [
+      0.0,
+      -0.6,
+      0.0
+     ],
+     "norma_beta": 0.6,
+     "gamma": 1.25
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": "medido en el marco con beta=(0.0, 0.6, 0.0) · clase previa TIPO_ELECTRICO · la clase se conserva"
+   }
+  },
+  {
+   "nombre": "electrico_boost_y-",
+   "E": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "B": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "beta": [
+    0.0,
+    -0.6,
+    0.0
+   ],
+   "esperado": {
+    "clase": "TIPO_ELECTRICO",
+    "estado": "MEDIDO",
+    "E": [
+     1.25,
+     0.0,
+     0.0
+    ],
+    "cB": [
+     0.0,
+     0.0,
+     -0.75
+    ],
+    "escala": 1.25,
+    "I1_algebra": 1.0,
+    "I2_algebra": 0.0,
+    "I1_vector": 1.0,
+    "I2_vector": 0.0,
+    "deriva_relativa": 0.0,
+    "eps": 1e-09,
+    "piso_nulo": 2.220446049250313e-14,
+    "margen_de_clase": 0.64,
+    "marco_sin_b": {
+     "estado": "MEDIDO",
+     "beta": [
+      -0.0,
+      0.6,
+      0.0
+     ],
+     "norma_beta": 0.6,
+     "gamma": 1.25
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": "medido en el marco con beta=(0.0, -0.6, 0.0) · clase previa TIPO_ELECTRICO · la clase se conserva"
+   }
+  },
+  {
+   "nombre": "electrico_boost_z+",
+   "E": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "B": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "beta": [
+    0.0,
+    0.0,
+    0.6
+   ],
+   "esperado": {
+    "clase": "TIPO_ELECTRICO",
+    "estado": "MEDIDO",
+    "E": [
+     1.25,
+     0.0,
+     0.0
+    ],
+    "cB": [
+     0.0,
+     -0.75,
+     0.0
+    ],
+    "escala": 1.25,
+    "I1_algebra": 1.0,
+    "I2_algebra": 0.0,
+    "I1_vector": 1.0,
+    "I2_vector": 0.0,
+    "deriva_relativa": 0.0,
+    "eps": 1e-09,
+    "piso_nulo": 2.220446049250313e-14,
+    "margen_de_clase": 0.64,
+    "marco_sin_b": {
+     "estado": "MEDIDO",
+     "beta": [
+      0.0,
+      0.0,
+      -0.6
+     ],
+     "norma_beta": 0.6,
+     "gamma": 1.25
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": "medido en el marco con beta=(0.0, 0.0, 0.6) · clase previa TIPO_ELECTRICO · la clase se conserva"
+   }
+  },
+  {
+   "nombre": "electrico_boost_z-",
+   "E": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "B": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "beta": [
+    0.0,
+    0.0,
+    -0.6
+   ],
+   "esperado": {
+    "clase": "TIPO_ELECTRICO",
+    "estado": "MEDIDO",
+    "E": [
+     1.25,
+     0.0,
+     0.0
+    ],
+    "cB": [
+     0.0,
+     0.75,
+     0.0
+    ],
+    "escala": 1.25,
+    "I1_algebra": 1.0,
+    "I2_algebra": 0.0,
+    "I1_vector": 1.0,
+    "I2_vector": 0.0,
+    "deriva_relativa": 0.0,
+    "eps": 1e-09,
+    "piso_nulo": 2.220446049250313e-14,
+    "margen_de_clase": 0.64,
+    "marco_sin_b": {
+     "estado": "MEDIDO",
+     "beta": [
+      0.0,
+      0.0,
+      0.6
+     ],
+     "norma_beta": 0.6,
+     "gamma": 1.25
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": "medido en el marco con beta=(0.0, 0.0, -0.6) · clase previa TIPO_ELECTRICO · la clase se conserva"
+   }
+  },
+  {
+   "nombre": "magnetico_boost_x+",
+   "E": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "B": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "beta": [
+    0.6,
+    0.0,
+    0.0
+   ],
+   "esperado": {
+    "clase": "TIPO_MAGNETICO",
+    "estado": "MEDIDO",
+    "E": [
+     0.0,
+     -224844343.49999997,
+     0.0
+    ],
+    "cB": [
+     0.0,
+     0.0,
+     374740572.5
+    ],
+    "escala": 374740572.5,
+    "I1_algebra": -8.98755178736818e+16,
+    "I2_algebra": 0.0,
+    "I1_vector": -8.98755178736818e+16,
+    "I2_vector": 0.0,
+    "deriva_relativa": 0.0,
+    "eps": 1e-09,
+    "piso_nulo": 1995.6373858694258,
+    "margen_de_clase": 0.6400000000000002,
+    "marco_sin_b": {
+     "estado": "SINGULARIDAD_DE_MARCO",
+     "beta": [
+      -1.666666666666667,
+      0.0,
+      0.0
+     ],
+     "norma_beta": 1.666666666666667,
+     "gamma": null,
+     "motivo": "|beta| >= 1: el marco que quitaria B no existe, esta en el cono de luz",
+     "gamma_infinita": true
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": "medido en el marco con beta=(0.6, 0.0, 0.0) · clase previa TIPO_MAGNETICO · la clase se conserva"
+   }
+  },
+  {
+   "nombre": "magnetico_boost_x-",
+   "E": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "B": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "beta": [
+    -0.6,
+    0.0,
+    0.0
+   ],
+   "esperado": {
+    "clase": "TIPO_MAGNETICO",
+    "estado": "MEDIDO",
+    "E": [
+     0.0,
+     224844343.49999997,
+     0.0
+    ],
+    "cB": [
+     0.0,
+     0.0,
+     374740572.5
+    ],
+    "escala": 374740572.5,
+    "I1_algebra": -8.98755178736818e+16,
+    "I2_algebra": 0.0,
+    "I1_vector": -8.98755178736818e+16,
+    "I2_vector": 0.0,
+    "deriva_relativa": 0.0,
+    "eps": 1e-09,
+    "piso_nulo": 1995.6373858694258,
+    "margen_de_clase": 0.6400000000000002,
+    "marco_sin_b": {
+     "estado": "SINGULARIDAD_DE_MARCO",
+     "beta": [
+      1.666666666666667,
+      0.0,
+      0.0
+     ],
+     "norma_beta": 1.666666666666667,
+     "gamma": null,
+     "motivo": "|beta| >= 1: el marco que quitaria B no existe, esta en el cono de luz",
+     "gamma_infinita": true
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": "medido en el marco con beta=(-0.6, 0.0, 0.0) · clase previa TIPO_MAGNETICO · la clase se conserva"
+   }
+  },
+  {
+   "nombre": "magnetico_boost_y+",
+   "E": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "B": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "beta": [
+    0.0,
+    0.6,
+    0.0
+   ],
+   "esperado": {
+    "clase": "TIPO_MAGNETICO",
+    "estado": "MEDIDO",
+    "E": [
+     224844343.49999997,
+     0.0,
+     0.0
+    ],
+    "cB": [
+     0.0,
+     0.0,
+     374740572.5
+    ],
+    "escala": 374740572.5,
+    "I1_algebra": -8.98755178736818e+16,
+    "I2_algebra": 0.0,
+    "I1_vector": -8.98755178736818e+16,
+    "I2_vector": 0.0,
+    "deriva_relativa": 0.0,
+    "eps": 1e-09,
+    "piso_nulo": 1995.6373858694258,
+    "margen_de_clase": 0.6400000000000002,
+    "marco_sin_b": {
+     "estado": "SINGULARIDAD_DE_MARCO",
+     "beta": [
+      0.0,
+      -1.666666666666667,
+      0.0
+     ],
+     "norma_beta": 1.666666666666667,
+     "gamma": null,
+     "motivo": "|beta| >= 1: el marco que quitaria B no existe, esta en el cono de luz",
+     "gamma_infinita": true
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": "medido en el marco con beta=(0.0, 0.6, 0.0) · clase previa TIPO_MAGNETICO · la clase se conserva"
+   }
+  },
+  {
+   "nombre": "magnetico_boost_y-",
+   "E": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "B": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "beta": [
+    0.0,
+    -0.6,
+    0.0
+   ],
+   "esperado": {
+    "clase": "TIPO_MAGNETICO",
+    "estado": "MEDIDO",
+    "E": [
+     -224844343.49999997,
+     0.0,
+     0.0
+    ],
+    "cB": [
+     0.0,
+     0.0,
+     374740572.5
+    ],
+    "escala": 374740572.5,
+    "I1_algebra": -8.98755178736818e+16,
+    "I2_algebra": 0.0,
+    "I1_vector": -8.98755178736818e+16,
+    "I2_vector": 0.0,
+    "deriva_relativa": 0.0,
+    "eps": 1e-09,
+    "piso_nulo": 1995.6373858694258,
+    "margen_de_clase": 0.6400000000000002,
+    "marco_sin_b": {
+     "estado": "SINGULARIDAD_DE_MARCO",
+     "beta": [
+      0.0,
+      1.666666666666667,
+      -0.0
+     ],
+     "norma_beta": 1.666666666666667,
+     "gamma": null,
+     "motivo": "|beta| >= 1: el marco que quitaria B no existe, esta en el cono de luz",
+     "gamma_infinita": true
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": "medido en el marco con beta=(0.0, -0.6, 0.0) · clase previa TIPO_MAGNETICO · la clase se conserva"
+   }
+  },
+  {
+   "nombre": "magnetico_boost_z+",
+   "E": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "B": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "beta": [
+    0.0,
+    0.0,
+    0.6
+   ],
+   "esperado": {
+    "clase": "TIPO_MAGNETICO",
+    "estado": "MEDIDO",
+    "E": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "cB": [
+     0.0,
+     0.0,
+     299792458.0
+    ],
+    "escala": 299792458.0,
+    "I1_algebra": -8.987551787368176e+16,
+    "I2_algebra": 0.0,
+    "I1_vector": -8.987551787368176e+16,
+    "I2_vector": 0.0,
+    "deriva_relativa": 0.0,
+    "eps": 1e-09,
+    "piso_nulo": 1277.2079269564324,
+    "margen_de_clase": 1.0,
+    "marco_sin_b": {
+     "estado": "NO_MEDIDO",
+     "motivo": "|E| nulo: la direccion del boost no esta definida"
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": "medido en el marco con beta=(0.0, 0.0, 0.6) · clase previa TIPO_MAGNETICO · la clase se conserva"
+   }
+  },
+  {
+   "nombre": "magnetico_boost_z-",
+   "E": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "B": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "beta": [
+    0.0,
+    0.0,
+    -0.6
+   ],
+   "esperado": {
+    "clase": "TIPO_MAGNETICO",
+    "estado": "MEDIDO",
+    "E": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "cB": [
+     0.0,
+     0.0,
+     299792458.0
+    ],
+    "escala": 299792458.0,
+    "I1_algebra": -8.987551787368176e+16,
+    "I2_algebra": 0.0,
+    "I1_vector": -8.987551787368176e+16,
+    "I2_vector": 0.0,
+    "deriva_relativa": 0.0,
+    "eps": 1e-09,
+    "piso_nulo": 1277.2079269564324,
+    "margen_de_clase": 1.0,
+    "marco_sin_b": {
+     "estado": "NO_MEDIDO",
+     "motivo": "|E| nulo: la direccion del boost no esta definida"
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": "medido en el marco con beta=(0.0, 0.0, -0.6) · clase previa TIPO_MAGNETICO · la clase se conserva"
+   }
+  },
+  {
+   "nombre": "oblicuo_boost_x+",
+   "E": [
+    1.0,
+    0.4,
+    0.0
+   ],
+   "B": [
+    0.2,
+    0.0,
+    0.9
+   ],
+   "beta": [
+    0.6,
+    0.0,
+    0.0
+   ],
+   "esperado": {
+    "clase": "TIPO_MAGNETICO",
+    "estado": "MEDIDO",
+    "E": [
+     1.0,
+     -202359908.64999998,
+     0.0
+    ],
+    "cB": [
+     59958491.6,
+     0.0,
+     337266514.95
+    ],
+    "escala": 342554700.48076385,
+    "I1_algebra": -7.63941901926295e+16,
+    "I2_algebra": 59958491.6,
+    "I1_vector": -7.639419019262949e+16,
+    "I2_vector": 59958491.6,
+    "deriva_relativa": 1.3635156287263369e-16,
+    "eps": 1e-09,
+    "piso_nulo": 1667.5545967567848,
+    "margen_de_clase": 0.6510292016971411,
+    "marco_sin_b": {
+     "estado": "NO_MEDIDO",
+     "motivo": "fuera del caso ortogonal (E . cB != 0): el boost no es el simple"
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": "medido en el marco con beta=(0.6, 0.0, 0.0) · clase previa TIPO_MAGNETICO · la clase se conserva"
+   }
+  },
+  {
+   "nombre": "oblicuo_boost_x-",
+   "E": [
+    1.0,
+    0.4,
+    0.0
+   ],
+   "B": [
+    0.2,
+    0.0,
+    0.9
+   ],
+   "beta": [
+    -0.6,
+    0.0,
+    0.0
+   ],
+   "esperado": {
+    "clase": "TIPO_MAGNETICO",
+    "estado": "MEDIDO",
+    "E": [
+     1.0,
+     202359909.65,
+     0.0
+    ],
+    "cB": [
+     59958491.6,
+     0.0,
+     337266515.55
+    ],
+    "escala": 342554701.0715014,
+    "I1_algebra": -7.63941901926295e+16,
+    "I2_algebra": 59958491.6,
+    "I1_vector": -7.63941901926295e+16,
+    "I2_vector": 59958491.6,
+    "deriva_relativa": 0.0,
+    "eps": 1e-09,
+    "piso_nulo": 1667.5546025081994,
+    "margen_de_clase": 0.6510291994517341,
+    "marco_sin_b": {
+     "estado": "NO_MEDIDO",
+     "motivo": "fuera del caso ortogonal (E . cB != 0): el boost no es el simple"
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": "medido en el marco con beta=(-0.6, 0.0, 0.0) · clase previa TIPO_MAGNETICO · la clase se conserva"
+   }
+  },
+  {
+   "nombre": "oblicuo_boost_y+",
+   "E": [
+    1.0,
+    0.4,
+    0.0
+   ],
+   "B": [
+    0.2,
+    0.0,
+    0.9
+   ],
+   "beta": [
+    0.0,
+    0.6,
+    0.0
+   ],
+   "esperado": {
+    "clase": "TIPO_MAGNETICO",
+    "estado": "MEDIDO",
+    "E": [
+     202359910.39999998,
+     0.4,
+     -44968868.7
+    ],
+    "cB": [
+     74948114.5,
+     0.0,
+     337266516.0
+    ],
+    "escala": 345493737.54365414,
+    "I1_algebra": -7.63941901926295e+16,
+    "I2_algebra": 59958490.0,
+    "I1_vector": -7.63941901926295e+16,
+    "I2_vector": 59958490.0,
+    "deriva_relativa": 0.0,
+    "eps": 1e-09,
+    "piso_nulo": 1696.2917851782802,
+    "margen_de_clase": 0.6399999972875352,
+    "marco_sin_b": {
+     "estado": "NO_MEDIDO",
+     "motivo": "fuera del caso ortogonal (E . cB != 0): el boost no es el simple"
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": "medido en el marco con beta=(0.0, 0.6, 0.0) · clase previa TIPO_MAGNETICO · la clase se conserva"
+   }
+  },
+  {
+   "nombre": "oblicuo_boost_y-",
+   "E": [
+    1.0,
+    0.4,
+    0.0
+   ],
+   "B": [
+    0.2,
+    0.0,
+    0.9
+   ],
+   "beta": [
+    0.0,
+    -0.6,
+    0.0
+   ],
+   "esperado": {
+    "clase": "TIPO_MAGNETICO",
+    "estado": "MEDIDO",
+    "E": [
+     -202359907.89999998,
+     0.4,
+     44968868.7
+    ],
+    "cB": [
+     74948114.5,
+     0.0,
+     337266514.49999994
+    ],
+    "escala": 345493736.0793735,
+    "I1_algebra": -7.639419019262947e+16,
+    "I2_algebra": 59958492.0,
+    "I1_vector": -7.639419019262947e+16,
+    "I2_vector": 59958492.0,
+    "deriva_relativa": 0.0,
+    "eps": 1e-09,
+    "piso_nulo": 1696.291770799743,
+    "margen_de_clase": 0.6400000027124647,
+    "marco_sin_b": {
+     "estado": "NO_MEDIDO",
+     "motivo": "fuera del caso ortogonal (E . cB != 0): el boost no es el simple"
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": "medido en el marco con beta=(0.0, -0.6, 0.0) · clase previa TIPO_MAGNETICO · la clase se conserva"
+   }
+  },
+  {
+   "nombre": "oblicuo_boost_z+",
+   "E": [
+    1.0,
+    0.4,
+    0.0
+   ],
+   "B": [
+    0.2,
+    0.0,
+    0.9
+   ],
+   "beta": [
+    0.0,
+    0.0,
+    0.6
+   ],
+   "esperado": {
+    "clase": "TIPO_MAGNETICO",
+    "estado": "MEDIDO",
+    "E": [
+     1.25,
+     44968869.2,
+     0.0
+    ],
+    "cB": [
+     74948114.80000001,
+     -0.75,
+     269813212.20000005
+    ],
+    "escala": 280029265.23803943,
+    "I1_algebra": -7.639419019262952e+16,
+    "I2_algebra": 59958491.60000001,
+    "I1_vector": -7.639419019262954e+16,
+    "I2_vector": 59958491.60000001,
+    "deriva_relativa": 2.0403897864354013e-16,
+    "eps": 1e-09,
+    "piso_nulo": 1114.3639169085338,
+    "margen_de_clase": 0.9742120338252799,
+    "marco_sin_b": {
+     "estado": "NO_MEDIDO",
+     "motivo": "fuera del caso ortogonal (E . cB != 0): el boost no es el simple"
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": "medido en el marco con beta=(0.0, 0.0, 0.6) · clase previa TIPO_MAGNETICO · la clase se conserva"
+   }
+  },
+  {
+   "nombre": "oblicuo_boost_z-",
+   "E": [
+    1.0,
+    0.4,
+    0.0
+   ],
+   "B": [
+    0.2,
+    0.0,
+    0.9
+   ],
+   "beta": [
+    0.0,
+    0.0,
+    -0.6
+   ],
+   "esperado": {
+    "clase": "TIPO_MAGNETICO",
+    "estado": "MEDIDO",
+    "E": [
+     1.25,
+     -44968868.2,
+     0.0
+    ],
+    "cB": [
+     74948114.2,
+     0.75,
+     269813212.20000005
+    ],
+    "escala": 280029265.0774531,
+    "I1_algebra": -7.639419019262952e+16,
+    "I2_algebra": 59958491.599999994,
+    "I1_vector": -7.639419019262952e+16,
+    "I2_vector": 59958491.599999994,
+    "deriva_relativa": 0.0,
+    "eps": 1e-09,
+    "piso_nulo": 1114.3639156304414,
+    "margen_de_clase": 0.9742120349426285,
+    "marco_sin_b": {
+     "estado": "NO_MEDIDO",
+     "motivo": "fuera del caso ortogonal (E . cB != 0): el boost no es el simple"
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": "medido en el marco con beta=(0.0, 0.0, -0.6) · clase previa TIPO_MAGNETICO · la clase se conserva"
+   }
+  },
+  {
+   "nombre": "antiparalelo_boost_x+",
+   "E": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "B": [
+    -3.3356409519815204e-09,
+    0.0,
+    0.0
+   ],
+   "beta": [
+    0.6,
+    0.0,
+    0.0
+   ],
+   "esperado": {
+    "clase": "SIN_MARCO_DE_REPOSO",
+    "estado": "MEDIDO",
+    "E": [
+     1.0,
+     0.0,
+     0.0
+    ],
+    "cB": [
+     -1.0,
+     0.0,
+     0.0
+    ],
+    "escala": 1.0,
+    "I1_algebra": 0.0,
+    "I2_algebra": -1.0,
+    "I1_vector": 0.0,
+    "I2_vector": -1.0,
+    "deriva_relativa": 0.0,
+    "eps": 1e-09,
+    "piso_nulo": 1.4210854715202004e-14,
+    "margen_de_clase": 2.0,
+    "marco_sin_b": {
+     "estado": "NO_MEDIDO",
+     "motivo": "fuera del caso ortogonal (E . cB != 0): el boost no es el simple"
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": "medido en el marco con beta=(0.6, 0.0, 0.0) · clase previa SIN_MARCO_DE_REPOSO · la clase se conserva"
+   }
+  },
+  {
+   "nombre": "antiparalelo_boost_x-",
+   "E": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "B": [
+    -3.3356409519815204e-09,
+    0.0,
+    0.0
+   ],
+   "beta": [
+    -0.6,
+    0.0,
+    0.0
+   ],
+   "esperado": {
+    "clase": "SIN_MARCO_DE_REPOSO",
+    "estado": "MEDIDO",
+    "E": [
+     1.0,
+     0.0,
+     0.0
+    ],
+    "cB": [
+     -1.0,
+     0.0,
+     0.0
+    ],
+    "escala": 1.0,
+    "I1_algebra": 0.0,
+    "I2_algebra": -1.0,
+    "I1_vector": 0.0,
+    "I2_vector": -1.0,
+    "deriva_relativa": 0.0,
+    "eps": 1e-09,
+    "piso_nulo": 1.4210854715202004e-14,
+    "margen_de_clase": 2.0,
+    "marco_sin_b": {
+     "estado": "NO_MEDIDO",
+     "motivo": "fuera del caso ortogonal (E . cB != 0): el boost no es el simple"
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": "medido en el marco con beta=(-0.6, 0.0, 0.0) · clase previa SIN_MARCO_DE_REPOSO · la clase se conserva"
+   }
+  },
+  {
+   "nombre": "antiparalelo_boost_y+",
+   "E": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "B": [
+    -3.3356409519815204e-09,
+    0.0,
+    0.0
+   ],
+   "beta": [
+    0.0,
+    0.6,
+    0.0
+   ],
+   "esperado": {
+    "clase": "SIN_MARCO_DE_REPOSO",
+    "estado": "MEDIDO",
+    "E": [
+     1.25,
+     0.0,
+     0.75
+    ],
+    "cB": [
+     -1.25,
+     0.0,
+     0.75
+    ],
+    "escala": 1.4577379737113252,
+    "I1_algebra": 0.0,
+    "I2_algebra": -1.0,
+    "I1_vector": 0.0,
+    "I2_vector": -1.0,
+    "deriva_relativa": 0.0,
+    "eps": 1e-09,
+    "piso_nulo": 3.019806626980426e-14,
+    "margen_de_clase": 0.9411764705882353,
+    "marco_sin_b": {
+     "estado": "NO_MEDIDO",
+     "motivo": "fuera del caso ortogonal (E . cB != 0): el boost no es el simple"
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": "medido en el marco con beta=(0.0, 0.6, 0.0) · clase previa SIN_MARCO_DE_REPOSO · la clase se conserva"
+   }
+  },
+  {
+   "nombre": "antiparalelo_boost_y-",
+   "E": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "B": [
+    -3.3356409519815204e-09,
+    0.0,
+    0.0
+   ],
+   "beta": [
+    0.0,
+    -0.6,
+    0.0
+   ],
+   "esperado": {
+    "clase": "SIN_MARCO_DE_REPOSO",
+    "estado": "MEDIDO",
+    "E": [
+     1.25,
+     0.0,
+     -0.75
+    ],
+    "cB": [
+     -1.25,
+     0.0,
+     -0.75
+    ],
+    "escala": 1.4577379737113252,
+    "I1_algebra": 0.0,
+    "I2_algebra": -1.0,
+    "I1_vector": 0.0,
+    "I2_vector": -1.0,
+    "deriva_relativa": 0.0,
+    "eps": 1e-09,
+    "piso_nulo": 3.019806626980426e-14,
+    "margen_de_clase": 0.9411764705882353,
+    "marco_sin_b": {
+     "estado": "NO_MEDIDO",
+     "motivo": "fuera del caso ortogonal (E . cB != 0): el boost no es el simple"
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": "medido en el marco con beta=(0.0, -0.6, 0.0) · clase previa SIN_MARCO_DE_REPOSO · la clase se conserva"
+   }
+  },
+  {
+   "nombre": "antiparalelo_boost_z+",
+   "E": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "B": [
+    -3.3356409519815204e-09,
+    0.0,
+    0.0
+   ],
+   "beta": [
+    0.0,
+    0.0,
+    0.6
+   ],
+   "esperado": {
+    "clase": "SIN_MARCO_DE_REPOSO",
+    "estado": "MEDIDO",
+    "E": [
+     1.25,
+     -0.75,
+     0.0
+    ],
+    "cB": [
+     -1.25,
+     -0.75,
+     0.0
+    ],
+    "escala": 1.4577379737113252,
+    "I1_algebra": 0.0,
+    "I2_algebra": -1.0,
+    "I1_vector": 0.0,
+    "I2_vector": -1.0,
+    "deriva_relativa": 0.0,
+    "eps": 1e-09,
+    "piso_nulo": 3.019806626980426e-14,
+    "margen_de_clase": 0.9411764705882353,
+    "marco_sin_b": {
+     "estado": "NO_MEDIDO",
+     "motivo": "fuera del caso ortogonal (E . cB != 0): el boost no es el simple"
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": "medido en el marco con beta=(0.0, 0.0, 0.6) · clase previa SIN_MARCO_DE_REPOSO · la clase se conserva"
+   }
+  },
+  {
+   "nombre": "antiparalelo_boost_z-",
+   "E": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "B": [
+    -3.3356409519815204e-09,
+    0.0,
+    0.0
+   ],
+   "beta": [
+    0.0,
+    0.0,
+    -0.6
+   ],
+   "esperado": {
+    "clase": "SIN_MARCO_DE_REPOSO",
+    "estado": "MEDIDO",
+    "E": [
+     1.25,
+     0.75,
+     0.0
+    ],
+    "cB": [
+     -1.25,
+     0.75,
+     0.0
+    ],
+    "escala": 1.4577379737113252,
+    "I1_algebra": 0.0,
+    "I2_algebra": -1.0,
+    "I1_vector": 0.0,
+    "I2_vector": -1.0,
+    "deriva_relativa": 0.0,
+    "eps": 1e-09,
+    "piso_nulo": 3.019806626980426e-14,
+    "margen_de_clase": 0.9411764705882353,
+    "marco_sin_b": {
+     "estado": "NO_MEDIDO",
+     "motivo": "fuera del caso ortogonal (E . cB != 0): el boost no es el simple"
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": "medido en el marco con beta=(0.0, 0.0, -0.6) · clase previa SIN_MARCO_DE_REPOSO · la clase se conserva"
+   }
+  },
+  {
+   "nombre": "azar_00",
+   "E": [
+    -1.7357764636158943,
+    0.03169138157939155,
+    -0.7049724689584504
+   ],
+   "B": [
+    1.4057900407610075e-08,
+    -1.5011041332535e-08,
+    6.243361820772942e-09
+   ],
+   "beta": [
+    -0.729916212848251,
+    0.4946403649643365,
+    -0.12280018349868582
+   ],
+   "esperado": {
+    "clase": "TIPO_MAGNETICO",
+    "estado": "MEDIDO",
+    "E": [
+     -1.4839465844366577,
+     0.9111651878371048,
+     1.340696565518492
+    ],
+    "cB": [
+     3.9188565031558156,
+     -5.090655501467508,
+     1.2503432255245552
+    ],
+    "escala": 6.54488868572745,
+    "I1_algebra": -38.00578116278266,
+    "I2_algebra": -8.777470930784006,
+    "I1_vector": -38.005781162782654,
+    "I2_vector": -8.777470930784006,
+    "deriva_relativa": 1.6587680996241832e-16,
+    "eps": 1e-09,
+    "piso_nulo": 6.087300321917609e-13,
+    "margen_de_clase": 0.9773244884180614,
+    "marco_sin_b": {
+     "estado": "NO_MEDIDO",
+     "motivo": "fuera del caso ortogonal (E . cB != 0): el boost no es el simple"
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": "medido en el marco con beta=(-0.729916212848251, 0.4946403649643365, -0.12280018349868582) · clase previa TIPO_MAGNETICO · la clase se conserva"
+   }
+  },
+  {
+   "nombre": "azar_01",
+   "E": [
+    -1.9445905032583686,
+    -0.15432006673866994,
+    -1.7549019471413088
+   ],
+   "B": [
+    -1.6112133937924875e-08,
+    -4.143391354042487e-09,
+    -2.84793164493144e-08
+   ],
+   "beta": null,
+   "esperado": {
+    "clase": "TIPO_MAGNETICO",
+    "estado": "MEDIDO",
+    "E": [
+     -1.9445905032583686,
+     -0.15432006673866994,
+     -1.7549019471413088
+    ],
+    "cB": [
+     -4.830296236875718,
+     -1.2421574784843454,
+     -8.537884280499796
+    ],
+    "escala": 9.887880709461246,
+    "I1_algebra": -90.88525717209461,
+    "I2_algebra": 24.56778776344906,
+    "I1_vector": -90.88525717209461,
+    "I2_vector": 24.56778776344906,
+    "deriva_relativa": 0.0,
+    "eps": 1e-09,
+    "piso_nulo": 1.389397893441012e-12,
+    "margen_de_clase": 1.0567347931614073,
+    "marco_sin_b": {
+     "estado": "NO_MEDIDO",
+     "motivo": "fuera del caso ortogonal (E . cB != 0): el boost no es el simple"
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": ""
+   }
+  },
+  {
+   "nombre": "azar_02",
+   "E": [
+    -1.172912837977773,
+    -2.4502866032076165,
+    1.1266518770000857
+   ],
+   "B": [
+    2.1701295934548846e-08,
+    1.02236827250581e-08,
+    -9.524602116851293e-09
+   ],
+   "beta": [
+    0.414589529467465,
+    0.537981648284285,
+    -0.5905008621206831
+   ],
+   "esperado": {
+    "clase": "TIPO_MAGNETICO",
+    "estado": "MEDIDO",
+    "E": [
+     -0.42690983399127824,
+     -9.596119258261957,
+     -4.8598623222006205
+    ],
+    "cB": [
+     12.858608545059795,
+     1.3291628120375245,
+     0.023395195045269546
+    ],
+    "escala": 12.927143336063828,
+    "I1_algebra": -51.225016215249774,
+    "I2_algebra": -18.35796872421026,
+    "I1_vector": -51.22501621524975,
+    "I2_vector": -18.357968724210256,
+    "deriva_relativa": 1.2755759722475808e-16,
+    "eps": 1e-09,
+    "piso_nulo": 2.3747906372923843e-12,
+    "margen_de_clase": 0.3771402632643552,
+    "marco_sin_b": {
+     "estado": "NO_MEDIDO",
+     "motivo": "fuera del caso ortogonal (E . cB != 0): el boost no es el simple"
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": "medido en el marco con beta=(0.414589529467465, 0.537981648284285, -0.5905008621206831) · clase previa TIPO_MAGNETICO · la clase se conserva"
+   }
+  },
+  {
+   "nombre": "azar_03",
+   "E": [
+    0.7357074461702653,
+    -1.036681295957397,
+    2.0931694145177175
+   ],
+   "B": [
+    -5.230920742548495e-09,
+    -1.2255043364934166e-08,
+    -2.672940757319232e-08
+   ],
+   "beta": null,
+   "esperado": {
+    "clase": "TIPO_MAGNETICO",
+    "estado": "MEDIDO",
+    "E": [
+     0.7357074461702653,
+     -1.036681295957397,
+     2.0931694145177175
+    ],
+    "cB": [
+     -1.5681905870117985,
+     -3.6739695732702047,
+     -8.01327479725114
+    ],
+    "escala": 8.953761618379616,
+    "I1_algebra": -74.17251536515724,
+    "I2_algebra": -14.118135669084648,
+    "I1_vector": -74.17251536515724,
+    "I2_vector": -14.118135669084648,
+    "deriva_relativa": 0.0,
+    "eps": 1e-09,
+    "piso_nulo": 1.1392820499447675e-12,
+    "margen_de_clase": 0.9899643267269039,
+    "marco_sin_b": {
+     "estado": "NO_MEDIDO",
+     "motivo": "fuera del caso ortogonal (E . cB != 0): el boost no es el simple"
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": ""
+   }
+  },
+  {
+   "nombre": "azar_04",
+   "E": [
+    1.492741981912192,
+    0.7764357608704495,
+    0.9464562659701001
+   ],
+   "B": [
+    -1.9740344242423265e-08,
+    -2.5955264477604336e-08,
+    9.552160199356523e-09
+   ],
+   "beta": [
+    0.11340148235285397,
+    0.5379868317267689,
+    -0.3102796037400529
+   ],
+   "esperado": {
+    "clase": "TIPO_MAGNETICO",
+    "estado": "MEDIDO",
+    "E": [
+     0.7740274325189888,
+     2.835568680036541,
+     4.254063622773705
+    ],
+    "cB": [
+     -8.12498489729995,
+     -7.052912164500135,
+     3.3198045191338954
+    ],
+    "escala": 11.259664809698737,
+    "I1_algebra": -100.04342611466544,
+    "I2_algebra": -12.165318396450695,
+    "I1_vector": -100.04342611466544,
+    "I2_vector": -12.165318396450697,
+    "deriva_relativa": 1.4011327622974352e-17,
+    "eps": 1e-09,
+    "piso_nulo": 1.801652894453811e-12,
+    "margen_de_clase": 0.8121115211292086,
+    "marco_sin_b": {
+     "estado": "NO_MEDIDO",
+     "motivo": "fuera del caso ortogonal (E . cB != 0): el boost no es el simple"
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": "medido en el marco con beta=(0.11340148235285397, 0.5379868317267689, -0.3102796037400529) · clase previa TIPO_MAGNETICO · la clase se conserva"
+   }
+  },
+  {
+   "nombre": "azar_05",
+   "E": [
+    -0.5164779754218065,
+    -1.6203265660367752,
+    -1.680172217609488
+   ],
+   "B": [
+    2.3835207067689054e-08,
+    -2.2252308442709107e-08,
+    2.4583708049603325e-08
+   ],
+   "beta": null,
+   "esperado": {
+    "clase": "TIPO_MAGNETICO",
+    "estado": "MEDIDO",
+    "E": [
+     -0.5164779754218065,
+     -1.6203265660367752,
+     -1.680172217609488
+    ],
+    "cB": [
+     7.145615313761474,
+     -6.671074244213916,
+     7.370010262944967
+    ],
+    "escala": 12.242552881649763,
+    "I1_algebra": -144.16491469946376,
+    "I2_algebra": -5.264120595788004,
+    "I1_vector": -144.16491469946376,
+    "I2_vector": -5.264120595788004,
+    "deriva_relativa": 0.0,
+    "eps": 1e-09,
+    "piso_nulo": 2.129924340863325e-12,
+    "margen_de_clase": 0.9644298123690193,
+    "marco_sin_b": {
+     "estado": "NO_MEDIDO",
+     "motivo": "fuera del caso ortogonal (E . cB != 0): el boost no es el simple"
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": ""
+   }
+  },
+  {
+   "nombre": "azar_06",
+   "E": [
+    -2.252521564543639,
+    0.2226655144431957,
+    0.6300428720880915
+   ],
+   "B": [
+    -2.465119298572773e-09,
+    2.406895085537242e-08,
+    -2.747198964831484e-08
+   ],
+   "beta": [
+    0.36962071824976417,
+    -0.6783744220883072,
+    0.5621074611907793
+   ],
+   "esperado": {
+    "clase": "TIPO_MAGNETICO",
+    "estado": "MEDIDO",
+    "E": [
+     -1.8347671372168002,
+     8.5385597545901,
+     10.391306752491074
+    ],
+    "cB": [
+     8.83481874491065,
+     12.134267305393852,
+     -8.595352579489123
+    ],
+    "escala": 17.296663009375685,
+    "I1_algebra": -114.921922105022,
+    "I2_algebra": -1.91761393044154,
+    "I1_vector": -114.92192210502202,
+    "I2_vector": -1.917613930441533,
+    "deriva_relativa": 4.750021235214106e-17,
+    "eps": 1e-09,
+    "piso_nulo": 4.251526082440266e-12,
+    "margen_de_clase": 0.3843438531680436,
+    "marco_sin_b": {
+     "estado": "NO_MEDIDO",
+     "motivo": "fuera del caso ortogonal (E . cB != 0): el boost no es el simple"
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": "medido en el marco con beta=(0.36962071824976417, -0.6783744220883072, 0.5621074611907793) · clase previa TIPO_MAGNETICO · la clase se conserva"
+   }
+  },
+  {
+   "nombre": "azar_07",
+   "E": [
+    0.8993877817267846,
+    0.3618640183676627,
+    -0.47394789176955765
+   ],
+   "B": [
+    -1.8338289277170806e-09,
+    -1.586594274494339e-08,
+    1.0688710062014302e-08
+   ],
+   "beta": null,
+   "esperado": {
+    "clase": "TIPO_MAGNETICO",
+    "estado": "MEDIDO",
+    "E": [
+     0.8993877817267846,
+     0.3618640183676627,
+     -0.47394789176955765
+    ],
+    "cB": [
+     -0.5497680817918079,
+     -4.756489973993846,
+     3.2043946623406
+    ],
+    "escala": 5.761474374541463,
+    "I1_algebra": -32.03011641467652,
+    "I2_algebra": -3.7343733654757867,
+    "I1_vector": -32.03011641467653,
+    "I2_vector": -3.734373365475787,
+    "deriva_relativa": 2.1405379631155334e-16,
+    "eps": 1e-09,
+    "piso_nulo": 4.71723452740462e-13,
+    "margen_de_clase": 0.9908051620054439,
+    "marco_sin_b": {
+     "estado": "NO_MEDIDO",
+     "motivo": "fuera del caso ortogonal (E . cB != 0): el boost no es el simple"
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": ""
+   }
+  },
+  {
+   "nombre": "azar_08",
+   "E": [
+    -0.13986697529413483,
+    -1.9632645748020092,
+    0.17554164572625197
+   ],
+   "B": [
+    1.2664156750059537e-08,
+    -2.533554753194558e-08,
+    1.0444420939030287e-08
+   ],
+   "beta": [
+    0.6861841585182173,
+    -0.47750415322919837,
+    0.48920018962047007
+   ],
+   "esperado": {
+    "clase": "TIPO_MAGNETICO",
+    "estado": "MEDIDO",
+    "E": [
+     6.318399492478033,
+     -7.640888381803405,
+     -14.42512540538874
+    ],
+    "cB": [
+     -5.4154394356226785,
+     -17.846822215594607,
+     6.046273113913578
+    ],
+    "escala": 19.60595486182636,
+    "I1_algebra": -78.003875673056,
+    "I2_algebra": 14.93041883423021,
+    "I1_vector": -78.00387567305603,
+    "I2_vector": 14.93041883423021,
+    "deriva_relativa": 7.393910651736393e-17,
+    "eps": 1e-09,
+    "piso_nulo": 5.46255969942383e-12,
+    "margen_de_clase": 0.21728801653834667,
+    "marco_sin_b": {
+     "estado": "NO_MEDIDO",
+     "motivo": "fuera del caso ortogonal (E . cB != 0): el boost no es el simple"
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": "medido en el marco con beta=(0.6861841585182173, -0.47750415322919837, 0.48920018962047007) · clase previa TIPO_MAGNETICO · la clase se conserva"
+   }
+  },
+  {
+   "nombre": "azar_09",
+   "E": [
+    -0.2925630501113683,
+    -2.1416318973770148,
+    -2.804943837411752
+   ],
+   "B": [
+    -1.6525471963558805e-08,
+    2.2720253273679206e-08,
+    2.7422611638206637e-08
+   ],
+   "beta": null,
+   "esperado": {
+    "clase": "TIPO_MAGNETICO",
+    "estado": "MEDIDO",
+    "E": [
+     -0.2925630501113683,
+     -2.1416318973770148,
+     -2.804943837411752
+    ],
+    "cB": [
+     -4.954211859565381,
+     6.811360575298836,
+     8.221092147797375
+    ],
+    "escala": 11.769673068474297,
+    "I1_algebra": -125.9853138855819,
+    "I2_algebra": -36.19770949682227,
+    "I1_vector": -125.98531388558189,
+    "I2_vector": -36.19770949682227,
+    "deriva_relativa": 1.0258678053248795e-16,
+    "eps": 1e-09,
+    "piso_nulo": 1.968561550409748e-12,
+    "margen_de_clase": 1.0489390360761512,
+    "marco_sin_b": {
+     "estado": "NO_MEDIDO",
+     "motivo": "fuera del caso ortogonal (E . cB != 0): el boost no es el simple"
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": ""
+   }
+  },
+  {
+   "nombre": "azar_10",
+   "E": [
+    0.16023671512622073,
+    2.0751047302751067,
+    2.3536713180076516
+   ],
+   "B": [
+    3.361733295747218e-09,
+    1.936343118969581e-08,
+    -4.760822456596685e-09
+   ],
+   "beta": [
+    0.13798868641421014,
+    -0.2984555072158097,
+    0.28453169302402403
+   ],
+   "esperado": {
+    "clase": "TIPO_MAGNETICO",
+    "estado": "MEDIDO",
+    "E": [
+     -1.189056650724042,
+     2.854136793413284,
+     3.8251897426599717
+    ],
+    "cB": [
+     2.7161184896204897,
+     6.407660706912227,
+     -1.6235858818416786
+    ],
+    "escala": 7.1464289334100854,
+    "I1_algebra": -26.87941737878322,
+    "I2_algebra": 8.848197367520644,
+    "I1_vector": -26.879417378783216,
+    "I2_vector": 8.848197367520644,
+    "deriva_relativa": 6.956360005939849e-17,
+    "eps": 1e-09,
+    "piso_nulo": 7.257689063107025e-13,
+    "margen_de_clase": 0.6301320780972567,
+    "marco_sin_b": {
+     "estado": "NO_MEDIDO",
+     "motivo": "fuera del caso ortogonal (E . cB != 0): el boost no es el simple"
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": "medido en el marco con beta=(0.13798868641421014, -0.2984555072158097, 0.28453169302402403) · clase previa TIPO_MAGNETICO · la clase se conserva"
+   }
+  },
+  {
+   "nombre": "azar_11",
+   "E": [
+    -0.2976783985920801,
+    -2.7176631702595166,
+    0.8830291077082109
+   ],
+   "B": [
+    2.0811365728880924e-08,
+    -1.1513703427238565e-09,
+    1.0832427437523347e-08
+   ],
+   "beta": null,
+   "esperado": {
+    "clase": "TIPO_MAGNETICO",
+    "estado": "MEDIDO",
+    "E": [
+     -0.2976783985920801,
+     -2.7176631702595166,
+     0.8830291077082109
+    ],
+    "cB": [
+     6.239090486198174,
+     -0.34517214511348737,
+     3.2474800476017656
+    ],
+    "escala": 7.042124719450968,
+    "I1_algebra": -41.337474623269074,
+    "I2_algebra": 1.9484385703058482,
+    "I1_vector": -41.337474623269074,
+    "I2_vector": 1.9484385703058482,
+    "deriva_relativa": 0.0,
+    "eps": 1e-09,
+    "piso_nulo": 7.047378938452536e-13,
+    "margen_de_clase": 0.8372549756008916,
+    "marco_sin_b": {
+     "estado": "NO_MEDIDO",
+     "motivo": "fuera del caso ortogonal (E . cB != 0): el boost no es el simple"
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": ""
+   }
+  },
+  {
+   "nombre": "azar_12",
+   "E": [
+    -2.883682387548907,
+    -1.7160858698845132,
+    -1.4224792647545232
+   ],
+   "B": [
+    -1.2709683786923523e-08,
+    -8.534624734986692e-09,
+    2.895468384750692e-08
+   ],
+   "beta": [
+    0.044609616686319686,
+    -0.3407540762349165,
+    0.8212557917920471
+   ],
+   "esperado": {
+    "clase": "TIPO_MAGNETICO",
+    "estado": "MEDIDO",
+    "E": [
+     -8.16434478895583,
+     -11.854705720246777,
+     -5.342339249919417
+    ],
+    "cB": [
+     -13.051547988251578,
+     3.468024864828714,
+     11.682934753048862
+    ],
+    "escala": 17.856681264913167,
+    "I1_algebra": -83.12990358886947,
+    "I2_algebra": 3.0307227171851565,
+    "I1_vector": -83.1299035888695,
+    "I2_vector": 3.0307227171851565,
+    "deriva_relativa": 8.913508884940217e-17,
+    "eps": 1e-09,
+    "piso_nulo": 4.531288280371384e-12,
+    "margen_de_clase": 0.2614009854697388,
+    "marco_sin_b": {
+     "estado": "NO_MEDIDO",
+     "motivo": "fuera del caso ortogonal (E . cB != 0): el boost no es el simple"
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": "medido en el marco con beta=(0.044609616686319686, -0.3407540762349165, 0.8212557917920471) · clase previa TIPO_MAGNETICO · la clase se conserva"
+   }
+  },
+  {
+   "nombre": "azar_13",
+   "E": [
+    0.43015684699289913,
+    2.4240191717912385,
+    -0.13514357920220377
+   ],
+   "B": [
+    1.6270672384253438e-09,
+    1.3196751657362356e-08,
+    -2.03760213574131e-08
+   ],
+   "beta": null,
+   "esperado": {
+    "clase": "TIPO_MAGNETICO",
+    "estado": "MEDIDO",
+    "E": [
+     0.43015684699289913,
+     2.4240191717912385,
+     -0.13514357920220377
+    ],
+    "cB": [
+     0.48778248673880586,
+     3.9562866169762345,
+     -6.10857752699937
+    ],
+    "escala": 7.29416581614348,
+    "I1_algebra": -47.12568730817015,
+    "I2_algebra": 10.625472615998257,
+    "I1_vector": -47.12568730817015,
+    "I2_vector": 10.625472615998255,
+    "deriva_relativa": 3.338711929496323e-17,
+    "eps": 1e-09,
+    "piso_nulo": 7.560864638861075e-13,
+    "margen_de_clase": 0.9716327744323906,
+    "marco_sin_b": {
+     "estado": "NO_MEDIDO",
+     "motivo": "fuera del caso ortogonal (E . cB != 0): el boost no es el simple"
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": ""
+   }
+  },
+  {
+   "nombre": "azar_14",
+   "E": [
+    0.6060219275467178,
+    1.0534059007881815,
+    -0.07080500628300301
+   ],
+   "B": [
+    -7.73865884442622e-09,
+    -2.5632854657918626e-09,
+    1.3964716681813664e-08
+   ],
+   "beta": [
+    -0.12246943042414875,
+    0.43941022086922715,
+    0.7758349672496349
+   ],
+   "esperado": {
+    "clase": "TIPO_MAGNETICO",
+    "estado": "MEDIDO",
+    "E": [
+     7.0436993318163985,
+     -0.7706779686277737,
+     1.9785222965785552
+    ],
+    "cB": [
+     -2.751027572886163,
+     -5.064436453020223,
+     6.551594486803745
+    ],
+    "escala": 8.725827159242682,
+    "I1_algebra": -22.01786432655972,
+    "I2_algebra": -2.5118857088063393,
+    "I1_vector": -22.017864326559717,
+    "I2_vector": -2.5118857088063375,
+    "deriva_relativa": 4.6660242937280036e-17,
+    "eps": 1e-09,
+    "piso_nulo": 1.0820153251668389e-12,
+    "margen_de_clase": 0.2966076593501182,
+    "marco_sin_b": {
+     "estado": "NO_MEDIDO",
+     "motivo": "fuera del caso ortogonal (E . cB != 0): el boost no es el simple"
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": "medido en el marco con beta=(-0.12246943042414875, 0.43941022086922715, 0.7758349672496349) · clase previa TIPO_MAGNETICO · la clase se conserva"
+   }
+  },
+  {
+   "nombre": "azar_15",
+   "E": [
+    -1.1647211647605151,
+    2.5971486568113074,
+    1.0139545963858305
+   ],
+   "B": [
+    4.3253136261640626e-10,
+    1.9500368316607215e-08,
+    -1.1002520055127889e-08
+   ],
+   "beta": null,
+   "esperado": {
+    "clase": "TIPO_MAGNETICO",
+    "estado": "MEDIDO",
+    "E": [
+     -1.1647211647605151,
+     2.5971486568113074,
+     1.0139545963858305
+    ],
+    "cB": [
+     0.12966964036086173,
+     5.846063349540999,
+     -3.298472531521085
+    ],
+    "escala": 6.713657121396427,
+    "I1_algebra": -35.943331482927135,
+    "I2_algebra": 11.687565216950826,
+    "I1_vector": -35.943331482927135,
+    "I2_vector": 11.687565216950826,
+    "deriva_relativa": 0.0,
+    "eps": 1e-09,
+    "piso_nulo": 6.405285822620066e-13,
+    "margen_de_clase": 0.9512446297960794,
+    "marco_sin_b": {
+     "estado": "NO_MEDIDO",
+     "motivo": "fuera del caso ortogonal (E . cB != 0): el boost no es el simple"
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": ""
+   }
+  },
+  {
+   "nombre": "azar_16",
+   "E": [
+    -2.0116261552344126,
+    1.0648496576376116,
+    -2.647987767594461
+   ],
+   "B": [
+    1.0246294070800755e-08,
+    2.337156967404419e-08,
+    -1.3946235382555984e-08
+   ],
+   "beta": [
+    0.5473064704778141,
+    -0.4898879579689472,
+    0.40484830419922924
+   ],
+   "esperado": {
+    "clase": "TIPO_MAGNETICO",
+    "estado": "MEDIDO",
+    "E": [
+     -3.3883304551629716,
+     6.871516201535479,
+     6.239526765038004
+    ],
+    "cB": [
+     6.29107574612075,
+     9.694629974065618,
+     -5.280469133831476
+    ],
+    "escala": 12.70617324967778,
+    "I1_algebra": -63.81662621785212,
+    "I2_algebra": 12.352934895866781,
+    "I1_vector": -63.816626217852104,
+    "I2_vector": 12.352934895866781,
+    "deriva_relativa": 8.802188283126962e-17,
+    "eps": 1e-09,
+    "piso_nulo": 2.294297568295565e-12,
+    "margen_de_clase": 0.423867222551053,
+    "marco_sin_b": {
+     "estado": "NO_MEDIDO",
+     "motivo": "fuera del caso ortogonal (E . cB != 0): el boost no es el simple"
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": "medido en el marco con beta=(0.5473064704778141, -0.4898879579689472, 0.40484830419922924) · clase previa TIPO_MAGNETICO · la clase se conserva"
+   }
+  },
+  {
+   "nombre": "azar_17",
+   "E": [
+    0.5323030418793118,
+    -0.33190798291198353,
+    -1.7858652872393412
+   ],
+   "B": [
+    -1.6096305104562427e-08,
+    2.2582054545019946e-08,
+    -5.206558154047478e-09
+   ],
+   "beta": null,
+   "esperado": {
+    "clase": "TIPO_MAGNETICO",
+    "estado": "MEDIDO",
+    "E": [
+     0.5323030418793118,
+     -0.33190798291198353,
+     -1.7858652872393412
+    ],
+    "cB": [
+     -4.825550872014717,
+     6.769929638741601,
+     -1.560886866721836
+    ],
+    "escala": 8.458974899041769,
+    "I1_algebra": -67.97143208093757,
+    "I2_algebra": -2.0281154261812704,
+    "I1_vector": -67.97143208093757,
+    "I2_vector": -2.028115426181271,
+    "deriva_relativa": 6.20632835206418e-18,
+    "eps": 1e-09,
+    "piso_nulo": 1.0168471411392758e-12,
+    "margen_de_clase": 0.9516184899870543,
+    "marco_sin_b": {
+     "estado": "NO_MEDIDO",
+     "motivo": "fuera del caso ortogonal (E . cB != 0): el boost no es el simple"
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": ""
+   }
+  },
+  {
+   "nombre": "azar_18",
+   "E": [
+    -0.2540939724197422,
+    -0.07274769251174584,
+    -2.6404914044634484
+   ],
+   "B": [
+    2.8168752885861645e-08,
+    -2.209072746449357e-08,
+    -1.6630281824628002e-09
+   ],
+   "beta": [
+    -0.6237074505130851,
+    0.4834345967199869,
+    -0.4327586011492449
+   ],
+   "esperado": {
+    "clase": "TIPO_MAGNETICO",
+    "estado": "MEDIDO",
+    "E": [
+     -6.449341853268066,
+     -10.242253668557256,
+     -5.072028886367041
+    ],
+    "cB": [
+     14.150234331581027,
+     -5.292874940512401,
+     -7.235999118314709
+    ],
+    "escala": 16.751219060558242,
+    "I1_algebra": -108.38009243927829,
+    "I2_algebra": -0.3475341817196629,
+    "I1_vector": -108.38009243927826,
+    "I2_vector": -0.34753418171965933,
+    "deriva_relativa": 1.0128785148781179e-16,
+    "eps": 1e-09,
+    "piso_nulo": 3.98761329755089e-12,
+    "margen_de_clase": 0.3862474382285823,
+    "marco_sin_b": {
+     "estado": "NO_MEDIDO",
+     "motivo": "fuera del caso ortogonal (E . cB != 0): el boost no es el simple"
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": "medido en el marco con beta=(-0.6237074505130851, 0.4834345967199869, -0.4327586011492449) · clase previa TIPO_MAGNETICO · la clase se conserva"
+   }
+  },
+  {
+   "nombre": "azar_19",
+   "E": [
+    1.5244279719946334,
+    -2.9361650341868035,
+    0.9225634344682243
+   ],
+   "B": [
+    -3.48803231750249e-09,
+    1.3182750049224765e-08,
+    -2.494851865354178e-08
+   ],
+   "beta": null,
+   "esperado": {
+    "clase": "TIPO_MAGNETICO",
+    "estado": "MEDIDO",
+    "E": [
+     1.5244279719946334,
+     -2.9361650341868035,
+     0.9225634344682243
+    ],
+    "cB": [
+     -1.0456857820475078,
+     3.952089040456713,
+     -7.47937773060414
+    ],
+    "escala": 8.523705636372688,
+    "I1_algebra": -60.85748873513284,
+    "I2_algebra": -20.098258715483492,
+    "I1_vector": -60.85748873513284,
+    "I2_vector": -20.09825871548349,
+    "deriva_relativa": 4.8899376542259214e-17,
+    "eps": 1e-09,
+    "piso_nulo": 1.0324691540906134e-12,
+    "margen_de_clase": 1.0038624079000724,
+    "marco_sin_b": {
+     "estado": "NO_MEDIDO",
+     "motivo": "fuera del caso ortogonal (E . cB != 0): el boost no es el simple"
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": ""
+   }
+  },
+  {
+   "nombre": "azar_20",
+   "E": [
+    0.10776917805232333,
+    0.13387569214418793,
+    -2.4308459110675313
+   ],
+   "B": [
+    1.3185720307751501e-08,
+    -2.1804267916110635e-08,
+    9.126948754780155e-09
+   ],
+   "beta": [
+    -0.24053510569272052,
+    0.9070398482852688,
+    0.002352039997826294
+   ],
+   "esperado": {
+    "clase": "TIPO_MAGNETICO",
+    "estado": "MEDIDO",
+    "E": [
+     7.584735539569021,
+     2.1437147579882807,
+     -12.86061213756416
+    ],
+    "cB": [
+     14.264860171442336,
+     -3.8166813836009954,
+     8.328816316194875
+    ],
+    "escala": 16.95353867850728,
+    "I1_algebra": -59.9034030019615,
+    "I2_algebra": -7.100360506841483,
+    "I1_vector": -59.90340300196152,
+    "I2_vector": -7.100360506841483,
+    "deriva_relativa": 7.416358852056461e-17,
+    "eps": 1e-09,
+    "piso_nulo": 4.0845190159706466e-12,
+    "margen_de_clase": 0.2141920565639481,
+    "marco_sin_b": {
+     "estado": "NO_MEDIDO",
+     "motivo": "fuera del caso ortogonal (E . cB != 0): el boost no es el simple"
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": "medido en el marco con beta=(-0.24053510569272052, 0.9070398482852688, 0.002352039997826294) · clase previa TIPO_MAGNETICO · la clase se conserva"
+   }
+  },
+  {
+   "nombre": "azar_21",
+   "E": [
+    2.482120783115829,
+    -1.9402892929538145,
+    -2.292096166957248
+   ],
+   "B": [
+    1.8969463494749883e-09,
+    -2.7027723784883655e-08,
+    2.3049839717776887e-08
+   ],
+   "beta": null,
+   "esperado": {
+    "clase": "TIPO_MAGNETICO",
+    "estado": "MEDIDO",
+    "E": [
+     2.482120783115829,
+     -1.9402892929538145,
+     -2.292096166957248
+    ],
+    "cB": [
+     0.5686902088032337,
+     -8.102707747615334,
+     6.910168105498359
+    ],
+    "escala": 10.66431923017597,
+    "I1_algebra": -98.54835368219415,
+    "I2_algebra": 1.2943850454139216,
+    "I1_vector": -98.54835368219415,
+    "I2_vector": 1.2943850454139216,
+    "deriva_relativa": 0.0,
+    "eps": 1e-09,
+    "piso_nulo": 1.6161678877765125e-12,
+    "margen_de_clase": 0.8668279235295264,
+    "marco_sin_b": {
+     "estado": "NO_MEDIDO",
+     "motivo": "fuera del caso ortogonal (E . cB != 0): el boost no es el simple"
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": ""
+   }
+  },
+  {
+   "nombre": "azar_22",
+   "E": [
+    -1.650834905332094,
+    1.0643055692855823,
+    1.265664379252601
+   ],
+   "B": [
+    2.2652475384358662e-08,
+    -7.711083153472266e-09,
+    1.0873949481220375e-08
+   ],
+   "beta": [
+    -0.34162886293899564,
+    -0.2348663188416592,
+    0.2314594658787128
+   ],
+   "esperado": {
+    "clase": "TIPO_MAGNETICO",
+    "estado": "MEDIDO",
+    "E": [
+     -2.012439365268253,
+     4.346913509696951,
+     4.062869152128143
+    ],
+    "cB": [
+     8.122878704442787,
+     -2.82897780323198,
+     4.7008228583770535
+    ],
+    "escala": 9.802143102613304,
+    "I1_algebra": -56.62953439712797,
+    "I2_algebra": -9.545294514702778,
+    "I1_vector": -56.62953439712796,
+    "I2_vector": -9.545294514702778,
+    "deriva_relativa": 7.395169399212307e-17,
+    "eps": 1e-09,
+    "piso_nulo": 1.3654074763864737e-12,
+    "margen_de_clase": 0.6219771343876096,
+    "marco_sin_b": {
+     "estado": "NO_MEDIDO",
+     "motivo": "fuera del caso ortogonal (E . cB != 0): el boost no es el simple"
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": "medido en el marco con beta=(-0.34162886293899564, -0.2348663188416592, 0.2314594658787128) · clase previa TIPO_MAGNETICO · la clase se conserva"
+   }
+  },
+  {
+   "nombre": "azar_23",
+   "E": [
+    -1.7870215474265607,
+    1.0740567364885525,
+    -1.950233659171908
+   ],
+   "B": [
+    2.1016543603538277e-08,
+    8.278934824955e-09,
+    1.9654984111316757e-08
+   ],
+   "beta": null,
+   "esperado": {
+    "clase": "TIPO_MAGNETICO",
+    "estado": "MEDIDO",
+    "E": [
+     -1.7870215474265607,
+     1.0740567364885525,
+     -1.950233659171908
+    ],
+    "cB": [
+     6.300601265568917,
+     2.4819622207950593,
+     5.892415998682596
+    ],
+    "escala": 8.976540484767682,
+    "I1_algebra": -72.4278238651429,
+    "I2_algebra": -20.085129994833544,
+    "I1_vector": -72.4278238651429,
+    "I2_vector": -20.085129994833544,
+    "deriva_relativa": 0.0,
+    "eps": 1e-09,
+    "piso_nulo": 1.1450862171311827e-12,
+    "margen_de_clase": 1.0278419191031223,
+    "marco_sin_b": {
+     "estado": "NO_MEDIDO",
+     "motivo": "fuera del caso ortogonal (E . cB != 0): el boost no es el simple"
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": ""
+   }
+  },
+  {
+   "nombre": "azar_24",
+   "E": [
+    2.673051259168945,
+    0.10618994641352897,
+    -0.9130436882972797
+   ],
+   "B": [
+    1.0664174361846896e-08,
+    -6.6176821227770465e-09,
+    2.6452782148023698e-08
+   ],
+   "beta": [
+    -0.39116317236083065,
+    -0.7303935239189475,
+    0.3514493886833107
+   ],
+   "esperado": {
+    "clase": "TIPO_MAGNETICO",
+    "estado": "MEDIDO",
+    "E": [
+     -6.458868107729298,
+     8.252778271254865,
+     5.853634194137528
+    ],
+    "cB": [
+     7.756113946853951,
+     -2.403221025981603,
+     12.133213239998934
+    ],
+    "escala": 14.599576650834361,
+    "I1_algebra": -69.05727867727268,
+    "I2_algebra": 1.0944246309267527,
+    "I1_vector": -69.05727867727268,
+    "I2_vector": 1.0944246309267527,
+    "deriva_relativa": 0.0,
+    "eps": 1e-09,
+    "piso_nulo": 3.029010121957581e-12,
+    "margen_de_clase": 0.3241507132370415,
+    "marco_sin_b": {
+     "estado": "NO_MEDIDO",
+     "motivo": "fuera del caso ortogonal (E . cB != 0): el boost no es el simple"
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": "medido en el marco con beta=(-0.39116317236083065, -0.7303935239189475, 0.3514493886833107) · clase previa TIPO_MAGNETICO · la clase se conserva"
+   }
+  },
+  {
+   "nombre": "azar_25",
+   "E": [
+    1.0512917762706042,
+    -2.798066539777756,
+    -0.6301332930517196
+   ],
+   "B": [
+    -1.4351280445761038e-08,
+    2.8525477906280035e-08,
+    2.3475740163540672e-08
+   ],
+   "beta": null,
+   "esperado": {
+    "clase": "TIPO_MAGNETICO",
+    "estado": "MEDIDO",
+    "E": [
+     1.0512917762706042,
+     -2.798066539777756,
+     -0.6301332930517196
+    ],
+    "cB": [
+     -4.302405640282037,
+     8.551723137148386,
+     7.03784984699718
+    ],
+    "escala": 11.881666271060132,
+    "I1_algebra": -131.84253464995768,
+    "I2_algebra": -32.88615753539881,
+    "I1_vector": -131.84253464995768,
+    "I2_vector": -32.88615753539881,
+    "deriva_relativa": 0.0,
+    "eps": 1e-09,
+    "piso_nulo": 2.0062031094432767e-12,
+    "margen_de_clase": 1.0436616414814792,
+    "marco_sin_b": {
+     "estado": "NO_MEDIDO",
+     "motivo": "fuera del caso ortogonal (E . cB != 0): el boost no es el simple"
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": ""
+   }
+  },
+  {
+   "nombre": "azar_26",
+   "E": [
+    -0.8839421105522658,
+    1.9665283378981444,
+    -2.930137658196512
+   ],
+   "B": [
+    -2.4699732981936586e-08,
+    1.086684368601924e-08,
+    -2.7329175386609732e-08
+   ],
+   "beta": [
+    -0.34367803520124207,
+    0.7015945053545509,
+    -0.2231594581821814
+   ],
+   "esperado": {
+    "clase": "TIPO_MAGNETICO",
+    "estado": "MEDIDO",
+    "E": [
+     -9.258989264362427,
+     -0.3992809458216411,
+     2.529998184981187
+    ],
+    "cB": [
+     -7.448389282174772,
+     1.9147678568894388,
+     -12.348313719532038
+    ],
+    "escala": 14.547360260905624,
+    "I1_algebra": -119.33649227329315,
+    "I2_algebra": 36.95881478152634,
+    "I1_vector": -119.33649227329315,
+    "I2_vector": 36.95881478152634,
+    "deriva_relativa": 0.0,
+    "eps": 1e-09,
+    "piso_nulo": 3.0073819425606437e-12,
+    "margen_de_clase": 0.6633152612239794,
+    "marco_sin_b": {
+     "estado": "NO_MEDIDO",
+     "motivo": "fuera del caso ortogonal (E . cB != 0): el boost no es el simple"
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": "medido en el marco con beta=(-0.34367803520124207, 0.7015945053545509, -0.2231594581821814) · clase previa TIPO_MAGNETICO · la clase se conserva"
+   }
+  },
+  {
+   "nombre": "azar_27",
+   "E": [
+    0.6779396025704383,
+    -0.8508339849275632,
+    -0.6680781050515936
+   ],
+   "B": [
+    -1.4566389115597325e-08,
+    -2.1589629156601563e-08,
+    1.4504822613647272e-08
+   ],
+   "beta": null,
+   "esperado": {
+    "clase": "TIPO_MAGNETICO",
+    "estado": "MEDIDO",
+    "E": [
+     0.6779396025704383,
+     -0.8508339849275632,
+     -0.6680781050515936
+    ],
+    "cB": [
+     -4.366893597149368,
+     -6.472407992166049,
+     4.3484364241993
+    ],
+    "escala": 8.937042253518907,
+    "I1_algebra": -78.24087531209189,
+    "I2_algebra": -0.35864059188358244,
+    "I1_vector": -78.24087531209189,
+    "I2_vector": -0.35864059188358244,
+    "deriva_relativa": 0.0,
+    "eps": 1e-09,
+    "piso_nulo": 1.1350312581894045e-12,
+    "margen_de_clase": 0.9796350773138355,
+    "marco_sin_b": {
+     "estado": "NO_MEDIDO",
+     "motivo": "fuera del caso ortogonal (E . cB != 0): el boost no es el simple"
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": ""
+   }
+  },
+  {
+   "nombre": "azar_28",
+   "E": [
+    -2.755138023212849,
+    -0.11724412676355023,
+    0.5501071310882963
+   ],
+   "B": [
+    -2.9497398220907778e-08,
+    -1.8354312298023957e-08,
+    -2.882120135271793e-08
+   ],
+   "beta": [
+    -0.33499255220894797,
+    0.17979280712480517,
+    -0.6346084312882372
+   ],
+   "esperado": {
+    "clase": "TIPO_MAGNETICO",
+    "estado": "MEDIDO",
+    "E": [
+     -11.428772288370025,
+     3.776159546245356,
+     6.231734851875112
+    ],
+    "cB": [
+     -10.960027119719706,
+     -12.241341956673885,
+     -9.432114994317383
+    ],
+    "escala": 18.94564437096935,
+    "I1_algebra": -175.2267044290532,
+    "I2_algebra": 20.255954200107166,
+    "I1_vector": -175.2267044290532,
+    "I2_vector": 20.255954200107162,
+    "deriva_relativa": 9.897863183491105e-18,
+    "eps": 1e-09,
+    "piso_nulo": 5.100807820657034e-12,
+    "margen_de_clase": 0.5010590712031602,
+    "marco_sin_b": {
+     "estado": "NO_MEDIDO",
+     "motivo": "fuera del caso ortogonal (E . cB != 0): el boost no es el simple"
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": "medido en el marco con beta=(-0.33499255220894797, 0.17979280712480517, -0.6346084312882372) · clase previa TIPO_MAGNETICO · la clase se conserva"
+   }
+  },
+  {
+   "nombre": "azar_29",
+   "E": [
+    -2.9637439887853727,
+    0.7953469367345654,
+    1.9710211924187844
+   ],
+   "B": [
+    1.0072638040620313e-08,
+    -2.2472315490685652e-08,
+    -2.9524604161660557e-08
+   ],
+   "beta": null,
+   "esperado": {
+    "clase": "TIPO_MAGNETICO",
+    "estado": "MEDIDO",
+    "E": [
+     -2.9637439887853727,
+     0.7953469367345654,
+     1.9710211924187844
+    ],
+    "cB": [
+     3.0197009167418676,
+     -6.737030697904128,
+     -8.851253653101248
+    ],
+    "escala": 11.526095066526757,
+    "I1_algebra": -119.54958776081398,
+    "I2_algebra": -31.753905697924907,
+    "I1_vector": -119.54958776081399,
+    "I2_vector": -31.75390569792491,
+    "deriva_relativa": 1.0696847513669359e-16,
+    "eps": 1e-09,
+    "piso_nulo": 1.8879243765839596e-12,
+    "margen_de_clase": 1.0189707030256767,
+    "marco_sin_b": {
+     "estado": "NO_MEDIDO",
+     "motivo": "fuera del caso ortogonal (E . cB != 0): el boost no es el simple"
+    },
+    "grados_de_libertad": "NO_MEDIDO",
+    "limites": "No certifica 9 grados de libertad fisicos ni solucion de Maxwell; RUNBOOK_INVARIANTES_CAMPO.md §2 deja el conteo 9+3 NO_MEDIDO",
+    "motivo": ""
+   }
+  }
+ ]
+}
