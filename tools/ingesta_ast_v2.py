@@ -375,6 +375,11 @@ def ingest(
     return {
         "esquema": SCHEMA,
         "huella": HUELLA,
+        # El documento ya tiene la forma que --graph-sensitivity consume
+        # (archivos e imports como listas de registros); lo declara para que ese
+        # consumidor tenga productor. Sin este campo el flag sólo era alcanzable
+        # desde fixtures escritos a mano.
+        "projection": {"version": "graph-input/1", "source_schema": SCHEMA},
         "paquete": package_name,
         "raiz": source_root_rel,
         "source": {"commit": commit},

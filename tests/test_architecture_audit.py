@@ -111,6 +111,63 @@ class ArchitectureAuditIntegrationTests(unittest.TestCase):
             self.assertIn("these numbers are stale", published_readme)
 
 
+class GraphSensitivityProducerTests(unittest.TestCase):
+    """`--graph-sensitivity` tenía consumidor y ningún productor: la ingesta no
+    declaraba la proyección `graph-input/1`, así que el flag sólo era alcanzable
+    desde fixtures escritos a mano. Este control fija las dos mitades."""
+
+    def test_ingest_declares_the_projection_the_sensitivity_consumes(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            repository = Path(temporary_directory) / "sample-repository"
+            source_root = repository / "src"
+            source_root.mkdir(parents=True)
+            # El artefacto, en tres módulos: `a` importa un submódulo y la
+            # expansión del inicializador convierte esa arista en una vuelta a la
+            # raíz. Sin expansión, el mismo import es un DAG.
+            sources = {
+                "__init__.py": "from .a import value_a\n",
+                "a.py": "from .b import value_b\nvalue_a = 1\n",
+                "b.py": "value_b = 2\n",
+            }
+            for relative, source in sources.items():
+                (source_root / relative).write_text(source, encoding="utf-8")
+
+            subprocess.run(["git", "init", "--quiet", str(repository)], check=True)
+            subprocess.run(["git", "-C", str(repository), "config", "user.name", "Audit Test"], check=True)
+            subprocess.run(["git", "-C", str(repository), "config", "user.email", "audit-test@example.invalid"], check=True)
+            subprocess.run(["git", "-C", str(repository), "add", "src"], check=True)
+            subprocess.run(["git", "-C", str(repository), "commit", "--quiet", "-m", "sample"], check=True)
+            commit = subprocess.run(
+                ["git", "-C", str(repository), "rev-parse", "HEAD"],
+                check=True, capture_output=True, text=True,
+            ).stdout.strip()
+
+            ingested = subprocess.run(
+                [
+                    sys.executable, str(INGESTOR), str(repository), commit,
+                    "--source-root", "src", "--package", "sample",
+                ],
+                check=True, capture_output=True, text=True,
+            )
+            corpus = json.loads(ingested.stdout)
+            self.assertEqual(corpus["projection"]["version"], "graph-input/1")
+            self.assertEqual(corpus["projection"]["source_schema"], "ingesta_ast/v2")
+
+            analyzed = subprocess.run(
+                [sys.executable, str(ANALYZER), "-", "--graph-sensitivity"],
+                input=ingested.stdout, check=True, capture_output=True, text=True,
+            )
+            sensitivity = json.loads(analyzed.stdout)
+            self.assertEqual(sensitivity["graph_input_version"], "graph-input/1")
+            self.assertEqual(sensitivity["initializer_count"], 1)
+            self.assertEqual(sensitivity["baseline"]["cyclic_scc_count"], 1)
+            self.assertEqual(sensitivity["baseline"]["largest_scc_size"], 2)
+            self.assertEqual(
+                sensitivity["without_initializer_expansion"]["cyclic_scc_count"], 0
+            )
+            self.assertEqual(sensitivity["cyclic_scc_delta_without_expansion"], -1)
+
+
 class BadgeHonestyTests(unittest.TestCase):
     def test_badge_message_carries_the_counts_it_reports(self) -> None:
         sys.path.insert(0, str(REPO_ROOT / "tools"))

@@ -139,11 +139,12 @@ python3 auditar_supply_chain.py --repo alexisromtz-lab/git-preflight-gate
 
 Turns a static ingest into the two numbers an architecture claim rests on: how many **cyclic strongly connected components (SCC)** the import graph has, and how many **physical lines of code** sit behind them. `LOC` counts physical lines that carry Python tokens other than comments and blanks; the ingest and the checkout are bound by the **SHA-256** of each file and by the Git commit, so a report cannot describe a tree other than the one it names.
 
-- **Piece.** `tools/ingesta_ast_v2.py` walks the tracked Python files and emits an `ingesta_ast/v2` document; `tools/calculate_arch_index.py` projects it and reports; `tools/publish_architecture_snapshot.py` writes the badge and the table inside the `PLATINO-LABS-ARCHITECTURE-AUDIT` block near the top of this file.
+- **Piece.** `tools/ingesta_ast_v2.py` walks the tracked Python files and emits an `ingesta_ast/v2` document that also declares the `graph-input/1` projection `--graph-sensitivity` consumes; `tools/calculate_arch_index.py` projects it and reports; `tools/publish_architecture_snapshot.py` writes the badge and the table inside the `PLATINO-LABS-ARCHITECTURE-AUDIT` block near the top of this file.
 - **Negative control.** `--self-test` runs Tarjan's minimum check on a synthetic graph plus a condensation case: it must find the cycles the fixture declares and stay silent on a DAG. Measured on a clean clone of this repository, `2026-11-12`, `RC 0` ⇒ `SELF-TEST OK: 4 SCC, 2 cyclic SCC` and `SELF-TEST CONDENSACION OK: DAG aciclico, 2 aristas, SCC maximo 2, 1 modulo expuesto`.
-- **Declared limit.** It measures **static** imports of Python files in one commit: runtime and dynamic imports, other languages, and files the ingest excludes are outside its universe. A component counts as cyclic when its size is greater than 1 or it is a self-loop. `0 cyclic SCC` is an observation about one commit — not a quality verdict, a score or a threshold. The `--graph-sensitivity` flag is **not reachable from this README**: it demands a `graph-input/1` projection that the commands below do not produce, so it is declared absent rather than promised.
+- **Declared limit.** It measures **static** imports of Python files in one commit: runtime and dynamic imports, other languages, and files the ingest excludes are outside its universe. A component counts as cyclic when its size is greater than 1 or it is a self-loop. `0 cyclic SCC` is an observation about one commit — not a quality verdict, a score or a threshold.
+- **Two readings, and why one number is not enough.** A large cyclic component is usually the package root expanded: every `from .sub import X` also counts as an edge back to `__init__.py`, so the root joins the component without any two of those modules importing each other. `--graph-sensitivity` re-projects **the same document** without that expansion, and the component that survives is the one that is a cycle rather than an artifact of the root. Measured `2026-11-13` over five public libraries at their `HEAD`: `httpx` `b5addb64` **19 → 2** modules, `requests` `3c7baaa0` **13 → 7**, `click` `e38188e9` **1 component of 14 → 3 components of at most 7**, while `attrs` `9d9f94a0` **7 → 7** and `rich` `3a109ccd` **43 → 39** do not move. The second reading moves the conclusion by up to 17 modules, and in `click` it turns one cycle into three: the first number alone would have been wrong in both directions.
 - **Dependency.** Python **3.12**: `python tools/calculate_arch_index.py --self-test` returns `RC 0` there, while the ingest calls `Path.write_text(newline=...)`, which does not exist before 3.10. No third-party packages.
-- **Command.** The negative control is one command; the table is three.
+- **Command.** The negative control is one command; the table is three; the second reading is one more.
 
 ```bash
 python3 tools/calculate_arch_index.py --self-test
@@ -155,6 +156,9 @@ python3 tools/calculate_arch_index.py /tmp/ingesta.json --repo <owner>/<repo> \
   --repo-root . --commit "$(git rev-parse HEAD)" > /tmp/architecture.json
 python3 tools/publish_architecture_snapshot.py --report /tmp/architecture.json \
   --readme README.md --run-url <workflow-run-url> --observed-at "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+# the second reading: the same ingest, without initializer expansion
+python3 tools/calculate_arch_index.py /tmp/ingesta.json --graph-sensitivity
 ```
 
 <!-- HUELLA-PIEZA6-ARCH-INDEX-20261112 -->
