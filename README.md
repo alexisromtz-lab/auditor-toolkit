@@ -52,6 +52,11 @@ the port never drifted from it. No network calls, no build step, no dependencies
 | [The detection floor: ε is not a tolerance](https://alexisromtz-lab.github.io/auditor-toolkit/demo/piso-de-deteccion/) | A gate with a constant ε is not choosing a precision — it is choosing between two blindnesses. Drag δ and watch the local gate see what the constant one approves. | 80 bit-exact fields + 108 gates |
 | [The threshold: the attempt pays, and do you survive to collect?](https://alexisromtz-lab.github.io/auditor-toolkit/demo/umbral-economico/) | An attempt costs `C` and pays `V` with probability `p`. Two questions that look like one — does it pay on average, and will you still have attempts left when it finally lands? | 250 frozen states · 4 270 exact values |
 
+Every page ends by saying what it does **not** prove. That block is not decoration:
+`tools/verificar_limites.py` fails closed with `RC 1` if a page loses it, empties it,
+drops below two declared limits, or leaves a translation behind. A page that cannot
+name its own limit is not finished here.
+
 The engines the first three ports were taken from live in a private repository. The
 fourth ships its own: `demo/umbral-economico/umbral.py` **is** the oracle, stdlib
 only, and it runs from anywhere. What is public — and enough — is the answer key and

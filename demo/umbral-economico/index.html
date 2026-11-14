@@ -76,6 +76,9 @@
   .formula .dim { color: var(--tenue); }
   .pie { margin-top: 26px; color: var(--tenue); font-size: 12.5px; line-height: 1.7; }
   .pie code { color: var(--texto); }
+  #limites ul { margin: 6px 0 0; padding-left: 18px; }
+  #limites li { margin: 0 0 7px; }
+  #limites h2 { font-size: 12px; margin: 0; }
 </style>
 </head>
 <body>
@@ -154,6 +157,14 @@
     <p data-t="por_que_2">Los valores de la tabla salen de tres cómputos independientes del mismo número.</p>
   </div>
 </div>
+
+<section id="limites" data-limites="2" class="pie">
+  <h2 data-t="lim_titulo">Qué no prueba esta página</h2>
+  <ul>
+    <li data-t="lim_1">p es un dato, no una estimación. La página no la infiere de tu historial ni de una frecuencia observada: si p viene mal, todo lo demás es aritmética correcta sobre una premisa falsa, y p_min = C/V no la corrige — la supone.</li>
+    <li data-t="lim_2">El modelo supone intentos independientes, con C y V constantes y sin coste creciente. Apuesta variable, correlación entre intentos y un coste que sube con el número de intentos quedan fuera: NO_MEDIDO, no modelados.</li>
+  </ul>
+</section>
 
 <div class="pie" id="pie"></div>
 
@@ -354,7 +365,10 @@ var TEXTO = {
     fila_mcmedia: "Resultado medio medido (simulación)",
     pie_p1: "Los cuatro números del panel izquierdo son todo el motor: no hay archivos, ni corpus, ni dependencias que instalar. El oráculo en Python viaja en este mismo directorio y da estas mismas cifras:",
     pie_p2: "Esta pieza es la primera del escaparate que no es un port: no existía un motor interno que copiar, así que el motor se escribió dos veces desde cero y lo que se verifica es que los dos caminos coincidan — 4 270 valores analíticos sobre 250 estados y 4 estados de simulación Monte Carlo, bit a bit.",
-    pie_p3: "Sin enlaces a repositorios privados. Todo lo que la página afirma se puede recalcular aquí mismo."
+    pie_p3: "Sin enlaces a repositorios privados. Todo lo que la página afirma se puede recalcular aquí mismo.",
+    lim_titulo: "Qué no prueba esta página",
+    lim_1: "p es un dato, no una estimación. La página no la infiere de tu historial ni de una frecuencia observada: si p viene mal, todo lo demás es aritmética correcta sobre una premisa falsa, y p_min = C/V no la corrige — la supone.",
+    lim_2: "El modelo supone intentos independientes, con C y V constantes y sin coste creciente. Apuesta variable, correlación entre intentos y un coste que sube con el número de intentos quedan fuera: NO_MEDIDO, no modelados."
   },
   en: {
     titulo: "The threshold — does the attempt pay, and do you survive to collect?",
@@ -405,7 +419,10 @@ var TEXTO = {
     fila_mcmedia: "Measured mean outcome (simulation)",
     pie_p1: "The four numbers on the left are the whole engine: no files, no corpus, no dependencies to install. The Python oracle ships in this same directory and returns these same figures:",
     pie_p2: "This is the first piece in the showcase that is not a port: there was no internal engine to copy, so the engine was written twice from scratch and what gets verified is that the two paths agree — 4 270 analytic values over 250 states and 4 Monte Carlo simulation states, bit for bit.",
-    pie_p3: "No links to private repositories. Everything the page claims can be recomputed right here."
+    pie_p3: "No links to private repositories. Everything the page claims can be recomputed right here.",
+    lim_titulo: "What this page does not prove",
+    lim_1: "p is a given, not an estimate. The page does not infer it from your history or from an observed frequency: if p is wrong, everything else is correct arithmetic on a false premise, and p_min = C/V does not correct it — it assumes it.",
+    lim_2: "The model assumes independent attempts, with constant C and V and no growing cost. Variable bet size, correlation between attempts, and a cost that rises with the number of attempts stay outside: NO_MEDIDO, not modelled."
   }
 };
 

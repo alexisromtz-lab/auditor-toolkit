@@ -34,6 +34,11 @@ de compilación, sin dependencias.
 | [El piso de detección: ε no es una tolerancia](https://alexisromtz-lab.github.io/auditor-toolkit/demo/piso-de-deteccion/) | Una compuerta con ε constante no elige una precisión: elige entre dos cegueras. Mueve δ y mira la compuerta local ver lo que la constante aprueba. | 80 campos bit a bit + 108 compuertas |
 | [El umbral: paga el intento, y ¿sobrevives a cobrarlo?](https://alexisromtz-lab.github.io/auditor-toolkit/demo/umbral-economico/) | Un intento cuesta `C` y paga `V` con probabilidad `p`. Dos preguntas que parecen una: si el intento paga en promedio, y si te quedan intentos cuando por fin sale. | 250 estados congelados · 4 270 valores exactos |
 
+Cada página termina diciendo qué **no** prueba. Ese bloque no es decoración:
+`tools/verificar_limites.py` falla cerrado con `RC 1` si una página lo pierde, lo deja
+vacío, baja de dos límites declarados o deja una traducción atrás. Una página que no
+sabe nombrar su propio límite aquí no está terminada.
+
 Los motores de los que se tomaron **los tres primeros** ports viven en un
 repositorio privado. El cuarto trae el suyo: `demo/umbral-economico/umbral.py`
 **es** el oráculo, sólo biblioteca estándar, y corre desde cualquier sitio. Lo que

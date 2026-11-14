@@ -79,6 +79,10 @@
   .teorema{border-left:2px solid var(--violet);padding:2px 0 2px 12px;margin:0 0 20px;
     color:var(--ink);font-size:13.5px;max-width:74ch}
   .teorema b{color:var(--violet)}
+  #limites{margin-top:26px;border-top:1px solid var(--line);padding-top:14px;font-size:12.5px;color:var(--dim);line-height:1.7}
+  #limites h2{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin:0 0 8px}
+  #limites ul{margin:0;padding-left:18px}
+  #limites li{margin:0 0 7px}
 </style>
 </head>
 <body>
@@ -171,6 +175,14 @@
     </table>
   </div>
 </div>
+
+<section id="limites" data-limites="2">
+  <h2 data-t="limTitulo">What this page does not prove</h2>
+  <ul>
+    <li data-t="lim1">The floats are not bit-exact and this page does not claim they are: x**2 in CPython routes to the system libm, which is not correctly rounded, so every float is compared within a measured 1 ULP with the bound declared at 4. No cross-language port can be bit-exact there.</li>
+    <li data-t="lim2">The verdict speaks about the five resamplers and the two invariants this page implements. An invariant outside those two, or a resampler outside those five, stays NO_MEDIDO — neither a pass nor a failure.</li>
+  </ul>
+</section>
 
 <footer id="pie"></footer>
 
@@ -532,6 +544,9 @@ var T = {
       },
       serieNota: function (n, rho) { return 'n = ' + n + ' · ρ = ' + rho; },
       nuloNota: function (k) { return 'n = ' + k + ' samples'; },
+      limTitulo: 'What this page does not prove',
+      lim1: 'The floats are not bit-exact and this page does not claim they are: x**2 in CPython routes to the system libm, which is not correctly rounded, so every float is compared within a measured 1 ULP with the bound declared at 4. No cross-language port can be bit-exact there.',
+      lim2: 'The verdict speaks about the five resamplers and the two invariants this page implements. An invariant outside those two, or a resampler outside those five, stays NO_MEDIDO — neither a pass nor a failure.',
       pie: 'Engine ported from <code>nulo_de_remuestreo.py</code> (private repository). This page is the port; <code>verificar_paridad.py</code> is the check that the port did not drift: every discrete output — state, return code, verdicts, sample count — is identical on a frozen fixture, and every float stays within a measured 1 ULP (bound declared at 4). The bound exists because <code>x**2</code> in CPython routes to the system libm, which is not correctly rounded: no cross-language port can be bit-exact there. <code>verificar_ui.js</code> checks the page starts and publishes each value whole.'
     },
     es: {
@@ -595,6 +610,9 @@ var T = {
       },
       serieNota: function (n, rho) { return 'n = ' + n + ' · ρ = ' + rho; },
       nuloNota: function (k) { return 'n = ' + k + ' muestras'; },
+      limTitulo: 'Qué no prueba esta página',
+      lim1: 'Los flotantes no son bit a bit y esta página no afirma que lo sean: x**2 en CPython llama a la libm del sistema, que no redondea correctamente, así que cada flotante se compara dentro de 1 ULP medido con la cota declarada en 4. Ahí ningún port entre lenguajes puede ser bit a bit.',
+      lim2: 'El veredicto habla de los cinco remuestreadores y los dos invariantes que esta página implementa. Un invariante fuera de esos dos, o un remuestreador fuera de esos cinco, queda NO_MEDIDO — ni aprobado ni reprobado.',
       pie: 'Motor portado desde <code>nulo_de_remuestreo.py</code> (repositorio privado). Esta página es el port; <code>verificar_paridad.py</code> es la comprobación de que el port no divergió: toda salida discreta —estado, código de retorno, veredictos, número de muestras— es idéntica sobre un fixture congelado, y cada flotante queda dentro de 1 ULP medido (cota declarada en 4). La cota existe porque <code>x**2</code> en CPython llama a la libm del sistema, que no redondea correctamente: ningún port entre lenguajes puede ser bit a bit ahí. <code>verificar_ui.js</code> comprueba que la página arranca y publica cada valor entero.'
     }
   };
@@ -668,6 +686,12 @@ var T = {
     for (var k = 0; k < ps.length; k++) {
       $('preset-t-' + ps[k].id).textContent = ps[k].t;
       $('preset-s-' + ps[k].id).textContent = ps[k].s;
+    }
+
+    var ls = document.querySelectorAll('[data-t]');
+    for (var q = 0; q < ls.length; q++) {
+      var lv = t(ls[q].getAttribute('data-t'));
+      if (lv !== undefined) ls[q].textContent = lv;
     }
   }
 

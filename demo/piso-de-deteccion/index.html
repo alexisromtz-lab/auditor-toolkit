@@ -83,6 +83,10 @@
   footer { margin-top: 26px; border-top: 1px solid var(--borde); padding-top: 14px;
            font-size: 12.5px; color: var(--tenue); }
   footer code { color: var(--texto); }
+  #limites{margin-top:26px;border-top:1px solid var(--borde);padding-top:14px;font-size:12.5px;color:var(--tenue);line-height:1.7}
+  #limites h2{font-size:12px;margin:0 0 8px}
+  #limites ul{margin:0;padding-left:18px}
+  #limites li{margin:0 0 7px}
 </style>
 </head>
 <body>
@@ -196,6 +200,14 @@
     <p data-t="tesis_2"></p>
     <p data-t="tesis_3"></p>
   </div>
+</section>
+
+<section id="limites" data-limites="2">
+  <h2 data-t="lim_titulo">Qué no prueba esta página</h2>
+  <ul>
+    <li data-t="lim_1">El piso ε_max se mide sobre el dominio y la máscara de los perfiles congelados. Extrapolarlo a otro dominio, a otra máscara o a otra resolución queda NO_MEDIDO: esta página no prueba que ese otro caso tenga el mismo piso.</li>
+    <li data-t="lim_2">Los flotantes que son cociente de una diferencia que cancela no son bit a bit: se comparan con cota relativa declarada, 5.6e-13 medido y 1e-11 contratado. Fuera de esa cota esta página no demuestra nada.</li>
+  </ul>
 </section>
 
 <footer>
@@ -563,6 +575,9 @@ var TEXTO = {
     tesis_2: "La compuerta local no tiene ese dilema porque no compara contra un número: compara contra τ̂(x) + 4h⁴, que vale hasta 170 veces menos en el decil bajo de la máscara. Ahí el residuo honesto cabe y la contaminación no.",
     tesis_3: "Ninguna de las dos cifras está configurada: las dos se miden. El oráculo en Python y este motor en el navegador se comparan bit a bit sobre 108 compuertas congeladas y con cota declarada en los campos que cancelan.",
     pie_oraculo: "Oráculo: tools/piso_de_deteccion.py · el motor de esta página es un port verificado contra él. Los campos que son cociente de una diferencia que cancela se comparan con cota relativa declarada (5.6e-13 medido, 1e-11 contratado).",
+    lim_titulo: "Qué no prueba esta página",
+    lim_1: "El piso ε_max se mide sobre el dominio y la máscara de los perfiles congelados. Extrapolarlo a otro dominio, a otra máscara o a otra resolución queda NO_MEDIDO: esta página no prueba que ese otro caso tenga el mismo piso.",
+    lim_2: "Los flotantes que son cociente de una diferencia que cancela no son bit a bit: se comparan con cota relativa declarada, 5.6e-13 medido y 1e-11 contratado. Fuera de esa cota esta página no demuestra nada.",
     est_conserva: "conserva",
     est_viola: "viola",
     est_no_medido: "no medido",
@@ -610,6 +625,9 @@ var TEXTO = {
     tesis_2: "The local gate has no such dilemma because it does not compare against a number: it compares against τ̂(x) + 4h⁴, which is up to 170 times smaller in the low decile of the mask. There the honest residual fits and the contamination does not.",
     tesis_3: "Neither figure is configured: both are measured. The Python oracle and this browser engine are compared bit for bit over 108 frozen gate cases and with a declared bound on the fields that cancel.",
     pie_oraculo: "Oracle: tools/piso_de_deteccion.py · this page's engine is a port verified against it. Fields that are a quotient of a cancelling difference are compared with a declared relative bound (5.6e-13 measured, 1e-11 contracted).",
+    lim_titulo: "What this page does not prove",
+    lim_1: "The floor ε_max is measured on the domain and the mask of the frozen profiles. Extrapolating it to another domain, another mask or another resolution stays NO_MEDIDO: this page does not prove that the other case has the same floor.",
+    lim_2: "Floats that are a quotient of a cancelling difference are not bit-exact: they are compared with a declared relative bound, 5.6e-13 measured and 1e-11 contracted. Outside that bound this page proves nothing.",
     est_conserva: "conserves",
     est_viola: "violates",
     est_no_medido: "not measured",
