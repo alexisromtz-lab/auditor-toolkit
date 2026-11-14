@@ -2,7 +2,7 @@
 # Auditor-Toolkit — metrological verification and falsifiers
 
 <!-- PLATINO-LABS-ARCHITECTURE-AUDIT:START -->
-[![Static Python scan: 27 modules, 0 cyclic SCC — observation, not a certification](https://img.shields.io/badge/static%20scan-27%20modules%20%C2%B7%200%20cyclic%20SCC-6C48B1)](https://github.com/alexisromtz-lab/auditor-toolkit/actions/runs/43652106152)
+[![Static Python scan: 27 modules, 0 cyclic SCC — observation, not a certification](https://img.shields.io/badge/static%20scan-27%20modules%20%C2%B7%200%20cyclic%20SCC-6C48B1)](https://github.com/alexisromtz-lab/auditor-toolkit/actions/runs/43652295829)
 
 ### Static architecture scan · observed metrics (not a certification)
 
@@ -12,7 +12,7 @@
 | Cyclic components (SCC) | 0 |
 | Python source bytes | 532,134 bytes |
 
-Commit: `126cf2fb632322d4cef43c110258330aec1e0244` · Observed at: `2026-11-14T23:13:03Z` (UTC) · [Workflow run](https://github.com/alexisromtz-lab/auditor-toolkit/actions/runs/43652106152)
+Commit: `2ea38913316b50a44fa398f86f3c413f66562d06` · Observed at: `2026-11-14T23:15:22Z` (UTC) · [Workflow run](https://github.com/alexisromtz-lab/auditor-toolkit/actions/runs/43652295829)
 
 **What this shows.** How many tracked Python files are eligible for static analysis, how many of their dependency components close a cycle, and how many bytes they total — measured on the single commit cited above.
 
