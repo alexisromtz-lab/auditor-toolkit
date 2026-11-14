@@ -30,9 +30,11 @@ en dos. Se declara y no se resuelve: parsear JavaScript para distinguirlo
 costaría más de lo que compra.
 
 Tercer límite: lee el HTML, no lo renderiza. Un `<li>` que existe y que el CSS
-esconde (`display:none`) cuenta como declarado. Lo descontado a mano son los
-comentarios `<!-- … -->`: ese texto no lo lee nadie, medido el 14-Nov-2026
-cuando el propio banco de pruebas dejó verde un límite comentado entero.
+esconde (`display:none`) cuenta como declarado. Los comentarios `<!-- … -->` se
+descuentan sobre el documento entero antes de contar nada, porque un comentario
+que abraza la etiqueta completa deja el `<li>` visible a un `findall`. Medido el
+14-Nov-2026: hasta esta corrección, comentar un límite entero daba RC 0; el
+banco sólo cubría el caso de comentar el texto *dentro* del `<li>`.
 """
 
 from __future__ import annotations
@@ -58,10 +60,19 @@ RC_NO_MEDIDO = 2
 RC_SIN_PAGINA = 3
 
 
+def sin_comentarios(fragmento):
+    """Quita `<!-- … -->`: ese texto está en el archivo y no lo lee nadie.
+
+    Se aplica al documento entero, no sólo al texto de cada `<li>`: si el
+    comentario abraza la etiqueta completa, el `<li>` sigue existiendo para un
+    `findall` y el límite cuenta como publicado.
+    """
+    return re.sub(r"<!--.*?-->", " ", fragmento, flags=re.S)
+
+
 def texto_visible(fragmento):
     """Texto que vería una persona: sin comentarios, sin etiquetas, espacios colapsados."""
-    sin_comentarios = re.sub(r"<!--.*?-->", " ", fragmento, flags=re.S)
-    sin_etiquetas = re.sub(r"<[^>]+>", " ", sin_comentarios)
+    sin_etiquetas = re.sub(r"<[^>]+>", " ", sin_comentarios(fragmento))
     return " ".join(sin_etiquetas.split())
 
 
@@ -94,7 +105,7 @@ def cobertura(html, clave, donde):
 
 def revisar_pagina(ruta):
     """Devuelve (fallos, numero_de_limites_declarados)."""
-    html = ruta.read_text(encoding="utf-8")
+    html = sin_comentarios(ruta.read_text(encoding="utf-8"))
     apertura = re.search(r'<section\b[^>]*\bid\s*=\s*"limites"[^>]*>', html)
     if not apertura:
         return ['no hay <section id="limites">: la página no declara lo que no prueba'], 0

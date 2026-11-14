@@ -152,6 +152,40 @@ class MutacionesTests(unittest.TestCase):
             self.assertEqual(resultado.returncode, 1)
             self.assertIn("no dice nada verificable", resultado.stderr)
 
+    def test_un_limite_entero_comentado_no_cuenta(self) -> None:
+        """El comentario puede abrazar la etiqueta, no sólo el texto de dentro.
+
+        Medido el `2026-11-14`: esta mutación daba `RC 0`, porque el `findall`
+        de `<li>` corría sobre el cuerpo sin descontar comentarios y el texto
+        seguía siendo sustantivo. Un límite invisible contaba como publicado.
+        """
+        with CopiaDelEscaparate() as copia:
+            copia.mutar(
+                copia.pagina,
+                '<li data-i18n="lim_1">This page does not certify the 9+3 physical degrees of freedom '
+                "of the field, nor a Maxwell solution; those stay <code>NO_MEDIDO</code>. It classifies, "
+                "it does not solve.</li>",
+                '<!-- <li data-i18n="lim_1">This page does not certify the 9+3 physical degrees of '
+                "freedom of the field, nor a Maxwell solution; those stay NO_MEDIDO. It classifies, "
+                "it does not solve.</li> -->",
+            )
+            resultado = correr(copia.raiz)
+            self.assertEqual(resultado.returncode, 1)
+            self.assertIn("declara 2 límites y publica 1", resultado.stderr)
+
+    def test_la_seccion_entera_comentada_no_cuenta(self) -> None:
+        """Comentar el bloque completo dejaría la página sin límites, y sin aviso."""
+        with CopiaDelEscaparate() as copia:
+            copia.mutar(
+                copia.pagina,
+                '  <section id="limites" data-limites="2">',
+                '  <!--<section id="limites" data-limites="2">',
+            )
+            copia.mutar(copia.pagina, "    </ul>\n  </section>", "    </ul>\n  </section>-->")
+            resultado = correr(copia.raiz)
+            self.assertEqual(resultado.returncode, 1)
+            self.assertIn("no hay <section", resultado.stderr)
+
     def test_un_limite_sin_negacion_queda_en_rojo(self) -> None:
         with CopiaDelEscaparate() as copia:
             copia.mutar(
