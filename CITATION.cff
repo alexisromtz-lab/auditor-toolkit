@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: "Cita la versión que uses: cada release tiene su propio DOI."
+title: "Auditor-Toolkit"
+abstract: >-
+  Cuatro demos interactivas autocontenidas y los instrumentos que las certifican.
+  Cada página publica lo que no prueba. La paridad entre el oráculo en Python y el
+  motor en JavaScript se verifica con fixtures congelados, y los controles de borde
+  se pinzan con una batería de mutaciones que debe fallar en rojo cuando el
+  instrumento se degrada.
+type: software
+license: Apache-2.0
+authors:
+  - family-names: "Roman Martinez"
+    given-names: "Jose Alexis"
+    orcid: "https://orcid.org/0009-0001-9116-075X"
+    affiliation: "Platino Labs"
+repository-code: "https://github.com/alexisromtz-lab/auditor-toolkit"
+url: "https://alexisromtz-lab.github.io/auditor-toolkit/"
+keywords:
+  - deterministic testing
+  - parity testing
+  - falsification
+  - metrology
+  - mutation testing
+  - monte carlo
+  - circular dependency

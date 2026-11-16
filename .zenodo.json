@@ -1,0 +1,34 @@
+{
+  "title": "Auditor-Toolkit — certified engines with executable falsifiers",
+  "upload_type": "software",
+  "access_right": "open",
+  "license": "Apache-2.0",
+  "language": "eng",
+  "creators": [
+    {
+      "name": "Roman Martinez, Jose Alexis",
+      "orcid": "0009-0001-9116-075X",
+      "affiliation": "Platino Labs"
+    }
+  ],
+  "description": "<p>Four self-contained interactive demos and the instruments that certify them. Each page publishes its own limit: what it does not prove. The JavaScript engine is verified against a frozen Python oracle through fixtures that are regenerated from a tagged commit, and the boundary controls are pinned by a mutation battery that must turn red when the instrument degrades. A verifier that passes on a real defect is itself a defect.</p><p><strong>Demos:</strong> <em>Electromagnetic field classifier, Cl(1,3)</em> — frame-invariant classification of a bivector field; <em>Does your null have teeth?</em> — resampling nulls that actually bite; <em>El piso de detección</em> — ε is not a tolerance; <em>El umbral</em> — does the attempt pay, and do you survive collecting it? (threshold <code>p_min</code> with Monte Carlo).</p><p><strong>Español:</strong> cuatro demos interactivas autocontenidas y los instrumentos que las certifican. Cada página publica su límite —lo que no prueba—. La paridad entre el oráculo en Python y el motor en JavaScript se verifica con fixtures congelados y regenerables, y los controles de borde se pinzan con una batería de mutaciones que debe fallar en rojo al degradar el instrumento.</p><p><strong>Live:</strong> https://alexisromtz-lab.github.io/auditor-toolkit/</p>",
+  "keywords": [
+    "deterministic testing",
+    "parity testing",
+    "falsification",
+    "metrology",
+    "mutation testing",
+    "monte carlo",
+    "circular dependency",
+    "import boundary",
+    "python",
+    "javascript"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://alexisromtz-lab.github.io/auditor-toolkit/",
+      "relation": "isSupplementedBy",
+      "resource_type": "software"
+    }
+  ]
+}
