@@ -1,6 +1,8 @@
 <!-- HUELLA-README-AUDITOR-TOOLKIT-EN-20261021 -->
 # Auditor-Toolkit — metrological verification and falsifiers
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24293665.svg)](https://doi.org/10.5281/zenodo.24293665)
+
 <!-- PLATINO-LABS-ARCHITECTURE-AUDIT:START -->
 [![Static Python scan: 28 modules, 0 cyclic SCC — observation, not a certification](https://img.shields.io/badge/static%20scan-28%20modules%20%C2%B7%200%20cyclic%20SCC-6C48B1)](https://github.com/alexisromtz-lab/auditor-toolkit/actions/runs/43965493870)
 
@@ -397,3 +399,7 @@ The badge text is built from the measured counts — `static scan: N modules · 
 - We do not ask for bounties: we ask for **datasets** and **merges**.
 - If you find a failure in this toolkit, attach the **`sha256` of the mutant** that proves it.
 - A report without a declared limit reads as an opinion. A report with a declared limit can be re-audited — and that is all this repo offers.
+
+## How to cite
+
+The DOI [`10.5281/zenodo.24293665`](https://doi.org/10.5281/zenodo.24293665) resolves to the latest deposited version; each release carries its own. `CITATION.cff` feeds GitHub's *Cite this repository* button.

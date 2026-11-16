@@ -1,6 +1,8 @@
 <!-- HUELLA-README-AUDITOR-TOOLKIT-20261021 -->
 # Auditor-Toolkit — verificación metrológica y falsadores
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24293665.svg)](https://doi.org/10.5281/zenodo.24293665)
+
 Instrumentos para auditar artefactos, manifiestos y CI **sin confiar en la palabra del autor**.
 
 La mayoría de los benchmarks miden la media. Estos instrumentos miden **el límite del instrumento**:
@@ -383,3 +385,7 @@ El texto de la insignia se construye con las cifras medidas — `static scan: N 
 - No pedimos bounties: pedimos **datasets** y **merges**.
 - Si encuentras un fallo en este toolkit, adjunta el **`sha256` del mutante** que lo demuestra.
 - Un reporte sin límite declarado se lee como opinión. Un reporte con límite declarado se puede re-auditar — y eso es todo lo que este repo ofrece.
+
+## Cómo citar
+
+El DOI [`10.5281/zenodo.24293665`](https://doi.org/10.5281/zenodo.24293665) resuelve a la última versión depositada; cada release tiene el suyo. `CITATION.cff` alimenta el botón *Cite this repository* de GitHub.

@@ -1,5 +1,6 @@
 cff-version: 1.2.0
 message: "Cita la versión que uses: cada release tiene su propio DOI."
+doi: "10.5281/zenodo.24293665"
 title: "Auditor-Toolkit"
 abstract: >-
   Cuatro demos interactivas autocontenidas y los instrumentos que las certifican.
