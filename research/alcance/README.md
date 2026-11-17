@@ -84,7 +84,7 @@ puerta), `referencia_sin_uso` (definida y nunca usada: el lector no la ve),
 # reproducir
 python3 research/alcance/instruments/medir_alcance.py --pieza 5059635 \
   --debe https://github.com/alexisromtz-lab/auditor-toolkit \
-  --origen ~/Desktop/devto-articulo-final.md
+  --origen case_studies/devto/encontre-2-bugs-reales-en-django-20261117.md
 
 # el render que sirve la plataforma, contra el markdown que la plataforma guarda:
 # la misma pieza, tres objetos (markdown · body_html · pagina servida)
@@ -94,7 +94,7 @@ python3 research/alcance/instruments/medir_alcance.py --pieza 5059635 --render \
 
 # control positivo: el original corregido debe dar RC 0
 python3 research/alcance/instruments/medir_alcance.py \
-  --pieza ~/Desktop/devto-articulo-final.md \
+  --pieza case_studies/devto/encontre-2-bugs-reales-en-django-20261117.md \
   --debe https://github.com/alexisromtz-lab/auditor-toolkit
 
 # control negativo: pieza ilegible => NO_MEDIDO, RC 2, nunca HUERFANO
