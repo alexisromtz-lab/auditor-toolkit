@@ -62,9 +62,31 @@ Reglas que este instrumento NO negocia:
    una linea en blanco parte cualquier parser. Medido 17-Nov-2026: RECEPCION.tsv
    tenia cabecera en la linea 1 y en la 12.
 
+9. La regla sellada en la enmienda 4B decide sobre `vistas_pagina` UNICAS, y esta
+   tabla publicaba el conteo total bajo ese mismo nombre. Medido 17-Nov-2026: la
+   fila decia `github vistas_pagina 2`, que era `count` -- coincidia con
+   `uniques` solo porque con dos visitas las dos cifras son la misma. En el
+   umbral (15) divergen, y ahi el nombre compartido decidiria la rama equivocada.
+   Se publica `vistas_pagina_unicas` en clase POBLACION, que NO es contable:
+   sumarla a LECTOR contaria dos veces al mismo lector. El umbral no se movio; se
+   alineo el instrumento al nombre que la regla ya tenia.
+
+10. `github.com` como referrer es navegacion DENTRO de github, no una puerta.
+    Medido 17-Nov-2026: el unico referrer de la ventana era `github.com` con 1
+    visita. Contarlo como puerta externa habria disparado la rama A con cero
+    trafico de fuera -- es decir, habria declarado "hay puerta" justo cuando la
+    puerta es lo que falta.
+
+11. La regla del 19-Nov se aplica con `decidir()`, no a mano el dia del corte.
+    Una consecuencia evaluada a mano sobre dos comandos y ocho columnas es una
+    consecuencia que se puede leer mal. La rama D (NO_MEDIDO) no es un veredicto
+    sobre el objeto: es un fallo del instrumento y se reejecuta.
+
 Uso:
     medir_recepcion.py --recid 24323318 --repo alexisromtz-lab/auditor-toolkit --articulo 5059635
     medir_recepcion.py --recid 24323318 --repo alexisromtz-lab/auditor-toolkit
+    medir_recepcion.py --repo alexisromtz-lab/auditor-toolkit --canal
+    medir_recepcion.py --repo alexisromtz-lab/auditor-toolkit --articulo 5059635 --veredicto
     medir_recepcion.py --self-test
 """
 
@@ -88,6 +110,13 @@ MEDIDO = "MEDIDO"
 NO_MEDIDO = "NO_MEDIDO"
 
 RC_ARGUMENTOS = 20  # el contrato del corpus reserva 2 para NO_MEDIDO
+
+# Clase de la cifra que DECIDE. No entra en CLASES_CONTABLES: sumarla a LECTOR
+# contaria dos veces al mismo lector (ver regla 9 del docstring).
+POBLACION = "POBLACION"
+UMBRAL_POBLACION = 15  # vistas unicas del repositorio, sellado en la enmienda 4B
+UMBRAL_DEVTO = 50      # vistas del articulo, sellado en la enmienda 4B
+REFERRER_INTERNO = "github.com"
 
 
 class _ParserDeContrato(argparse.ArgumentParser):
@@ -207,6 +236,44 @@ def formatear_canal(canal: dict) -> list[str]:
     return lineas
 
 
+def es_externo(referrer) -> bool:
+    """Un referrer de github.com es navegacion interna, no una puerta de entrada.
+
+    Medido 17-Nov-2026: el unico referrer de la ventana era `github.com`. Leerlo
+    como puerta externa declararia que habia puerta justo cuando la puerta es lo
+    que falta (regla 10 del docstring).
+    """
+    nombre = str(referrer or "").strip().lower()
+    if not nombre:
+        return False
+    return not (nombre == REFERRER_INTERNO or nombre.endswith("." + REFERRER_INTERNO))
+
+
+def referrers_externos(canal: dict) -> tuple[int, int] | None:
+    """(referrers externos, visitas unicas suyas) o None si el canal no se leyo.
+
+    Vacio medido devuelve (0, 0): "nadie llego de fuera" es un hecho medido, no
+    una ausencia de medicion.
+    """
+    filas = canal.get("referrers")
+    if filas is None:
+        return None
+    externos = [(visitas, unicos) for etiqueta, visitas, unicos in filas if es_externo(etiqueta)]
+    return (len(externos), sum(unicos or 0 for _visitas, unicos in externos))
+
+
+def resumen_puerta(canal: dict) -> str:
+    """Una linea con lo que la rama A necesita saber: hay puerta o no hay."""
+    externos = referrers_externos(canal)
+    if externos is None:
+        return "  puerta externa NO_MEDIDA: sin referrers no se sabe si hay puerta."
+    cuantos, unicos = externos
+    if cuantos == 0:
+        return ("  puerta externa: 0 referrers externos. github.com es navegacion "
+                "interna, no una puerta.")
+    return f"  puerta externa: {cuantos} referrer(s) externo(s), {unicos} visita(s) unica(s)."
+
+
 # ------------------------------------------------------------------ lectura
 
 
@@ -322,6 +389,9 @@ def construir_filas(zenodo: list[dict], github: dict, devto: dict | None = None)
             celda(etiqueta, "vistas_registro", version["vistas"], "vista", "LECTOR", VENTANA_ZENODO)
         )
     filas.append(celda("github", "vistas_pagina", github["vistas"], "vista", "LECTOR", VENTANA_GITHUB))
+    # La cifra que decide la regla del 19-N. Clase propia y no contable: el
+    # conteo y los unicos son el mismo lector dos veces (regla 9 del docstring).
+    filas.append(celda("github", "vistas_pagina_unicas", github["vistas_unicas"], "vista", POBLACION, VENTANA_GITHUB))
     filas.append(celda("github", "estrellas", github["estrellas"], "estrella", "SENAL", VENTANA_GITHUB))
     filas.append(celda("github", "forks", github["forks"], "fork", "SENAL", VENTANA_GITHUB))
     # Los clones se miden, se publican y NO se suman: no son lectores.
@@ -398,23 +468,77 @@ def a_tsv(filas: list[dict], momento: str, con_cabecera: bool = True) -> str:
     return "\n".join(lineas) + "\n"
 
 
-def _valor_github(filas: list[dict], metrica: str):
-    """Valor medido de una metrica de github, o None. No totaliza: lee la fila."""
+def _valor_superficie(filas: list[dict], superficie: str, metrica: str):
+    """Valor medido de una metrica de una superficie, o None. No totaliza: lee la fila."""
     for fila in filas:
-        if fila["superficie"] == "github" and fila["metrica"] == metrica:
+        if fila["superficie"] == superficie and fila["metrica"] == metrica:
             return fila["valor"]
     return None
 
 
+def _valor_github(filas: list[dict], metrica: str):
+    return _valor_superficie(filas, "github", metrica)
+
+
+def _entrada(filas: list[dict], superficie: str, metrica: str, umbral: int) -> str:
+    """Una linea de las entradas de la regla, con su umbral y su estado.
+
+    `NO_PEDIDA` no es `NO_MEDIDO`: la primera es una decision del operador, la
+    segunda un fallo. La rama D es la misma, pero el remedio no.
+    """
+    for fila in filas:
+        if fila["superficie"] == superficie and fila["metrica"] == metrica:
+            valor = "NO_MEDIDO" if fila["valor"] is None else f"{fila['valor']:,}"
+            return f"  {metrica.ljust(30)}{valor.rjust(10)}   umbral >= {umbral}"
+    return f"  {metrica.ljust(30)}{'NO_PEDIDA'.rjust(10)}   umbral >= {umbral}"
+
+
+def decidir(filas: list[dict], canal: dict | None) -> tuple[str, str]:
+    """Aplica la regla sellada en la enmienda 4B. Devuelve (rama, motivo).
+
+    Decide sobre vistas UNICAS y sobre referrers externos. CLON no decide nada
+    en ninguna rama: es la huella del observador, no del sujeto.
+    """
+    p1 = _valor_superficie(filas, "github", "vistas_pagina_unicas")
+    p4 = _valor_superficie(filas, "devto", "vistas_pagina")
+    p3 = referrers_externos(canal) if canal is not None else None
+
+    if p1 is None:
+        return ("D", "P1 (vistas_pagina_unicas) NO_MEDIDA: sin poblacion no hay rama. Reejecutar.")
+    if p1 < UMBRAL_POBLACION:
+        return ("C", f"P1={p1} < {UMBRAL_POBLACION}: no hay poblacion. El acto es medir el "
+                     "canal (--canal), no escribir mas ni empaquetar.")
+    if (p3 is not None and p3[0] >= 1) or (p4 is not None and p4 >= UMBRAL_DEVTO):
+        return ("A", f"P1={p1} con puerta: hay poblacion y hay puerta. Empaquetar la GitHub Action.")
+    if p3 is None or p4 is None:
+        falta = "P3 (referrers externos)" if p3 is None else "P4 (vistas de dev.to)"
+        return ("D", f"P1={p1} pero {falta} NO_MEDIDA: no se puede separar A de B. Reejecutar.")
+    return ("B", f"P1={p1} sin puerta (P3={p3[0]}, P4={p4}): hay poblacion y falta la puerta, "
+                 "no el producto.")
+
+
+def imprimir_veredicto(rama: str, motivo: str, filas: list[dict], canal: dict | None) -> None:
+    print("  ENTRADAS DE LA REGLA (enmienda 4B, sellada 2026-11-17)")
+    print(_entrada(filas, "github", "vistas_pagina_unicas", UMBRAL_POBLACION))
+    externos = referrers_externos(canal) if canal is not None else None
+    texto_p3 = "NO_MEDIDA" if externos is None else f"{externos[0]:,}"
+    print(f"  {'referrers_externos'.ljust(30)}{texto_p3.rjust(10)}   umbral >= 1")
+    print(_entrada(filas, "devto", "vistas_pagina", UMBRAL_DEVTO))
+    print()
+    print("  RAMA " + rama + ": " + motivo)
+
+
 def imprimir_resumen(filas: list[dict], totales: dict) -> None:
-    ancho = max(len(f["superficie"]) for f in filas) + 2
-    print(f"{'superficie'.ljust(ancho)}{'metrica'.ljust(18)}{'valor'.rjust(10)}  {'ventana'.ljust(9)}estado")
-    print("-" * (ancho + 46))
+    # La cabecera manda: "superficie" mide mas que cualquier nombre de superficie
+    # corto y sin esto el encabezado se come la columna de al lado.
+    ancho = max(len("superficie"), max(len(f["superficie"]) for f in filas)) + 2
+    print(f"{'superficie'.ljust(ancho)}{'metrica'.ljust(20)}{'valor'.rjust(10)}  {'ventana'.ljust(9)}estado")
+    print("-" * (ancho + 48))
     for fila in filas:
         valor = "NO_MEDIDO" if fila["valor"] is None else f"{fila['valor']:,}"
         print(
             fila["superficie"].ljust(ancho)
-            + fila["metrica"].ljust(18)
+            + fila["metrica"].ljust(20)
             + valor.rjust(10)
             + "  "
             + fila["ventana"].ljust(9)
@@ -542,15 +666,48 @@ def self_test() -> int:
               formatear_canal({"referrers": [("github.com", 7, 3)], "rutas": []})[0].split()[-2:],
               ["7", "3"])
 
+    # 13. La regla decide sobre vistas UNICAS y la tabla publicaba el conteo bajo
+    #     ese nombre. Medido 17-Nov-2026: con 2 vistas las dos cifras coinciden, y
+    #     por eso nadie noto que la regla nombraba una cifra que no se publicaba.
+    con_unicas = {"estrellas": 0, "forks": 0, "vistas": 20, "vistas_unicas": 6,
+                  "clones": 488, "clones_unicos": 168, "corridas": 121}
+    filas13 = construir_filas([], con_unicas)
+    comprobar("unicas publicadas", _valor_superficie(filas13, "github", "vistas_pagina_unicas"), 6)
+    comprobar("conteo publicado aparte", _valor_superficie(filas13, "github", "vistas_pagina"), 20)
+    comprobar("unicas no se suman a LECTOR", totalizar(filas13)["LECTOR"], 20)
+    comprobar("poblacion no es clase contable", POBLACION in totalizar(filas13), False)
+
+    # 14. La regla del 19-N se aplica con `decidir()`, no a mano el dia del corte.
+    #     github.com no es puerta: es navegacion interna (medido 17-Nov-2026).
+    def rama(vistas_unicas, p4=None, referrers=None):
+        g = {"estrellas": 0, "forks": 0, "vistas": vistas_unicas,
+             "vistas_unicas": vistas_unicas, "clones": 488, "clones_unicos": 168, "corridas": 121}
+        d = None if p4 is None else {"alcanzable": True, "publicado": "2026-11-17T19:24:53Z",
+                                     "reacciones": 0, "comentarios": 0, "vistas": p4}
+        c = None if referrers is None else {"referrers": referrers, "rutas": []}
+        return decidir(construir_filas([], g, d), c)[0]
+
+    comprobar("rama A por puerta externa", rama(15, 0, [("dev.to", 3, 3)]), "A")
+    comprobar("rama A por devto", rama(15, 50, []), "A")
+    comprobar("rama B sin puerta", rama(15, 10, [("github.com", 9, 9)]), "B")
+    comprobar("rama C sin poblacion", rama(14, 500, [("dev.to", 9, 9)]), "C")
+    comprobar("rama D sin vistas", rama(None, 10, []), "D")
+    comprobar("rama D por puerta no medida", rama(15, 10, None), "D")
+    comprobar("github.com no es puerta", es_externo("github.com"), False)
+    comprobar("subdominio de github no es puerta", es_externo("gist.github.com"), False)
+    comprobar("devto si es puerta", es_externo("dev.to"), True)
+
     if fallos:
         print(f"SELF-TEST FALLA: {len(fallos)} defecto(s)")
         for fallo in fallos:
             print(f"  - {fallo}")
         return 1
-    print("SELF-TEST OK: 24/24 (cero medido, fallo NO_MEDIDO, mixto, clon aislado, clon no aditivo, "
+    print("SELF-TEST OK: 34/34 (cero medido, fallo NO_MEDIDO, mixto, clon aislado, clon no aditivo, "
           "version propia, github caido, devto no contamina, devto caido, devto senal propia, devto publicado, "
           "clase pedida sin filas, clase no pedida, cabecera unica, cabecera anexada, huella del CI no contable, "
-          "cobertura como techo, cobertura sin poblacion, canal caido, canal vacio, canal medido)")
+          "cobertura como techo, cobertura sin poblacion, canal caido, canal vacio, canal medido, "
+          "unicas publicadas, conteo aparte, unicas fuera de LECTOR, poblacion no contable, "
+          "rama A, rama B, rama C, rama D, github no es puerta)")
     return 0
 
 
@@ -569,6 +726,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--tsv", help="ruta donde anexar las filas")
     parser.add_argument("--canal", action="store_true",
                         help="nombra el canal de las visitas que si hubo (referrers y rutas)")
+    parser.add_argument("--veredicto", action="store_true",
+                        help="aplica la regla sellada del 19-Nov (ramas A/B/C/D)")
     parser.add_argument("--self-test", action="store_true")
     args = parser.parse_args(argv)
 
@@ -582,11 +741,25 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  {'':9} {'origen / ruta'.ljust(46)} {'visitas':>6} {'unicos':>6}")
         for linea in formatear_canal(canal):
             print(linea)
+        print(resumen_puerta(canal))
         if canal.get("referrers") is None and canal.get("rutas") is None:
             return 2
         return 0
+    if args.veredicto:
+        if not args.repo:
+            parser.error("--veredicto exige --repo")
+        github = leer_github(args.repo)
+        devto = leer_devto(args.articulo) if args.articulo else None
+        filas = construir_filas([], github, devto)
+        canal = leer_canal(args.repo)
+        rama, motivo = decidir(filas, canal)
+        imprimir_veredicto(rama, motivo, filas, canal)
+        if rama == "D":
+            print("  Un fallo del instrumento no es un veredicto sobre el objeto: se reejecuta.")
+            return 2
+        return 0
     if not args.recid and not args.repo and not args.articulo:
-        parser.error("hace falta --recid, --repo, --articulo, --canal o --self-test")
+        parser.error("hace falta --recid, --repo, --articulo, --canal, --veredicto o --self-test")
 
     zenodo: list[dict] = []
     if args.recid:

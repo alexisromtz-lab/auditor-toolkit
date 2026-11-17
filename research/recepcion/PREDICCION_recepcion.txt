@@ -220,3 +220,103 @@ ENMIENDA 4 — 2026-11-17T20:57Z — EL TECHO DEL CI, Y LA REGLA QUE FALTA
 
 VENTANA VÁLIDA (sin cambios)
   inicio 2026-11-17T19:24:53Z   fin 2026-11-19T19:24:53Z
+
+ENMIENDA 5 — 2026-11-17T21:06Z — LA REGLA NOMBRABA UNA CIFRA QUE LA TABLA NO PUBLICABA
+===========================================================================
+
+5A. EL DEFECTO, MEDIDO
+
+  La enmienda 4B sella que decide `vistas_pagina` ÚNICAS del repositorio. Hasta
+  hoy el instrumento publicaba, bajo el nombre `vistas_pagina`, el valor `count`
+  — el conteo total, no los únicos. `vistas_unicas` se leía de la API en
+  `leer_github()` y se descartaba antes de construir la tabla.
+
+  Medido en el registro (RECEPCION.tsv, bloque 2026-11-17T20:41:39Z):
+
+      github   vistas_pagina   2   vista   LECTOR   14d   MEDIDO
+
+  Ese 2 es `count`. Coincidía con `uniques` — 2 por los dos lados — porque con dos
+  visitas las dos cifras son la misma. Por eso la frase «vistas_pagina = 2 únicas»
+  de 4B era verdadera por accidente, no porque el instrumento la publicara. El
+  defecto era INVISIBLE en la línea base y se activaba en el umbral: a partir de
+  15 visitas, `count` y `uniques` divergen justo donde la regla tiene que decidir.
+
+  Es el mismo defecto que 4A corrige, con otro sujeto: un nombre que no mide lo
+  que su lector cree que mide. No lo detectó una auditoría; lo detectó escribir la
+  regla y comprobar que se pudiera ejecutar.
+
+5B. LA CORRECCIÓN: SE ALINEA EL INSTRUMENTO, NO SE MUEVE LA REGLA
+
+  Se publica la cifra que decide:
+
+      github   vistas_pagina_unicas   N   vista   POBLACION   14d   MEDIDO
+
+  `POBLACION` NO es clase contable: el conteo total ya incluye a esos mismos
+  lectores, y sumarlos daría el doble de la audiencia real. Es la misma ley que
+  separa CLON de LECTOR, aplicada al sujeto que decide.
+
+  EL UMBRAL NO CAMBIÓ: sigue en 15 vistas únicas, sellado a las 20:57Z. Lo que
+  cambia es que ahora la tabla publica la cifra que ese umbral nombra. Mover el
+  umbral después de verlo habría sido la negociación que 4B prohíbe; alinear el
+  instrumento al nombre que la regla ya tenía no es mover la portería, es
+  construirla donde la regla dijo que estaba.
+
+  FALSADOR DE LA CORRECCIÓN: si el 19-11 `vistas_pagina` y
+  `vistas_pagina_unicas` siguen siendo iguales con ≥ 15 vistas, la distinción es
+  inerte para esa lectura — y sería un dato: cero lectores que repitan. La
+  corrección no se juzga por si las cifras coinciden, sino por si la tabla publica
+  ambas para que se pueda ver.
+
+5C. SEGUNDO DEFECTO: `github.com` NO ES UNA PUERTA
+
+  P3 pide «≥ 1 referrer EXTERNO». El único referrer medido es `github.com` con 1
+  visita y 1 único, y esa visita es navegación DENTRO de github — la portada del
+  repositorio, no alguien que llega de fuera. Leído sin separar, P3 habría sido 1
+  y la rama A se habría disparado con cero tráfico externo: habría declarado «hay
+  puerta» justo cuando la puerta es lo que falta.
+
+  Se adopta `referrers_externos(canal)`, que excluye `github.com` y sus
+  subdominios y devuelve (cuántos, únicos). Vacío medido devuelve (0, 0): «nadie
+  llegó de fuera» es un hecho medido, no una ausencia. `--canal` publica ahora una
+  línea `puerta externa`.
+
+  ESTADO MEDIDO AHORA (2026-11-17T21:06Z): 0 referrers externos. P3 = 0, medido.
+
+5D. TERCER DEFECTO: LA REGLA NO SE EJECUTABA
+
+  4B selló cuatro ramas en prosa. Aplicarlas a mano exige tres cifras de dos
+  comandos distintos, y la rama D — la que impide declarar un veredicto sobre el
+  objeto a partir de un fallo del instrumento — no tenía disparador mecánico: el
+  comando principal sale con RC 0 aunque todas sus filas sean NO_MEDIDO.
+
+  Se adopta `decidir(filas, canal)` y el modo `--veredicto`:
+
+      RC 0   -> rama A, B o C (se decidió)
+      RC 2   -> rama D (NO_MEDIDO: no se decide, se reejecuta)
+      RC 20  -> argumento malo (no es NO_MEDIDO)
+
+  `--veredicto` imprime las tres entradas con su umbral y distingue `NO_PEDIDA` (no
+  se pasó --articulo) de `NO_MEDIDO` (se pidió y no se pudo leer). La rama D es la
+  misma en ambos casos; el remedio no.
+
+  La rama D se dispara también cuando P1 ya se cumplió pero falta la entrada que
+  separa A de B: con P1 >= 15 y P3 NO_MEDIDO, un P4 = 10 no permite afirmar «no hay
+  puerta», porque una puerta en dev.to con 60 vistas no se ha descartado. Decidir B
+  ahí sería leer una ausencia como un cero.
+
+5E. NADA DE ESTO TOCA LA VENTANA
+
+  Las tres correcciones son del instrumento, no del objeto: no publican, no
+  escriben en dev.to ni en Zenodo, no crean lectores. La ventana del 19-11 sigue
+  intacta y la variable que decide sigue siendo la misma. Lo único que cambia es
+  que ahora se puede medir y decidir sin leer mal.
+
+  VERIFICACIÓN AL SELLAR (2026-11-17T21:06Z):
+    self-test del instrumento .......... 34/34 (reglas 13 y 14 nuevas)
+    tests/test_recepcion.py ............ 16 OK
+    --veredicto en vivo ................ RAMA C, RC 0
+    --veredicto sin --repo ............. RC 20
+    --canal en vivo .................... 0 referrers externos, RC 0
+    P1 = vistas_pagina_unicas .......... 2   (umbral 15)
+    P3 = referrers externos ............ 0   (umbral 1)
+    P4 = vistas_pagina dev.to .......... NO_MEDIDO (sin DEVTO_API_KEY)

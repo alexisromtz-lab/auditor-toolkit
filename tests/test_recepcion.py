@@ -56,7 +56,7 @@ class TestRecepcion(unittest.TestCase):
             timeout=120,
         )
         self.assertEqual(proceso.returncode, 0, proceso.stdout + proceso.stderr)
-        self.assertIn("SELF-TEST OK: 24/24", proceso.stdout)
+        self.assertIn("SELF-TEST OK: 34/34", proceso.stdout)
 
     def test_tsv_tiene_una_sola_cabecera(self) -> None:
         texto = TSV.read_text(encoding="utf-8")
@@ -166,6 +166,70 @@ class TestRecepcion(unittest.TestCase):
         """Un argumento malo no es NO_MEDIDO: el contrato reserva 2 para eso."""
         proceso = subprocess.run(
             [sys.executable, str(INSTRUMENTO), "--canal"],
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        self.assertEqual(proceso.returncode, 20, proceso.stderr)
+
+    def test_la_regla_publica_la_cifra_que_decide(self) -> None:
+        """La enmienda 4B decide sobre vistas ÚNICAS, no sobre el conteo.
+
+        Medido 17-Nov-2026: la fila decía `vistas_pagina 2`, que era `count` y
+        coincidía con `uniques` sólo porque con dos visitas las dos cifras son la
+        misma. En el umbral (15) divergen, y ahí el nombre compartido elegiría la
+        rama equivocada. La clase POBLACION no se suma a LECTOR: sería contar dos
+        veces al mismo lector.
+        """
+        github = {
+            "estrellas": 0,
+            "forks": 0,
+            "vistas": 20,
+            "vistas_unicas": 6,
+            "clones": 488,
+            "clones_unicos": 168,
+            "corridas": 121,
+        }
+        filas = self.m.construir_filas([], github)
+        self.assertEqual(self.m.decidir(filas, {"referrers": [], "rutas": []})[0], "C")
+        self.assertEqual(self.m._valor_superficie(filas, "github", "vistas_pagina_unicas"), 6)
+        self.assertEqual(self.m._valor_superficie(filas, "github", "vistas_pagina"), 20)
+        self.assertEqual(self.m.totalizar(filas)["LECTOR"], 20)
+        self.assertNotIn("POBLACION", self.m.totalizar(filas))
+
+    def test_github_com_no_es_una_puerta(self) -> None:
+        """Un referrer de github.com es navegación interna, no tráfico de fuera.
+
+        Medido 17-Nov-2026: el único referrer era `github.com` con 1 visita.
+        Contarlo como puerta habría disparado la rama A con cero tráfico externo.
+        """
+        self.assertFalse(self.m.es_externo("github.com"))
+        self.assertTrue(self.m.es_externo("dev.to"))
+        canal = {"referrers": [("github.com", 1, 1)], "rutas": []}
+        self.assertEqual(self.m.referrers_externos(canal), (0, 0))
+        self.assertIsNone(self.m.referrers_externos({"referrers": None, "rutas": None}))
+
+    def test_la_rama_d_no_es_un_veredicto_sobre_el_objeto(self) -> None:
+        """Si falta una entrada que separa A de B, la regla no decide: reejecuta."""
+        github = {
+            "estrellas": 0,
+            "forks": 0,
+            "vistas": 40,
+            "vistas_unicas": 40,
+            "clones": 488,
+            "clones_unicos": 168,
+            "corridas": 121,
+        }
+        sin_canal = self.m.construir_filas([], github)
+        self.assertEqual(self.m.decidir(sin_canal, None)[0], "D")
+        caido = self.m.construir_filas([], github, {"alcanzable": False, "publicado": None,
+                                                    "reacciones": None, "comentarios": None,
+                                                    "vistas": None})
+        self.assertEqual(self.m.decidir(caido, {"referrers": [("dev.to", 3, 3)], "rutas": []})[0], "A")
+
+    def test_veredicto_exige_repo_y_sale_con_20(self) -> None:
+        proceso = subprocess.run(
+            [sys.executable, str(INSTRUMENTO), "--veredicto"],
             capture_output=True,
             text=True,
             timeout=60,
