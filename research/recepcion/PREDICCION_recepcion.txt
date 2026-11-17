@@ -88,3 +88,49 @@ CRITERIO DE FALSACIÓN (sin cambios, se sostiene)
   A 48 h: LECTOR sigue en 2, SENAL_DEVTO en 0 y ningún referrer externo.
   Entonces el cuello es el CANAL y "construir más instrumentos para ganar
   presencia" queda falsado por ejecución, igual que el predictor 0/11.
+
+===========================================================================
+ENMIENDA 3 — 2026-11-17T20:41Z — LA BASE TENÍA UN NÚMERO CON DUEÑO
+===========================================================================
+
+QUÉ SE MIDIÓ
+  La línea base de arriba anota `CLON (14 d) 488`. Ese número no es audiencia:
+  es, en buena parte, la huella de nuestro propio CI.
+
+  Mecanismo: architecture-audit.yml corre en cada push y clona este mismo
+  repositorio dos veces (actions/checkout + git fetch --depth=1 del motor).
+
+  Por día, con la API de tráfico y de corridas:
+    13-11   63 corridas   211 clones   62 uniques   3,35 clones/corrida
+    14-11   12 corridas    56 clones   23 uniques   4,67
+    15-11    4 corridas   136 clones   56 uniques  34,0   <- NO ENCAJA
+    16-11    8 corridas    53 clones   26 uniques   6,63
+
+  Y en la misma ventana de 14 días, vistas de página del repositorio: 2.
+  456 de los 488 clones (93 %) ocurrieron ANTES del tag v0.1.0 (16-11 21:59),
+  de v0.2.0 y de la publicación del artículo (17-11 19:24:53Z).
+
+QUÉ SIGNIFICA, SIN REDONDEAR
+  a) CLON 488 no se puede leer como lectores. Nunca se pudo.
+  b) El día 15-11 no se explica por el CI. La huella es COTA INFERIOR, no
+     explicación total; queda declarada como anomalía en vez de absorbida.
+  c) La hipótesis de la puerta ("la gente llega pero no encuentra el enlace")
+     NO queda refutada por este dato: queda SIN PROBAR. No había población que
+     llegara, así que no hubo puerta que fallara.
+
+QUÉ NO CAMBIA — y esta es la razón de que la predicción siga viva
+  Ninguno de los cuatro umbrales usa CLON.
+    P1 vistas de página >= 15 únicas   -> superficie humana, no contaminada
+    P2 descargas del zip v0.2.0 >= 1   -> Zenodo, no contaminada
+    P3 >= 1 referrer externo           -> superficie humana, no contaminada
+    P4 dev.to >= 50 vistas             -> superficie humana, no contaminada
+  La base HUMANA medida (LECTOR 2 · DESCARGA 1) queda intacta y de hecho más
+  limpia: no estaba diluida en 488, estaba sola desde el principio.
+
+REGLA QUE SE ADOPTA
+  Un CLON no se publica nunca sin `runs_ci` en el mismo bloque. La fila
+  HUELLA_PROPIA (clase no contable) entra al TSV; el bloque
+  2026-11-17T20:41:39Z es el primero que la lleva (runs_ci = 121).
+
+VENTANA VÁLIDA (sin cambios)
+  inicio 2026-11-17T19:24:53Z   fin 2026-11-19T19:24:53Z
