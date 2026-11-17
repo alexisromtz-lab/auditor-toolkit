@@ -56,7 +56,7 @@ class TestRecepcion(unittest.TestCase):
             timeout=120,
         )
         self.assertEqual(proceso.returncode, 0, proceso.stdout + proceso.stderr)
-        self.assertIn("SELF-TEST OK: 15/15", proceso.stdout)
+        self.assertIn("SELF-TEST OK: 16/16", proceso.stdout)
 
     def test_tsv_tiene_una_sola_cabecera(self) -> None:
         texto = TSV.read_text(encoding="utf-8")
@@ -101,6 +101,40 @@ class TestRecepcion(unittest.TestCase):
         self.assertIsNone(self.m._horas_desde(None))
         self.assertIsNone(self.m._horas_desde("no-es-una-fecha"))
         self.assertIsNotNone(self.m._horas_desde("2026-11-17T19:24:53Z"))
+
+    def test_huella_del_ci_no_se_suma_al_clon(self) -> None:
+        """Un clon puede ser el propio CI. La huella se publica, no se agrega."""
+        github = {
+            "estrellas": 0,
+            "forks": 0,
+            "vistas": 2,
+            "vistas_unicas": 2,
+            "clones": 488,
+            "clones_unicos": 168,
+            "corridas": 121,
+        }
+        filas = self.m.construir_filas([], github)
+        totales = self.m.totalizar(filas)
+        self.assertEqual(totales["CLON"], 488, "la huella del CI no se resta sola")
+        self.assertEqual(totales["LECTOR"], 2)
+        self.assertNotIn("HUELLA_PROPIA", totales)
+        huella = [f for f in filas if f["clase"] == "HUELLA_PROPIA"]
+        self.assertEqual(len(huella), 1)
+        self.assertEqual(huella[0]["metrica"], "runs_ci")
+        self.assertEqual(huella[0]["valor"], 121)
+
+    def test_todo_clon_publicado_lleva_su_huella(self) -> None:
+        """Desde el arreglo, un CLON sin runs_ci no es interpretable.
+
+        Los bloques anteriores al 17-Nov-2026 son el registro del defecto: por eso
+        la aserción cae sobre el bloque más reciente, que es el que un lector mira.
+        """
+        bloques: dict[str, set[str]] = {}
+        for fila in _filas():
+            bloques.setdefault(fila["fecha_hora"], set()).add(fila["metrica"])
+        ultimo = max(bloques)
+        self.assertIn("clones", bloques[ultimo])
+        self.assertIn("runs_ci", bloques[ultimo], f"{ultimo}: clon sin co-variable")
 
     def test_clase_pedida_sin_filas_es_no_medido(self) -> None:
         self.assertIsNone(self.m.totalizar([], {"DESCARGA"})["DESCARGA"])

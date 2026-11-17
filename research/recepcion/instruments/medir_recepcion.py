@@ -11,6 +11,15 @@ Reglas que este instrumento NO negocia:
    Medido 17-Nov-2026: 488 clones y 168 unicos frente a 2 vistas en 14 dias
    (ratio 244:1). Ninguna audiencia humana produce eso: es rastreo automatico.
 
+   Y ese rastreo automatico tiene duenno: `architecture-audit.yml` corre en cada
+   push y clona este mismo repositorio dos veces -- una en `actions/checkout` y
+   otra en el `git fetch --depth=1` que baja el motor. Medido 17-Nov-2026 por
+   dia: 63 corridas / 211 clones el 13-Nov, 12 / 56 el 14-Nov, 8 / 53 el 16-Nov.
+   Los clones siguen al numero de corridas, no a ninguna publicacion: los 456 de
+   488 ocurrieron ANTES del tag v0.1.0 y del articulo. Por eso toda fila CLON se
+   publica junto a `runs_ci` (clase HUELLA_PROPIA): sin esa co-variable el conteo
+   de clones mide al observador y se lee como si midiera al sujeto.
+
 2. En Zenodo, la clave agregada `downloads` de una version hereda el total del
    concepto. La cifra propia de la version es `version_downloads`. Usar la
    primera en una tabla por version cuenta doble. Medido 17-Nov-2026: v0.2.0
@@ -57,9 +66,10 @@ import os
 import subprocess
 import sys
 import urllib.request
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 ESPERA_S = 20
+DIAS_VENTANA_GITHUB = 14     # la API de trafico devuelve una ventana movil
 VENTANA_GITHUB = "14d"       # la API de trafico devuelve una ventana movil
 VENTANA_ZENODO = "lifetime"  # los stats de Zenodo son acumulados
 VENTANA_DEVTO = "lifetime"   # reacciones y comentarios son acumulados
@@ -99,6 +109,38 @@ def _json_gh(ruta: str) -> dict | None:
         return None
 
 
+def _gh_jq(ruta: str, filtro: str) -> str | None:
+    """Igual que _json_gh pero deja que `gh` aplique el filtro en el borde."""
+    try:
+        proceso = subprocess.run(
+            ["gh", "api", f"repos/{ruta}", "--jq", filtro],
+            capture_output=True,
+            text=True,
+            timeout=ESPERA_S,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if proceso.returncode != 0:
+        return None
+    return proceso.stdout.strip() or None
+
+
+def contar_corridas(repo: str) -> int | None:
+    """Corridas de CI del propio repo dentro de la misma ventana que los clones.
+
+    Sin esta co-variable el conteo de clones no es interpretable: mide la huella
+    del observador. Ver la regla 1 del docstring.
+    """
+    desde = (datetime.now(timezone.utc) - timedelta(days=DIAS_VENTANA_GITHUB)).strftime("%Y-%m-%d")
+    crudo = _gh_jq(f"{repo}/actions/runs?created=%3E%3D{desde}&per_page=1", ".total_count")
+    if crudo is None:
+        return None
+    try:
+        return int(crudo)
+    except ValueError:
+        return None
+
+
 # ------------------------------------------------------------------ lectura
 
 
@@ -132,6 +174,7 @@ def leer_github(repo: str) -> dict:
         "vistas_unicas": None if vistas is None else vistas.get("uniques"),
         "clones": None if clones is None else clones.get("count"),
         "clones_unicos": None if clones is None else clones.get("uniques"),
+        "corridas": contar_corridas(repo),
     }
 
 
@@ -218,6 +261,8 @@ def construir_filas(zenodo: list[dict], github: dict, devto: dict | None = None)
     # Los clones se miden, se publican y NO se suman: no son lectores.
     filas.append(celda("github", "clones", github["clones"], "clon", "CLON", VENTANA_GITHUB))
     filas.append(celda("github", "clones_unicos", github["clones_unicos"], "clon_unico", "CLON_UNICO", VENTANA_GITHUB))
+    # Co-variable del clon: la huella del propio CI. No es clase contable.
+    filas.append(celda("github", "runs_ci", github.get("corridas"), "corrida", "HUELLA_PROPIA", VENTANA_GITHUB))
     if devto is not None:
         # Clases propias: no se suman a LECTOR/SENAL (ver regla 5 del docstring).
         filas.append(celda("devto", "vistas_pagina", devto["vistas"], "vista", "LECTOR_DEVTO", VENTANA_DEVTO))
@@ -308,6 +353,8 @@ def imprimir_resumen(filas: list[dict], totales: dict) -> None:
     print()
     print("  CLON y CLON_UNICO se publican aparte: NO se suman a LECTOR")
     print("  ni entre si (un unico ya esta contenido en el conteo).")
+    print("  HUELLA_PROPIA (runs_ci) acota CLON: cada corrida de CI clona este repo,")
+    print("  asi que CLON no se resta solo; se lee contra esa fila.")
     print("  LECTOR_DEVTO y SENAL_DEVTO son otra superficie y NO se suman a LECTOR/SENAL.")
 
 
@@ -385,14 +432,27 @@ def self_test() -> int:
     comprobar("cabecera primera vez", a_tsv(ceros, "t").count(CABECERA), 1)
     comprobar("cabecera anexada", a_tsv(ceros, "t", con_cabecera=False).count(CABECERA), 0)
 
+    # 10. La huella del propio CI no es fila contable. Cada corrida clona el
+    #     repo, asi que CLON se lee contra runs_ci y nunca se suma ni se resta
+    #     solo (medido 17-Nov-2026: 87 corridas y 456 clones antes de publicar).
+    con_huella = dict(github, corridas=121)
+    totales10 = totalizar(construir_filas([], con_huella))
+    comprobar("huella fuera de clon", totales10["CLON"], 488)
+    comprobar("huella fuera de lector", totales10["LECTOR"], 2)
+    comprobar("huella no es clase contable", "HUELLA_PROPIA" in totales10, False)
+    comprobar("corrida sin medir", [f["estado"] for f in construir_filas([], con_huella)
+                                    if f["metrica"] == "runs_ci"][0], MEDIDO)
+    comprobar("corrida caida NO_MEDIDO", [f["valor"] for f in construir_filas([], github)
+                                          if f["metrica"] == "runs_ci"][0], None)
+
     if fallos:
         print(f"SELF-TEST FALLA: {len(fallos)} defecto(s)")
         for fallo in fallos:
             print(f"  - {fallo}")
         return 1
-    print("SELF-TEST OK: 15/15 (cero medido, fallo NO_MEDIDO, mixto, clon aislado, clon no aditivo, "
+    print("SELF-TEST OK: 16/16 (cero medido, fallo NO_MEDIDO, mixto, clon aislado, clon no aditivo, "
           "version propia, github caido, devto no contamina, devto caido, devto senal propia, devto publicado, "
-          "clase pedida sin filas, clase no pedida, cabecera unica, cabecera anexada)")
+          "clase pedida sin filas, clase no pedida, cabecera unica, cabecera anexada, huella del CI no contable)")
     return 0
 
 
@@ -425,7 +485,8 @@ def main(argv: list[str] | None = None) -> int:
             zenodo = [{"version": "NO_LEIDO", "doi": None, "descargas": None, "vistas": None}]
 
     github = {"estrellas": None, "forks": None, "vistas": None,
-              "vistas_unicas": None, "clones": None, "clones_unicos": None}
+              "vistas_unicas": None, "clones": None, "clones_unicos": None,
+              "corridas": None}
     if args.repo:
         github = leer_github(args.repo)
 

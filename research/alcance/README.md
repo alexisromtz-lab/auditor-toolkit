@@ -227,3 +227,12 @@ sus metadatos es un mal cambio: la puerta ya está abierta.
   página renderizada autolinkea las URL desnudas, así que `SOLO_TEXTO/url_desnuda`
   sobre un release es un **falso rojo deliberado y barato**: el arreglo es un enlace
   markdown explícito, no un cambio en el instrumento.
+- **Un HTTP 200 no prueba que el campo entró.** Medido el 17-11-2026 sobre el
+  registro Zenodo `24323318`: `PUT /api/records/<id>` devolvió 200 y dejó
+  `creators`, `resource_type`, `license` y `custom` en `null`. El registro publicado
+  exige `POST /draft` → `PUT /draft` → `POST /draft/actions/publish`, y un registro
+  creado con la forma heredada `related_identifiers[].relation` debe migrarse a
+  `relation_type` al editar, o el borrador anula esos campos en silencio. La
+  publicación es *fail-closed* (400), así que el DOI no corrió riesgo — pero el 200
+  no era evidencia. Este lector no escribe; si algún día escribe, la lección entra
+  aquí antes que el código.
