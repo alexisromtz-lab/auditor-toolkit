@@ -1,0 +1,173 @@
+PREREGISTRO — mecanica posicional del ciclo
+fecha: 2026-11-16T22:00 CST · autor: agente · sujeto: 5 ecosistemas ya instalados
+datos disponibles ANTES de esta medicion: escrutinio_total.tsv (17 SCC>=2, 16 con
+arista viva, 0 ORDEN), y el ejecutor con clasificacion de causa.
+
+HIPOTESIS H1 (posicional)
+  Una sentencia `from M import n` a nivel de modulo solo rompe el ciclo si `n`
+  no esta ligado en M antes de que M llegue a su primer import interno al SCC.
+  Prediccion: en los 16 SCC que el predictor etiqueto VIVO y que la ejecucion
+  dio PASA, el numero de lecturas INSEGURAS es 0. Es decir: el falso positivo
+  del predictor tiene UNA sola causa, la ausencia de la condicion posicional.
+
+HIPOTESIS H2 (perezosa)
+  Las aristas que cierran ciclo sin lectura de nombre son `import M` o `from .
+  import m` (enlazan el objeto modulo, lectura tardia) o viven dentro de una
+  funcion / bajo TYPE_CHECKING, donde no corren al importar.
+
+FALSADOR DECLARADO
+  Si aparece al menos un SCC con lecturas INSEGURAS >= 1 cuya ejecucion fue
+  PASA, H1 queda refutada y el cero de ORDEN no tiene esta explicacion.
+  Si el control positivo (control_orden/p: a<->b con lectura de nombre antes de
+  la ligadura) NO sale INSEGURA, el instrumento es ciego y no se publica nada.
+
+CONTROL POSITIVO OBLIGATORIO
+  control_orden/p/{__init__,a,b}.py debe dar INSEGURA y la ejecucion del par
+  debe dar ORDEN. Sin ese par, "0 INSEGURAS" es indistinguible de "no mide".
+
+NO_MEDIDO declarado de antemano
+  - ciclos que solo rompen bajo una SECUENCIA de imports (no un import aislado)
+  - ligaduras por `del`, por `exec`, o por mutacion de globals()
+  - modulos generados en tiempo de ejecucion
+
+================================================================================
+VEREDICTO · 2026-11-17 (posterior a la medicion, escrito despues de ejecutar)
+================================================================================
+H1 (posicional): REFUTADA como modelo de veredicto, CONFIRMADA como cota superior.
+  Tres versiones sucesivas, cada una corregida con evidencia y cada una aun
+  sobre-prediciendo:
+    v1 (bug: submodulo medido contra el SCC)        -> 17 SCC · 14 ROMPE · 1107 lecturas
+    v2 (bug: corte leido del origen, no del destino) -> 17 SCC · 14 ROMPE · 1050 lecturas
+    v3 (+ regla padre-primero: hijo nunca a medias)  -> 17 SCC · 11 ROMPE ·  625 lecturas
+  Ejecucion medida sobre los mismos 17 SCC: 2 rupturas, ambas en SCC que estaban
+  enmascaradas por driver ausente (ver abajo). Falsos positivos 9/11 = 82 %.
+
+H2 (aristas perezosas / ligadura de modulo): no ejercitada como tal; absorbida por
+  la regla padre-primero, que es su caso mecanico.
+
+FALSADOR DECLARADO: "un SCC con lectura INSEGURA cuya ejecucion dio PASA". Se
+  cumplio 11 veces sobre 11 SCC con veredicto limpio. H1 no se publica como
+  predictor. `corte` es una cota superior, no un veredicto.
+
+HALLAZGO NO PREVISTO (el que si vale): la prediccion de 0 rupturas de la corrida
+  anterior era un artefacto de medicion. Los 3 SCC marcados NO_MEDIDO por driver
+  ausente no eran ceros: al instalar oracledb 26.1.0 y psycopg2 2.9.13, DOS de
+  ellos rompen de verdad, con la clase exacta que el ejecutor buscaba:
+    django.db.backends.oracle.utils         ImportError: cannot import name 'BoundVar' from partially initialized module
+    django.db.backends.oracle.operations    ImportError: cannot import name 'DatabaseOperations' from partially initialized module
+    django.db.backends.postgresql.introspection  ImportError: cannot import name 'DatabaseIntrospection' from partially initialized module
+  Reproducibles en interprete limpio, uno por proceso. `NO_MEDIDO` dejo de leerse
+  como cero y el resultado cambio de signo.
+
+REACHABILITY — CORREGIDA DOS VECES. Primera medicion: `gh api search/code` con los
+  tres imports -> total_count 0, 0, 0. Se ley como "ningun consumidor". ERA FALSO:
+  la consulta se escribio con `+` como separador y en un parametro de query `+` es un
+  signo mas literal. Control positivo con la MISMA forma: la cadena
+  `from django.db.backends.postgresql.base import` da 0 con `+` y 11 696 con espacio.
+  Un cero que tambien da cero para lo que existe no es un cero: es un instrumento roto.
+  Segunda medicion, con espacios: 19 520 / 9 872 / 14 080. Tambien inservible, en la
+  direccion contraria: la API legacy empareja TOKENS, no sentencias, y los hits caen
+  en el propio `django/db/backends/postgresql/base.py`. Control negativo con frase
+  citada: 0. Control positivo: 9 312. Discrimina pero no localiza.
+  Tercera medicion, instrumento distinto y exacto — censo sobre el sdist de Django
+  6.1.3 (`pip download --no-binary :all:`), poblacion declarada, sin rate limit:
+    import de modulo de los 3 modulos rotos:  6 ocurrencias, TODAS en `contrib.gis`
+       (postgis/base.py:8 y :11, postgis/introspection.py:2, postgis/operations.py:13,
+        gis/oracle/operations.py:20, gis/oracle/introspection.py:3)
+    de esas 6, la unica que no tiene `postgresql.base` cargado antes es
+       postgis/introspection.py:2 — y su linea 1 importa GDAL, que falla primero.
+    import dentro de funcion (zona segura): 5, una en tests/gis_tests/tests.py:105
+    documentado en docs/ref: 0
+  VEREDICTO: los 6 consumidores internos estan despues de cargar `base`; el septimo
+  candidato esta enmascarado por GDAL. NO se abre ticket: por el criterio con el que
+  los maintainers cerraron el ticket anterior, y por la regla del corpus "sin consumidor
+  nombrado no hay hallazgo, hay texto".
+  La clase "consumidor externo de terceros" queda NO_MEDIDO: no tengo instrumento que
+  pruebe una sentencia literal sobre GitHub, y no voy a publicar un cero que no se
+  distingue de un instrumento roto.
+
+PREDICCION ABIERTA (pre-registrada, falsable, NO medida):
+  Con GDAL instalado, `import django.contrib.gis.db.backends.postgis.introspection`
+  pasa de NO_MEDIDO a ROMPE con ImportError sobre DatabaseIntrospection. Se apoya en
+  que su linea 1 (GDAL) precede a su linea 2 (introspection) y en que entrar por
+  `postgresql.introspection` ya rompe medido. Falsador: instalar GDAL y ver PASA.
+  cota_error: si `django.contrib.gis.gdal` carga `postgresql.base` por su cuenta, la
+  prediccion falla; no medido.
+
+CLASES NO_MEDIDAS QUE SIGUEN ABIERTAS (declaradas, no contadas como cero):
+  GDAL (django.contrib.gis.*: 24 modulos), mysqlclient (4), import concurrente
+  (el lock por modulo de CPython permite intercalado entre hilos), y rupturas por
+  secuencia multi-objetivo (argumento de induccion: el import ancestro-primero de un
+  solo objetivo es el peor caso, asi que una secuencia solo agrega modulos ya
+  completos; se sostiene, no se midio).
+
+CORRECCION DEL CENSO DE CONSUMIDORES (17-Nov-2026, antes de publicar):
+  El censo anterior conto 6 imports de modulo y 5 dentro de funcion, pero su poblacion
+  no era la declarada: los TRES modulos rotos mas dos hermanos (postgresql.operations,
+  oracle.introspection). Sobre la poblacion correcta —los 5 modulos de los SCC 8 y 10—
+  y separando las 7 aristas internas del ciclo (que no son consumidores):
+    consumidores a nivel modulo: 5   -> gis/oracle/base.py:1, gis/oracle/operations.py:20,
+                                        postgis/base.py:4, postgis/base.py:8, postgis/introspection.py:2
+    consumidores en funcion:    13   -> 11 en tests/, oracle/client.py:12, gis_tests/tests.py:105
+    documentados en docs/ref/:   0
+  Medido ejecutando los 5 como punto de entrada: 4 fallan por GDAL ausente
+  (ImproperlyConfigured: Could not find the GDAL library), no por el ciclo. El quinto
+  (postgis/base.py:8) queda cubierto por su linea 4. Es decir: GDAL enmascara 4 de 5,
+  no 1. Reproducible con `./venv/bin/python -c "import <modulo>"`.
+
+PREDICCION ABIERTA CORREGIDA (sustituye a la anterior; orden de lineas ya verificado,
+NO medida porque este entorno no tiene GDAL):
+  Con GDAL instalado:
+    ROMPE  django.contrib.gis.db.backends.oracle.operations  (linea 20 -> oracle.operations, roto medido)
+    ROMPE  django.contrib.gis.db.backends.postgis.introspection (linea 2 -> postgresql.introspection, roto medido)
+    PASA   django.contrib.gis.db.backends.postgis.base        (linea 4 antes de la 8)
+    PASA   django.contrib.gis.db.backends.oracle.base         (linea 1 -> oracle.base, entrada segura medida)
+  Falsadores: PASA en los dos primeros; ROMPE en los dos ultimos.
+  cota_error: si django.contrib.gis.geos carga postgresql.base por su cuenta antes de
+  la linea 20, el primer ROMPE pasa y la prediccion falla.
+
+================================================================================
+RESULTADO DE LA PREDICCION ABIERTA (17-Nov-2026 12:31 CST) — MEDIDA, no inferida
+================================================================================
+COMO SE DESENMASCARO (sin stub: el sujeto no se sustituyo)
+  GDAL: libgdal.38.3.12.2.dylib, 3.12.2 REAL, extraido del wheel
+        rasterio-1.5.2-cp314-cp314-macosx_15_0_arm64.whl (1 pip download vs 44
+        formulas de brew). Via GDAL_LIBRARY_PATH.
+  GEOS: /opt/homebrew/lib/libgeos_c.dylib, geos 3.15.0 (brew, cero dependencias).
+        Hacia falta: geos/__init__.py:16 importa .libgeos, asi que la mascara no
+        era una capa sino DOS (GDAL y despues GEOS). Hallazgo lateral no previsto.
+  Sonda de control: gdal_version() -> b'3.12.2' y libgeos importa. Carga probada
+  antes de medir, para que un fallo de carga no se confundiera con un fallo del ciclo.
+
+RESULTADO (interprete limpio por modulo, con django.setup(), INSTALLED_APPS=[])
+  ROMPE  django.contrib.gis.db.backends.oracle.operations
+         ImportError: cannot import name 'DatabaseOperations' from partially
+         initialized module 'django.db.backends.oracle.operations'
+  ROMPE  django.contrib.gis.db.backends.postgis.introspection
+         ImportError: cannot import name 'DatabaseIntrospection' from partially
+         initialized module 'django.db.backends.postgresql.introspection'
+  PASA   django.contrib.gis.db.backends.oracle.base
+  PASA   django.contrib.gis.db.backends.postgis.base
+
+VEREDICTO: 3 de 4 predicciones acertadas; 1 discrepancia, y es DEFECTO DEL
+PREREGISTRO, no del modelo. Sin django.setup(), postgis/base.py:8 da
+`AppRegistryNotReady: Apps aren't loaded yet` — una TERCERA clase de fallo que el
+preregistro no declaro como precondicion. El preregistro omitio `django.setup()`
+en la cota_error. Con setup, PASA, como estaba predicho.
+
+LA PRUEBA QUE FALTABA: ¿es el entorno o es el orden? Mismo interprete, misma
+configuracion, mismo modulo, dos secuencias:
+  A) import ...oracle.operations                    -> ImportError (circular)
+  B) import ...oracle.base; import ...oracle.operations -> OK
+  C) import ...postgis.introspection                -> ImportError (circular)
+  D) import ...postgis.base; import ...postgis.introspection -> OK
+El control negativo esta DENTRO de la misma medicion: B y D existen para refutar
+que la causa sea el entorno. No la refutan. La causa es el orden.
+
+CONSECUENCIA PARA EL ARTICULO: la cifra "4 enmascarados, 0 reales" es FALSA. La
+verdadera es "4 enmascarados por librerias nativas; al desenmascararlos, 2 alcanzan
+el ciclo y rompen, y la ruptura desaparece si se invierte el orden de import".
+Segunda capa: el ciclo no necesita que nadie lo reporte para ser real, pero SI
+necesita que un consumidor importe `operations` antes de `base`. Ese consumidor
+existe en el mundo (cualquier tercero que herede DatabaseOperations a nivel modulo);
+no se midio cuantos. Sigue siendo NO_MEDIDO, y ahora con denominador declarado.

@@ -1,0 +1,2 @@
+scc	tam	prediccion	ejecucion	contraste	miembros	aristas_vivas	fallos
+1	5	VIVO	PASA	FALLA	django_filters;django_filters.rest_framework;django_filters.rest_framework.backends;django_filters.rest_framework.filters;django_filters.rest_framework.filterset	django_filters.rest_framework.backends lee filterset.django_filters.rest_framework.filterset | django_filters.rest_framework.filters lee filters.django_filters | django_filters.rest_framework.filterset lee BooleanFilter.django_filters.rest_framework.filters	

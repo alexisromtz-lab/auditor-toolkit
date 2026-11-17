@@ -1,0 +1,88 @@
+PREREGISTRO — INVARIANTE DE ORDEN (nivel 7)
+Fecha: 17-Nov-2026 12:52 CST. Escrito ANTES de construir el instrumento.
+Sujeto: los 17 SCC ya censados en mecanismo_total.tsv (django 10, pydantic 3,
+sqlalchemy 2, celery 1, django_filters 1). No se anaden paquetes nuevos.
+
+PREGUNTA
+  De los 17 SCC, cuantos tienen al menos un LECTOR a nivel modulo que, importado
+  como punto de entrada, rompe por ciclo Y pasa si antes se carga el miembro del
+  SCC que ese lector lee? Esa pareja (rompe / repara) es la firma de una ruptura
+  DEPENDIENTE DEL ORDEN, que es una clase distinta de "tiene un ciclo".
+
+DEFINICIONES OPERATIVAS (fijadas antes de medir)
+  lector       modulo fuera del SCC con un import a nivel modulo cuyo destino
+               resuelve a un miembro del SCC.
+  ROMPE_CICLO  el import del lector, en interprete limpio, levanta ImportError
+               cuyo mensaje contiene "partially initialized" o "circular import".
+               Cualquier otro ImportError (dependencia nativa ausente, etc.) NO
+               cuenta: es la leccion de GDAL, y se registra en su propia columna.
+  REPARA       el mismo lector pasa si antes se importa el destino que lee.
+  CARGADOR     la ruta canonica del propio framework, cuando existe (django:
+               django.db.utils.load_backend). Si no se declara, NO_MEDIDO.
+
+CELDAS
+  MINA_VIVA             rompen >= 1 y (sin cargador medido o cargador rompe)
+  INMUNE_CONSTRUCCION   rompen >= 1 pero el cargador canonico pasa
+  INERTE                rompen = 0
+  NO_MEDIDO             el paquete no se puede importar en este entorno
+
+PREDICCION
+  P1: django SCC 8 (oracle base/operations/utils) y SCC 10 (postgresql
+      base/introspection) dan rompen >= 1 y reparan >= 1 -> MINA_VIVA si no hay
+      cargador, INMUNE_CONSTRUCCION con load_backend.
+  P2: los otros 15 SCC dan rompen = 0 -> INERTE.
+  Son 17 predicciones y un solo falsador: cualquier SCC fuera de {8,10} con
+  rompen >= 1, o cualquiera de los dos con rompen = 0.
+
+COTA_ERROR (declarada ahora, no despues)
+  - Solo se miden lectores DENTRO del paquete. Terceros que importen
+    `...oracle.operations` desde fuera NO se miden: sigue NO_MEDIDO.
+  - Un lector que herede DatabaseOperations a nivel de modulo se detecta solo si
+    el import resuelve a un miembro; `from x import *` no se resuelve.
+  - El cargador canonico es una sola ruta conocida por framework; un framework
+    con dos rutas canonicas queda sub-medido.
+  - El numero de SCC sale de mecanismo_total.tsv; si su censo estuviera mal, esto
+    hereda el error. No se re-cuenta.
+
+RESULTADO MEDIDO (17-Nov-2026 13:58 CST)
+  Sujeto: 17 SCC, arnes verificar_invariante_orden.py (auto-test 5/5, RC 0),
+  interprete limpio por sonda, tabla invariante_total.tsv.
+  Poblacion real medida: django 10, sqlalchemy 5, pydantic 1, django_filters 1,
+  celery 0. Total 17 -> el total del pre-registro era correcto y SU DESGLOSE ERA
+  FALSO (decia pydantic 3, sqlalchemy 2, celery 1). Defecto del pre-registro,
+  no del modelo; se registra sin corregirlo hacia atras.
+
+  CELDAS      INERTE 13 · INMUNE_CONSTRUCCION 4 · MINA_VIVA 0 · NO_MEDIDO 0
+  RUPTURAS    5 pares (SCC, lector) sobre 4 modulos distintos:
+                django.db.backends.oracle.operations            SCC 1 y 8
+                django.db.backends.postgresql.introspection     SCC 1
+                django.contrib.gis.db.backends.oracle.operations SCC 2 y 8
+                django.contrib.gis.db.backends.postgis.introspection SCC 10
+  REPARADOR   los 5 pares se reparan con DOS modulos: django.db.backends.
+              oracle.base y django.db.backends.postgresql.base.
+
+  P1 CONFIRMADA  SCC 8 y SCC 10 dan rompen>=1 y reparan>=1 (1/1 cada uno), y con
+                 load_backend('django.db.backends.oracle') la celda es
+                 INMUNE_CONSTRUCCION. 2/2.
+  P2 FALSADA     SCC 1 (db.models, 33 miembros) da rompen=2 y SCC 2 (gis oracle,
+                 9 miembros) da rompen=1. El falsador declarado se disparo: hay
+                 SCC fuera de {8,10} con rompen>=1.
+  Marcador: 15/17 predicciones correctas, 2 falsadas.
+
+  DESVIACION DECLARADA (anadida DESPUES de medir, se marca como tal)
+  El pre-registro define REPARA como "pasa si antes se importa el destino que el
+  lector lee". Medido: para SCC 1 y SCC 2 NINGUN miembro del propio SCC repara
+  (reparan_local=0), pero SI repara un miembro de otro SCC. El reparador no
+  tiene por que vivir en el ciclo que se rompe. Por eso la tabla publica dos
+  columnas, reparan (vecindario propio) y reparan_global (todo el censo). Esto
+  completa la medicion; no cambia las celdas pre-registradas.
+
+  LO QUE ESTO CAMBIA
+  La pregunta "que le permite a un paquete tener ciclos sin romperse" tiene
+  respuesta medida: una CONVENCION DE ENTRADA. django tiene 17 ciclos, 4 de
+  ellos con lector que rompe, y los 4 se neutralizan entrando por `.base`. Su
+  API publica lo impone en django/db/utils.py:116 (import_module("%s.base")).
+  pydantic, sqlalchemy y django_filters: 12 SCC, 0 rupturas, 0 convencion
+  necesaria. El invariante no es del ciclo: es del paquete.
+  COTA: solo lectores DENTRO del paquete; terceros que importen
+  `...oracle.operations` desde fuera siguen NO_MEDIDO.
