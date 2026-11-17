@@ -4,7 +4,7 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24293665.svg)](https://doi.org/10.5281/zenodo.24293665)
 
 <!-- PLATINO-LABS-ARCHITECTURE-AUDIT:START -->
-[![Static Python scan: 38 modules, 0 cyclic SCC — observation, not a certification](https://img.shields.io/badge/static%20scan-38%20modules%20%C2%B7%200%20cyclic%20SCC-6C48B1)](https://github.com/alexisromtz-lab/auditor-toolkit/actions/runs/44172265583)
+[![Static Python scan: 38 modules, 0 cyclic SCC — observation, not a certification](https://img.shields.io/badge/static%20scan-38%20modules%20%C2%B7%200%20cyclic%20SCC-6C48B1)](https://github.com/alexisromtz-lab/auditor-toolkit/actions/runs/44175279111)
 
 ### Static architecture scan · observed metrics (not a certification)
 
@@ -12,9 +12,9 @@
 |---|---:|
 | Python modules | 38 |
 | Cyclic components (SCC) | 0 |
-| Python source bytes | 692,520 bytes |
+| Python source bytes | 699,259 bytes |
 
-Commit: `78b9596c1acc898c3dd6fa5f2dc4286ccf9ea3ca` · Observed at: `2026-11-17T20:43:25Z` (UTC) · [Workflow run](https://github.com/alexisromtz-lab/auditor-toolkit/actions/runs/44172265583)
+Commit: `d713eae9179c70270fbdea44079b90b1df169306` · Observed at: `2026-11-17T21:00:50Z` (UTC) · [Workflow run](https://github.com/alexisromtz-lab/auditor-toolkit/actions/runs/44175279111)
 
 **What this shows.** How many tracked Python files are eligible for static analysis, how many of their dependency components close a cycle, and how many bytes they total — measured on the single commit cited above.
 
