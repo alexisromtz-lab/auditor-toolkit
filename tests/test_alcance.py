@@ -246,5 +246,61 @@ class TestAlcance(unittest.TestCase):
         self.assertIn("ENLACE", proceso.stdout)
 
 
+    def test_especificacion_reconoce_las_superficies(self) -> None:
+        """El despacho se decide antes de la red: se puede probar sin tocar el mundo."""
+        casos = {
+            "5059635": ("devto", ("5059635",)),
+            "devto:5059635": ("devto", ("5059635",)),
+            "zenodo:24323318": ("zenodo", ("24323318",)),
+            "gh:alexisromtz-lab/auditor-toolkit": ("gh", ("alexisromtz-lab/auditor-toolkit", "")),
+            "gh:alexisromtz-lab/auditor-toolkit@v0.2.0": (
+                "gh",
+                ("alexisromtz-lab/auditor-toolkit", "v0.2.0"),
+            ),
+            "https://example.org/x": ("url", ("https://example.org/x",)),
+            "research/alcance/data/ALCANCE.tsv": ("archivo", ("research/alcance/data/ALCANCE.tsv",)),
+            "devto:abc": ("desconocida", ()),
+            "zenodo:": ("desconocida", ()),
+            "gh:sin-barra": ("desconocida", ()),
+        }
+        for pieza, esperado in casos.items():
+            with self.subTest(pieza=pieza):
+                self.assertEqual(self.m.especificacion(pieza), esperado)
+
+    def test_peldano_que_no_existe_es_rc_20(self) -> None:
+        """GitHub releases no publica `body_html`: pedirlo no es NO_MEDIDO, es un error.
+
+        Un NO_MEDIDO ahi promete una medicion que no puede llegar nunca.
+        """
+        proceso = subprocess.run(
+            [
+                sys.executable,
+                str(INSTRUMENTO),
+                "--pieza",
+                "gh:alexisromtz-lab/auditor-toolkit@v0.2.0",
+                "--render",
+                "--debe",
+                OBJETO,
+            ],
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+        self.assertEqual(proceso.returncode, 20, proceso.stdout + proceso.stderr)
+        self.assertIn("no expone body_html", proceso.stderr)
+        self.assertNotIn("NO_MEDIDO", proceso.stdout)
+
+    def test_puerta_lateral_no_vuelve_verde_el_cuerpo(self) -> None:
+        """El campo de codigo del deposito es otra superficie: se publica aparte."""
+        self.assertEqual(
+            self.m.codigo_declarado({"metadata": {"custom": {"code:codeRepository": OBJETO}}}),
+            [OBJETO],
+        )
+        self.assertEqual(self.m.identificadores_relacionados({"metadata": {"custom": {}}}), [])
+        self.assertEqual(
+            self.m.codigo_declarado({"metadata": {"custom": {"otro:campo": OBJETO}}}), []
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

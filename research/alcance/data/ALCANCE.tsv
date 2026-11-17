@@ -3,3 +3,8 @@ fecha_hora	pieza	huella	objeto	estado	detalle	veredicto	origen
 2026-11-17T19:56:41Z	archivo:devto-articulo-final.md	ab0eff5a1ab9	https://github.com/alexisromtz-lab/auditor-toolkit	ENLACE	markdown	ALCANZABLE	sin_origen
 2026-11-17T20:05:08Z	devto/5059635	868e951fcee2	https://github.com/alexisromtz-lab/auditor-toolkit	ENLACE	markdown	ALCANZABLE	sin_divergencia
 2026-11-17T20:05:09Z	devto/5059635#render	a1ad5a7718f1	https://github.com/alexisromtz-lab/auditor-toolkit	ENLACE	html	ALCANZABLE	sin_divergencia
+2026-11-17T20:29:01Z	gh:alexisromtz-lab/auditor-toolkit@v0.2.0	fd3f50b02eae	https://github.com/alexisromtz-lab/auditor-toolkit	SOLO_TEXTO	url_desnuda	SIN_ALCANCE	sin_origen
+2026-11-17T20:29:01Z	gh:alexisromtz-lab/auditor-toolkit@v0.2.0	fd3f50b02eae	https://doi.org/10.5281/zenodo.24323318	HUERFANO	ausente	SIN_ALCANCE	sin_origen
+2026-11-17T20:29:02Z	zenodo/24323318	bdd5b6455029	https://github.com/alexisromtz-lab/auditor-toolkit	SOLO_TEXTO	mencion	SIN_ALCANCE	sin_origen
+2026-11-17T20:29:41Z	gh:alexisromtz-lab/auditor-toolkit@v0.2.0	795886a32837	https://github.com/alexisromtz-lab/auditor-toolkit	ENLACE	markdown	ALCANZABLE	sin_origen
+2026-11-17T20:29:41Z	gh:alexisromtz-lab/auditor-toolkit@v0.2.0	795886a32837	https://doi.org/10.5281/zenodo.24323318	ENLACE	markdown	ALCANZABLE	sin_origen

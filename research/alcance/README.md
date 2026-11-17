@@ -101,7 +101,7 @@ python3 research/alcance/instruments/medir_alcance.py \
 python3 research/alcance/instruments/medir_alcance.py --pieza 999999999 \
   --debe https://github.com/alexisromtz-lab/auditor-toolkit
 
-# 46 reglas del instrumento, sin red
+# 74 reglas del instrumento, sin red
 python3 research/alcance/instruments/medir_alcance.py --self-test
 ```
 
@@ -151,6 +151,65 @@ se deduce de la documentación; los cuatro costaron una medición.
    mano devolvió 404 sobre una pieza que existía: se midió una URL inexistente y se
    habría diagnosticado «el artículo desapareció».
 
+## Tres superficies, y los peldaños que cada una tiene
+
+Una superficie sin delimitador declarado no se mide. Por eso `--pieza` no adivina lo
+que recibe: lo declara. Lo que sigue se midió el 17-Nov-2026 contra el mundo, no
+contra la documentación.
+
+| superficie | especificación | peldaños | delimitador |
+|---|---|---|---|
+| dev.to | `5059635` · `devto:5059635` | **dos**: `body_markdown` y `body_html` | `<a href>`, y `<a href>` escapado dentro de `<code>` |
+| release de GitHub | `gh:<owner>/<repo>[@tag]` | **uno**: `body` | `<a href>` |
+| Zenodo | `zenodo:<registro>` | **uno**: `metadata.description` | `<a href>` |
+| archivo local | ruta | el que pida `--render` | el mismo |
+| URL cruda | `https://…` | ninguno | aviso en stderr, `NO_MEDIDO` |
+
+Portar el lector de `dev.to` a las otras dos superficies midió cuatro cosas que
+ninguna de ellas declara:
+
+1. **La API de releases de GitHub no publica `body_html`.** Verificado con
+   `'body_html' in d` → `False`. Pedir el segundo peldaño ahí **no es** `NO_MEDIDO`:
+   es `RC 20`. Un `NO_MEDIDO` promete una medición que no puede llegar nunca, y este
+   corpus ya pagó ese defecto. `--render` sobre un release es un error de uso, no un
+   estado del objeto.
+2. **Una copia servida antes de corregir la pieza se lee como si siguiera rota.**
+   Mismo endpoint, dos segundos de diferencia: 94 B y 515 B. Desde entonces el lector
+   pide `Cache-Control: no-cache`; sin eso el instrumento producía un rojo falso
+   sobre una pieza que ya estaba arreglada, y el rojo venía del transporte.
+3. **El depósito declara puertas en dos sitios que no son el cuerpo.** Además de
+   `related_identifiers`, el registro lleva `custom["code:codeRepository"]`. Los dos
+   se pintan en la barra lateral. **No se suman al veredicto** (sería sumar dos
+   superficies en un veredicto) y **no se ignoran** (daría un rojo falso sobre la
+   página): se publican aparte con las dos líneas `RELACIONES` y `CODIGO DECLARADO`.
+   No son columnas de la tabla, que conserva sus ocho.
+4. **Editar un DOI publicado con la forma vieja pierde campos en silencio.** El
+   registro se creó con `related_identifiers[].relation`; el flujo de borrador
+   espera `relation_type`. Un `PUT` al borrador devolvió **HTTP 200** y dejó
+   `creators`, `resource_type`, `license` y `custom` en `null`, además de recortar
+   `related_identifiers`. **La publicación está fail-closed** —la validación rechazó
+   el borrador con 400— y el borrador se descartó (`DELETE` → 204) verificando los
+   catorce campos contra la copia previa: los catorce, idénticos. El `200` no era
+   prueba de que el campo hubiera entrado.
+
+### Dos hallazgos sobre piezas ya publicadas
+
+Las dos se midieron **antes** de tocarlas, y las filas de antes y después están en
+`data/ALCANCE.tsv` (append-only: la corrección agrega fila, no edita la vieja).
+
+| pieza | antes | después |
+|---|---|---|
+| `gh:alexisromtz-lab/auditor-toolkit@v0.2.0` | `fd3f50b02eae` · repo `SOLO_TEXTO/url_desnuda`, DOI `HUERFANO/ausente` · **0/2** · `SIN_ALCANCE` | `795886a32837` · repo `ENLACE`, DOI `ENLACE` · **2/2** · `ALCANZABLE` |
+| `zenodo/24323318` | `bdd5b6455029` · repo `SOLO_TEXTO/mencion` · **0/1** · `SIN_ALCANCE` | sin cambio: `mencion` en el cuerpo, `CODIGO DECLARADO: 1 … 1 hacia los objetos pedidos` |
+
+La nota del release `v0.2.0` era la línea que GitHub autogenera: 94 bytes, un
+`**Full Changelog**` y ni una puerta al repositorio ni al DOI. La página del DOI
+nombra `auditor-toolkit` **sólo** dentro de la URL de Pages, y su descripción no
+enlaza el código. La diferencia entre las dos: el release no tenía ninguna puerta y
+se arregló; el registro ya tenía la de la barra lateral, así que su rojo es de
+cuerpo, no de página. Corregir el cuerpo de un DOI publicado a cambio de arriesgar
+sus metadatos es un mal cambio: la puerta ya está abierta.
+
 ## Límites declarados
 
 - No es un parser CommonMark: mide presencia de URL en posición de enlace. Los
@@ -164,3 +223,7 @@ se deduce de la documentación; los cuatro costaron una medición.
 - No corrige la pieza. Es un lector; publicar exige un acto humano.
 - Si se pide `--origen` y no se puede leer, la fila dice `origen_ilegible`, no
   `sin_origen`: "no me dieron original" y "no pude leerlo" son estados distintos.
+- El release de GitHub tiene **un** peldaño: no hay HTML servido que contrastar. La
+  página renderizada autolinkea las URL desnudas, así que `SOLO_TEXTO/url_desnuda`
+  sobre un release es un **falso rojo deliberado y barato**: el arreglo es un enlace
+  markdown explícito, no un cambio en el instrumento.

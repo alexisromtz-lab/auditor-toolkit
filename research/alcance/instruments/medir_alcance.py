@@ -62,10 +62,22 @@ Este lector mide la puerta. Reglas que NO negocia:
     medidor: 0 ALCANZABLE · 1 PARCIAL o SIN_ALCANCE · 2 NO_MEDIDO · 20 argumentos.
     Un NO_MEDIDO nunca degrada a 1 ni a 0.
 
+12. Una superficie sin delimitador declarado no se mide: la pagina servida trae
+    el chrome del sitio, que enlaza por su cuenta. `https://...` crudo sale
+    NO_MEDIDO con aviso, nunca un conteo que incluya la barra lateral.
+
+Superficies con lector, y el peldaño que cada una tiene de verdad — medido el
+17-Nov-2026, no supuesto:
+    devto:<id>          markdown (`body_markdown`) y html (`body_html`, `--render`)
+    gh:<o>/<r>[@tag]    markdown (`body`) y NADA MAS: la API de releases no
+                        devuelve `body_html`, asi que `--render` ahi es RC 20
+    zenodo:<id>         html (`metadata.description`): un solo peldaño
+    <ruta>              markdown, y html si `--render` se lo pide
+
 Uso:
     python3 medir_alcance.py --pieza 5059635 \
         --debe https://github.com/alexisromtz-lab/auditor-toolkit \
-        --origen ~/Desktop/devto-articulo-final.md \
+        --origen case_studies/devto/encontre-2-bugs-reales-en-django-20261117.md \
         --tsv research/alcance/data/ALCANCE.tsv
 """
 from __future__ import annotations
@@ -74,7 +86,6 @@ import argparse
 import hashlib
 import json
 import os
-import json
 import re
 import sys
 import urllib.request
@@ -98,6 +109,12 @@ PRIORIDAD_DETALLE = ("url_desnuda", "referencia_sin_uso", "code_span", "imagen",
 # self-test comprueba que ninguna etiqueta emitida queda fuera de esta tupla.
 ORIGENES = ("divergente", "sin_divergencia", "sin_origen", "origen_ilegible")
 
+# El formato de la pieza decide el clasificador, no la bandera: una superficie
+# que solo guarda HTML no tiene un peldaño de markdown que medir.
+FORMATOS = ("markdown", "html")
+
+SUPERFICIES = ("devto", "gh", "zenodo", "archivo", "url", "desconocida")
+
 RE_FENCE = re.compile(r"^\s{0,3}(```|~~~)")
 # (?<!!) descarta imagenes: `![alt](url)` pinta un pixel, no abre una puerta.
 RE_MD_LINK = re.compile(r"(?<!!)\[[^\]]*\]\(\s*<?([^)\s>]+)>?(?:\s+[\"'][^\"']*[\"'])?\s*\)")
@@ -108,6 +125,9 @@ RE_REF_USE = re.compile(r"\[([^\]]*)\]\[([^\]]*)\]")
 RE_REF_USE_SHORT = re.compile(r"\[([^\]]+)\](?!\(|\[|:)")
 RE_CODE_SPAN = re.compile(r"`+([^`]*)`+")
 RE_BARE_URL = re.compile(r"https?://[^\s)>\]]+")
+# La pieza nombra un repo y una etiqueta; nada mas entra en una URL de la API.
+RE_REPO_GH = re.compile(r"^[A-Za-z0-9_.\-]+/[A-Za-z0-9_.\-]+$")
+RE_ETIQUETA_GH = re.compile(r"^[A-Za-z0-9_.\-+]+$")
 
 
 # ------------------------------------------------------------- normalizacion
@@ -439,56 +459,182 @@ def imprimir_resumen(filas: list[dict], momento: str) -> None:
         print(f"ORIGEN_DIVERGE: {divergentes} objeto(s) enlazados en el original y no en la pieza publicada")
 
 
+class PeldanoInexistente(Exception):
+    """Se pidio un peldaño que la superficie no tiene. No es NO_MEDIDO: no existe."""
+
+
 # -------------------------------------------------------------------- lectura
 
 
-def _json_devto(articulo: int) -> dict | None:
+_CACHE: dict[str, dict | None] = {}
+
+
+def _json_http(url: str) -> dict | None:
+    """Un solo pedido por URL y corrida: los dos peldaños leen el mismo JSON.
+
+    `no-cache` no es adorno: sin el, una copia servida antes de corregir la pieza
+    se lee como si la pieza siguiera rota. Medido el 17-Nov-2026 sobre el release
+    v0.2.0: mismo endpoint, 94 B y 515 B con segundos de diferencia.
+    """
+    if url in _CACHE:
+        return _CACHE[url]
     peticion = urllib.request.Request(
-        f"https://dev.to/api/articles/{articulo}", headers={"User-Agent": UA}
+        url,
+        headers={"User-Agent": UA, "Accept": "application/json", "Cache-Control": "no-cache", "Pragma": "no-cache"},
     )
     try:
         with urllib.request.urlopen(peticion, timeout=20) as respuesta:
             datos = json.loads(respuesta.read().decode("utf-8"))
     except Exception:  # ilegible: NO_MEDIDO, no "no enlaza"
-        return None
-    return datos if isinstance(datos, dict) else None
+        datos = None
+    _CACHE[url] = datos if isinstance(datos, dict) else None
+    return _CACHE[url]
+
+
+def campo_anidado(datos, *ruta: str) -> str | None:
+    """Saca un campo de texto de un JSON de plataforma, o None si no esta.
+
+    None no es "vacio": es NO_MEDIDO. Una plataforma que no devuelve el cuerpo
+    no ha demostrado que la pieza no enlace.
+    """
+    actual = datos
+    for clave in ruta:
+        if not isinstance(actual, dict):
+            return None
+        actual = actual.get(clave)
+    return actual if isinstance(actual, str) else None
 
 
 def _texto_devto(articulo: int) -> str | None:
-    datos = _json_devto(articulo) or {}
-    cuerpo = datos.get("body_markdown")
-    return cuerpo if isinstance(cuerpo, str) else None
+    return campo_anidado(_json_http(f"https://dev.to/api/articles/{articulo}") or {}, "body_markdown")
 
 
 def _html_devto(articulo: int) -> str | None:
     """El cuerpo que la plataforma SIRVIO, sin el chrome del sitio."""
-    datos = _json_devto(articulo) or {}
-    cuerpo = datos.get("body_html")
-    return cuerpo if isinstance(cuerpo, str) else None
+    return campo_anidado(_json_http(f"https://dev.to/api/articles/{articulo}") or {}, "body_html")
 
 
-def leer_pieza(pieza: str, render: bool = False) -> tuple[str, str | None]:
-    """Devuelve (etiqueta, texto). texto None significa NO_MEDIDO."""
-    sufijo = "#render" if render else ""
+def _html_zenodo(registro: int) -> str | None:
+    """El deposito guarda la descripcion ya en HTML: no hay markdown que leer."""
+    datos = _json_http(f"https://zenodo.org/api/records/{registro}") or {}
+    return campo_anidado(datos, "metadata", "description")
+
+
+def identificadores_relacionados(datos) -> list[str]:
+    """Las puertas que el deposito declara aparte del cuerpo. Sin red."""
+    metadatos = datos.get("metadata") if isinstance(datos, dict) else None
+    if not isinstance(metadatos, dict):
+        return []
+    crudas = metadatos.get("related_identifiers")
+    if not isinstance(crudas, list):
+        return []
+    return [r.get("identifier") for r in crudas if isinstance(r, dict) and r.get("identifier")]
+
+
+def codigo_declarado(datos) -> list[str]:
+    """El campo `code:codeRepository` del deposito: una puerta mas, y no la del autor.
+
+    Medido el 17-Nov-2026 en el registro 24323318: el cuerpo no nombra el
+    repositorio y el registro si lo declara aqui. Leer solo el cuerpo daria un rojo
+    falso sobre la pagina; sumarlo al cuerpo daria un verde falso sobre el texto.
+    """
+    metadatos = datos.get("metadata") if isinstance(datos, dict) else None
+    if not isinstance(metadatos, dict):
+        return []
+    extra = metadatos.get("custom")
+    if not isinstance(extra, dict):
+        return []
+    return [
+        valor
+        for clave, valor in sorted(extra.items())
+        if isinstance(valor, str) and valor.startswith("http") and clave.endswith(":codeRepository")
+    ]
+
+
+def puertas_zenodo(registro: int) -> tuple[list[str], list[str]] | None:
+    """Las puertas que el registro declara aparte del cuerpo, o None si no se leyo.
+
+    El cuerpo es la puerta del autor; `related_identifiers` y el campo de codigo
+    son las que el deposito pinta en su barra lateral. Contarlas juntas con el
+    cuerpo seria sumar dos superficies en un veredicto; ignorarlas del todo daria un
+    rojo falso sobre el DOI.
+    """
+    datos = _json_http(f"https://zenodo.org/api/records/{registro}")
+    if datos is None:
+        return None
+    return (identificadores_relacionados(datos), codigo_declarado(datos))
+
+
+def _url_gh(repo: str, etiqueta: str) -> str:
+    base = f"https://api.github.com/repos/{repo}/releases"
+    return f"{base}/tags/{etiqueta}" if etiqueta else f"{base}/latest"
+
+
+def _texto_gh(repo: str, etiqueta: str) -> str | None:
+    return campo_anidado(_json_http(_url_gh(repo, etiqueta)) or {}, "body")
+
+
+def especificacion(pieza: str) -> tuple[str, tuple[str, ...]]:
+    """Traduce `--pieza` a (superficie, argumentos). Sin red: se puede probar."""
     if re.fullmatch(r"\d+", pieza):
-        ident = int(pieza)
-        lector = _html_devto if render else _texto_devto
-        return (f"devto/{ident}{sufijo}", lector(ident))
+        return ("devto", (pieza,))
     if pieza.startswith("devto:"):
         ident = pieza.split(":", 1)[1]
-        if not ident.isdigit():
-            return (pieza + sufijo, None)
-        lector = _html_devto if render else _texto_devto
-        return (f"devto/{ident}{sufijo}", lector(int(ident)))
+        return ("devto", (ident,)) if ident.isdigit() else ("desconocida", ())
+    if pieza.startswith("zenodo:"):
+        ident = pieza.split(":", 1)[1]
+        return ("zenodo", (ident,)) if ident.isdigit() else ("desconocida", ())
+    if pieza.startswith("gh:"):
+        repo, _, etiqueta = pieza.split(":", 1)[1].partition("@")
+        if not RE_REPO_GH.match(repo):
+            return ("desconocida", ())
+        if etiqueta and not RE_ETIQUETA_GH.match(etiqueta):
+            return ("desconocida", ())
+        return ("gh", (repo, etiqueta))
+    if re.match(r"^https?://", pieza):
+        return ("url", (pieza,))
+    return ("archivo", (pieza,))
+
+
+def leer_pieza(pieza: str, render: bool = False) -> tuple[str, str | None, str]:
+    """Devuelve (etiqueta, texto, formato). texto None significa NO_MEDIDO."""
+    superficie, argumentos = especificacion(pieza)
+    if superficie == "devto":
+        ident = int(argumentos[0])
+        if render:
+            return (f"devto/{ident}#render", _html_devto(ident), "html")
+        return (f"devto/{ident}", _texto_devto(ident), "markdown")
+    if superficie == "zenodo":
+        registro = int(argumentos[0])
+        # Un solo peldaño: el que el deposito guarda. Pedir `--render` aqui no
+        # cambia el objeto, asi que la etiqueta tampoco finge una segunda ronda.
+        return (f"zenodo/{registro}", _html_zenodo(registro), "html")
+    if superficie == "gh":
+        repo, etiqueta = argumentos
+        ronda = f"@{etiqueta}" if etiqueta else "@latest"
+        if render:
+            # La API de releases no devuelve `body_html`: el peldaño no existe.
+            # Devolver NO_MEDIDO aqui seria prometer una medicion que nunca llega.
+            raise PeldanoInexistente(f"gh:{repo}{ronda} no expone body_html; mide el markdown")
+        return (f"gh:{repo}{ronda}", _texto_gh(repo, etiqueta), "markdown")
+    if superficie == "url":
+        # La pagina servida trae el chrome del sitio, que enlaza por su cuenta.
+        print(f"AVISO: superficie sin delimitador declarado: {argumentos[0]}", file=sys.stderr)
+        return (f"url:{argumentos[0]}", None, "html")
+    if superficie == "desconocida":
+        print(f"AVISO: no se reconoce la pieza: {pieza}", file=sys.stderr)
+        return (pieza, None, "markdown")
     ruta = Path(pieza).expanduser()
+    sufijo = "#render" if render else ""
+    formato = "html" if render else "markdown"
     try:
-        return (f"archivo:{ruta.name}{sufijo}", ruta.read_text(encoding="utf-8"))
+        return (f"archivo:{ruta.name}{sufijo}", ruta.read_text(encoding="utf-8"), formato)
     except OSError:
-        return (f"archivo:{ruta.name}{sufijo}", None)
+        return (f"archivo:{ruta.name}{sufijo}", None, formato)
 
 
 def leer_origen(origen: str | None) -> str | None:
-    """El original contra el que se mide divergencia: un .md o el markdown de dev.to."""
+    """El original contra el que se mide divergencia: .md, markdown de dev.to o de un release."""
     if not origen:
         return None
     if re.fullmatch(r"\d+", origen):
@@ -496,6 +642,12 @@ def leer_origen(origen: str | None) -> str | None:
     if origen.startswith("devto:"):
         ident = origen.split(":", 1)[1]
         return _texto_devto(int(ident)) if ident.isdigit() else None
+    if origen.startswith("gh:"):
+        superficie, argumentos = especificacion(origen)
+        return _texto_gh(*argumentos) if superficie == "gh" else None
+    if origen.startswith("zenodo:"):
+        # Zenodo no guarda markdown: no hay original escrito contra el que divergir.
+        return None
     try:
         return Path(origen).expanduser().read_text(encoding="utf-8")
     except OSError:
@@ -655,6 +807,65 @@ def self_test() -> int:
     }
     caso("24a etiquetas de origen conocidas", emitidas <= set(ORIGENES), True)
     caso("24b las cuatro se ejercitan", len(emitidas), 4)
+    # 25. cada superficie con lector se reconoce sin red; lo que no tiene lector no se inventa
+    caso("25a devto suelto", especificacion("5059635"), ("devto", ("5059635",)))
+    caso("25b devto prefijo", especificacion("devto:5059635"), ("devto", ("5059635",)))
+    caso("25c zenodo", especificacion("zenodo:24323318"), ("zenodo", ("24323318",)))
+    caso(
+        "25d gh con etiqueta",
+        especificacion("gh:alexisromtz-lab/auditor-toolkit@v0.2.0"),
+        ("gh", ("alexisromtz-lab/auditor-toolkit", "v0.2.0")),
+    )
+    caso(
+        "25e gh ultima release",
+        especificacion("gh:alexisromtz-lab/auditor-toolkit"),
+        ("gh", ("alexisromtz-lab/auditor-toolkit", "")),
+    )
+    caso("25f ruta local", especificacion("case_studies/x.md"), ("archivo", ("case_studies/x.md",)))
+    caso("25g url cruda", especificacion("https://ejemplo.mx/x"), ("url", ("https://ejemplo.mx/x",)))
+    caso("25h zenodo no numerico", especificacion("zenodo:abc"), ("desconocida", ()))
+    caso("25i repo con espacio", especificacion("gh:dos palabras/x"), ("desconocida", ()))
+    caso("25j repo sin barra", especificacion("gh:solo-repo"), ("desconocida", ()))
+    # 26. un campo ausente no es un cuerpo vacio: es NO_MEDIDO
+    registro = {"metadata": {"description": '<p><a href="%s">r</a></p>' % objeto}}
+    caso("26a campo anidado", campo_anidado(registro, "metadata", "description"), registro["metadata"]["description"])
+    caso("26b campo ausente", campo_anidado(registro, "metadata", "title"), None)
+    caso("26c ruta que se rompe", campo_anidado(registro, "metadata", "description", "x"), None)
+    caso("26d sin datos", campo_anidado(None, "body"), None)
+    caso("26e campo no textual", campo_anidado({"n": 1}, "n"), None)
+    caso(
+        "26f lo que zenodo guarda lo lee el clasificador de html",
+        clasificar_html(registro["metadata"]["description"], objeto),
+        ("ENLACE", "html"),
+    )
+    # 27. el vocabulario de superficies tiene lector: nada emitido queda fuera
+    emitidas_sup = {
+        especificacion(p)[0]
+        for p in ("1", "devto:1", "zenodo:1", "gh:o/r", "x.md", "https://ejemplo.mx/x", "zenodo:abc")
+    }
+    caso("27a superficies conocidas", emitidas_sup <= set(SUPERFICIES), True)
+    caso("27b las seis se ejercitan", emitidas_sup == set(SUPERFICIES), True)
+    # 28. un peldaño que la superficie no tiene es argumento invalido, no NO_MEDIDO
+    try:
+        leer_pieza("gh:alexisromtz-lab/auditor-toolkit@v0.2.0", render=True)
+        caso("28a gh no tiene body_html", "no lanzo", "PeldanoInexistente")
+    except PeldanoInexistente:
+        caso("28a gh no tiene body_html", "PeldanoInexistente", "PeldanoInexistente")
+    # 29. las puertas que el deposito declara aparte se cuentan aparte
+    sucias = {"metadata": {"related_identifiers": [{"identifier": "https://a"}, {"identifier": ""}, {"x": 1}, "suelto"]}}
+    caso("29a relaciones del deposito", identificadores_relacionados(sucias), ["https://a"])
+    caso("29b sin relaciones", identificadores_relacionados({"metadata": {}}), [])
+    caso("29c metadatos con otro tipo", identificadores_relacionados({"metadata": "x"}), [])
+    caso("29d sin datos", identificadores_relacionados(None), [])
+    caso(
+        "30a codigo declarado",
+        codigo_declarado({"metadata": {"custom": {"code:codeRepository": "https://github.com/o/r"}}}),
+        ["https://github.com/o/r"],
+    )
+    caso("30b sin campo de codigo", codigo_declarado({"metadata": {"custom": {"otro:campo": "x"}}}), [])
+    caso("30c clave vecina no es codigo", codigo_declarado({"metadata": {"custom": {"code:otro": "https://a"}}}), [])
+    caso("30d valor no http", codigo_declarado({"metadata": {"custom": {"code:codeRepository": "git@a:b"}}}), [])
+    caso("30e sin metadatos", codigo_declarado(None), [])
 
     fallos = [(nombre, obtenido, esperado) for nombre, obtenido, esperado in pruebas if obtenido != esperado]
     for nombre, obtenido, esperado in fallos:
@@ -663,18 +874,39 @@ def self_test() -> int:
         print(f"SELF-TEST FALLA: {len(fallos)} defecto(s)")
     print(f"SELF-TEST OK: {len(pruebas) - len(fallos)}/{len(pruebas)} (enlace, autolink, code span, fence, "
           "url desnuda, imagen, subruta, hermano, referencia, ilegible, alcance parcial, origen divergente, "
-          "html servido)")
+          "html servido, superficies)")
     return 1 if fallos else 0
 
 
 # --------------------------------------------------------------------- main
 
 
+def imprimir_relaciones(puertas: tuple[list[str], list[str]] | None, objetos: list[str]) -> None:
+    """Las puertas del deposito, aparte de la del autor: no se suman en un veredicto."""
+    if puertas is None:
+        print("RELACIONES: NO_MEDIDO (el registro no se pudo leer)")
+        return
+    relaciones, repositorios = puertas
+    alcanzan = sum(1 for r in relaciones if any(_alcanza(r, objeto) for objeto in objetos))
+    print(
+        f"RELACIONES: {len(relaciones)} declarada(s) por el deposito, "
+        f"{alcanzan} hacia alguno de los objetos pedidos"
+    )
+    if repositorios:
+        alcanzan_codigo = sum(1 for r in repositorios if any(_alcanza(r, objeto) for objeto in objetos))
+        print(f"CODIGO DECLARADO: {len(repositorios)} ({', '.join(repositorios)}), {alcanzan_codigo} hacia los objetos pedidos")
+    else:
+        print("CODIGO DECLARADO: 0")
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="Mide si una pieza publicada abre la puerta al objeto que describe."
     )
-    parser.add_argument("--pieza", help="ruta a un .md o id numerico de dev.to")
+    parser.add_argument(
+        "--pieza",
+        help="ruta a un .md/.html, <id> o devto:<id>, gh:<o>/<r>[@tag], zenodo:<id>",
+    )
     parser.add_argument("--debe", action="append", default=[], help="URI que la pieza deberia alcanzar (repetible)")
     parser.add_argument("--origen", help="original contra el que medir divergencia: .md o devto:<id>")
     parser.add_argument(
@@ -692,9 +924,13 @@ def main(argv: list[str] | None = None) -> int:
         print("ERROR DE ARGUMENTOS: hacen falta --pieza y al menos un --debe, o --self-test", file=sys.stderr)
         return 20
 
-    pieza, texto = leer_pieza(args.pieza, render=args.render)
+    try:
+        pieza, texto, formato = leer_pieza(args.pieza, render=args.render)
+    except PeldanoInexistente as fallo:
+        print(f"ERROR DE ARGUMENTOS: {fallo}", file=sys.stderr)
+        return 20
     origen_texto = leer_origen(args.origen)
-    if args.render:
+    if formato == "html":
         # El render es el objeto; el markdown es el origen. La clasificacion va
         # sobre lo servido, pero la divergencia se mide contra lo escrito.
         estados = [clasificar_html(texto, obj) for obj in args.debe]
@@ -703,6 +939,9 @@ def main(argv: list[str] | None = None) -> int:
         filas = construir_filas(pieza, texto, args.debe, origen_texto, origen_pedido=bool(args.origen))
     momento = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     imprimir_resumen(filas, momento)
+    superficie, argumentos = especificacion(args.pieza)
+    if superficie == "zenodo":
+        imprimir_relaciones(puertas_zenodo(int(argumentos[0])), args.debe)
 
     if args.tsv:
         nuevo = not os.path.exists(args.tsv)
