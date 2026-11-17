@@ -131,6 +131,26 @@ embargo no se perdió nada. Se llama `sin_divergencia` porque es lo que se midi�
 | `sin_origen` | no se declaró original |
 | `origen_ilegible` | se declaró y no se pudo leer |
 
+## Publicar: lo que la API escribe y lo que solo lee
+
+Cuatro hechos medidos el 17-Nov-2026 publicando la corrección del `5059635`. Ninguno
+se deduce de la documentación; los cuatro costaron una medición.
+
+1. **`cover_image` es de lectura.** `PUT` con `cover_image` devuelve **HTTP 200** y
+   el campo sigue en `None`. El parámetro de escritura es **`main_image`**: con él,
+   `cover_image` pasa a ser la URL del CDN a `width=1000,height=420`, el aspecto
+   exacto que dev.to recomienda.
+2. **Un 200 no es un efecto.** La primera escritura devolvió 200 y el cuerpo no
+   cambió. Se verifica con un `GET` posterior *y* con la huella del texto, nunca con
+   el código de estado: el mismo «verde sin efecto» que este corpus persigue en sus
+   propias compuertas.
+3. **La página pública responde 403 a agentes y 200 a un navegador.** Un 403 en el
+   peldaño de la página es `NO_MEDIDO`, jamás «0 enlaces»: medir el bloqueo y
+   llamarlo cero es el defecto que esta tabla existe para no repetir.
+4. **El locus se toma de `canonical_url`, no de la memoria.** Un slug compuesto a
+   mano devolvió 404 sobre una pieza que existía: se midió una URL inexistente y se
+   habría diagnosticado «el artículo desapareció».
+
 ## Límites declarados
 
 - No es un parser CommonMark: mide presencia de URL en posición de enlace. Los
