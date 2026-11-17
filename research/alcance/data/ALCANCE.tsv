@@ -1,0 +1,3 @@
+fecha_hora	pieza	huella	objeto	estado	detalle	veredicto	origen
+2026-11-17T19:56:40Z	devto/5059635	287e6b023274	https://github.com/alexisromtz-lab/auditor-toolkit	SOLO_TEXTO	code_span	SIN_ALCANCE	divergente
+2026-11-17T19:56:41Z	archivo:devto-articulo-final.md	ab0eff5a1ab9	https://github.com/alexisromtz-lab/auditor-toolkit	ENLACE	markdown	ALCANZABLE	sin_origen
