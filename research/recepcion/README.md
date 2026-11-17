@@ -16,30 +16,38 @@ presencia» es una opinión. Este directorio la convierte en un estado medible.
 | `DESCARGA` | **1** | zip del DOI, todas las versiones |
 | `SENAL` | **0** | estrellas + forks |
 | `CLON` / `CLON_UNICO` | 488 / 168 | se publican aparte; **no** son lectores |
-| `HUELLA_PROPIA` | **121** | corridas de CI propias en la misma ventana: acotan `CLON` |
+| `HUELLA_PROPIA` | **121** | corridas de CI propias en la misma ventana (lectura de `20:41Z`; la ventana es móvil y sube con cada corrida): **piso** del rastreo propio, no su explicación |
 | `LECTOR_DEVTO` | `NO_MEDIDO` | `page_views_count` exige credencial de autor |
 | `SENAL_DEVTO` | **0** | reacciones + comentarios del artículo |
 
 ## Tres trampas que el instrumento se niega a repetir
 
 1. **Un clon no es un lector, y muchas veces es la huella del observador.**
-   `architecture-audit.yml` corre en cada push y clona este mismo repositorio dos
-   veces: una en `actions/checkout` y otra en el `git fetch --depth=1` que baja el
-   motor. Medido el 17-11-2026, por día:
+   `architecture-audit.yml` clona este mismo repositorio dos veces por corrida: una
+   en `actions/checkout` y otra en el `git fetch --depth=1` que baja el motor.
+   `ci.yml` clona una por job, y tiene dos. Medido el 17-11-2026, por día:
 
-   | día | corridas | clones | uniques | clones/corrida |
-   |---|---:|---:|---:|---:|
-   | 13-11 | 63 | 211 | 62 | 3,35 |
-   | 14-11 | 12 | 56 | 23 | 4,67 |
-   | 15-11 | 4 | 136 | 56 | **34,0** |
-   | 16-11 | 8 | 53 | 26 | 6,63 |
+   | día | corridas | de ellas clonan | clones | uniques | clones/corrida |
+   |---|---:|---:|---:|---:|---:|
+   | 13-11 | 63 | 42 | 211 | 62 | 3,35 |
+   | 14-11 | 12 | 6 | 56 | 23 | 4,67 |
+   | 15-11 | 4 | 2 | 136 | 56 | **34,0** |
+   | 16-11 | 8 | 4 | 53 | 26 | 6,63 |
 
-   Tres de cuatro días siguen al número de corridas. El día 15 **no** encaja y se
-   declara sin explicación en vez de absorberlo: la huella del CI es una **cota
-   inferior**, no una explicación total. Lo que sí queda establecido es que 456 de
-   los 488 clones (93 %) ocurrieron **antes** de todo acto de publicación (tag
-   `v0.1.0` el 16-11 a las 21:59, `v0.2.0` y el artículo el 17-11), y que en la
-   misma ventana la portada del repositorio recibió **2 vistas**.
+   «Clonan» son las corridas de `architecture-audit` (2 por corrida) y de `ci`
+   (2 jobs); las de Pages y las omitidas no clonan. El dato que importa no es la
+   correlación sino la **magnitud**: 54 corridas × 2 = **108** clones atribuibles
+   contra **456** medidos, y aun contando las 87 como si todas clonaran dos veces,
+   174. El CI cubre entre el **24 % y el 38 %**. Sobre los 14 días el techo es
+   `2 × 121 = 242` contra 488 (50 %), y esa cuenta cruza ventanas: se publica como
+   tope, no como cifra.
+
+   Por eso no se dice «los clones siguen a las corridas»: el día 15, con 4
+   corridas, produjo 136 clones. Un dato que no encaja se declara, no se absorbe.
+   Lo que sí queda establecido, y no depende del dueño: 456 de los 488 clones
+   ocurrieron **antes** de todo acto de publicación (tag `v0.1.0` el 16-11 a las
+   21:59, `v0.2.0` y el artículo el 17-11), y en la misma ventana la portada del
+   repositorio recibió **2 vistas**.
 
    Consecuencia para leer la tabla: `CLON` no se resta solo ni se interpreta como
    audiencia; se lee contra `runs_ci`. La hipótesis de la puerta —«la gente llega
@@ -61,11 +69,20 @@ artículo no es quien vio el repositorio; sumarlos fabrica una audiencia. Y como
 ## Reproducir
 
 ```bash
-python3 instruments/medir_recepcion.py --self-test          # 16/16, sin red
+python3 instruments/medir_recepcion.py --self-test          # 24/24, sin red
 python3 instruments/medir_recepcion.py \
   --recid 24323318 --repo alexisromtz-lab/auditor-toolkit --articulo 5059635 \
   --tsv data/RECEPCION.tsv
+python3 instruments/medir_recepcion.py \
+  --repo alexisromtz-lab/auditor-toolkit --canal           # nombra el canal, no escribe
 ```
+
+`--canal` es el lector de la rama C del pre-registro: cuando no hay población, el
+acto siguiente no es escribir más ni empaquetar, es **nombrar de dónde vienen las
+visitas que sí hubo**. Lee `traffic/popular/referrers` y `traffic/popular/paths`,
+no toca el TSV, y sale con RC 0 si midió y RC 2 si no pudo leer. Medido el
+17-11-2026: el único `referrer` es `github.com` (1 vista) — **cero referrers
+externos**, que es el estado que P3 va a evaluar el 19-11.
 
 Sin `DEVTO_API_KEY` la superficie de vistas queda en `NO_MEDIDO`. Es el resultado
 correcto, no un fallo: esa cifra sólo la tiene el autor.
@@ -80,6 +97,21 @@ contrario queda citada en la enmienda en vez de borrada.
 De ahí sale la regla que ahora es una fila de la tabla: `ESTADO_PIEZA` publica
 `publicado` y `horas_desde_publicacion`. La ventana de una predicción deja de vivir
 en la prosa y pasa a ser un dato que se puede restar.
+
+La **enmienda 4** cierra el hueco que quedaba: los umbrales estaban fijados, pero no
+lo que se hace con cada resultado. Una consecuencia que se decide después del dato no
+es una predicción, es una negociación. La regla sellada decide con **`vistas_pagina`
+únicas**, nunca con `CLON`:
+
+| rama | condición | acto siguiente |
+|---|---|---|
+| A | `P1 ≥ 15` y (`P3 ≥ 1` o `P4 ≥ 50`) | empaquetar la GitHub Action |
+| B | `P1 ≥ 15` pero sin puerta (`P3 = 0`, `P4 < 50`) | la puerta, no el producto |
+| C | `P1 < 15` | medir el canal (`--canal`), no escribir más |
+| D | `vistas_pagina` = `NO_MEDIDO` | no se decide: se reejecuta |
+
+La regla trae su propio falsador: si el 19-11 hay ≥ 15 vistas y aun así `referrers`
+vuelve vacío, quien falla es el instrumento, no el canal.
 
 ## Límites declarados
 

@@ -134,3 +134,89 @@ REGLA QUE SE ADOPTA
 
 VENTANA VÁLIDA (sin cambios)
   inicio 2026-11-17T19:24:53Z   fin 2026-11-19T19:24:53Z
+
+===========================================================================
+ENMIENDA 4 — 2026-11-17T20:57Z — EL TECHO DEL CI, Y LA REGLA QUE FALTA
+===========================================================================
+4A. CORRECCIÓN: LA ENMIENDA 3 AFIRMABA DE MÁS
+
+  La enmienda 3 dice «los clones siguen al número de corridas». La correlación
+  ordena los días pero no cubre la magnitud, y una correlación que no cubre la
+  magnitud no es una explicación.
+
+  Medido 17-Nov-2026 sobre 13..16-Nov, donde viven 456 de los 488 clones:
+
+    día     corridas   de ellas clonan   clones   uniques
+    13-11      63            42            211       62
+    14-11      12             6             56       23
+    15-11       4             2            136       56   <- NO ENCAJA
+    16-11       8             4             53       26
+
+  «Clonan» = corridas de `architecture-audit` (2 por corrida: `actions/checkout`
+  más el `git fetch --depth=1` del motor) y de `ci` (2 jobs, uno por job).
+  Pages y las omitidas no clonan.
+
+    clones atribuibles al CI = 54 x 2 = 108   ->  108 / 456 = 24 %
+    techo generoso           = 87 x 2 = 174   ->  174 / 456 = 38 %
+    techo de 14 días (cruza ventanas) = 2 x 121 = 242 -> 242 / 488 = 50 %
+
+  En ningún escenario el CI explica el conteo. Entre la mitad y tres cuartas
+  partes de CLON no tienen dueño medible: la API de tráfico dice cuántos clones
+  hubo, nunca quién los hizo. `runs_ci` es un PISO, no una explicación.
+
+  Se adopta `cobertura_huella(corridas, clones)` y el resumen imprime el techo
+  junto a CLON. Un instrumento que publicara cobertura cercana a 1 estaría
+  vendiendo una explicación; el test `test_la_huella_no_se_vende_como_
+  explicacion_total` falla si la cobertura llega a 0,6.
+
+  Lo que NO cambia: los 456 de 488 ocurrieron antes de todo acto de publicación.
+  Ese hecho no depende del dueño del clon y es el que mata la lectura «488
+  lectores». La conclusión (no hay audiencia) sobrevive; el mecanismo (es el CI)
+  queda degradado a piso medido.
+
+4B. REGLA DE DECISIÓN — SELLADA ANTES DE QUE EXISTA EL DATO
+
+  Esta sección es la que faltaba. Los umbrales P1..P4 estaban fijados; lo que no
+  estaba fijado era QUÉ SE HACE con cada resultado, y una consecuencia que se
+  decide después del dato no es una predicción: es una negociación.
+
+  VARIABLE QUE DECIDE: `vistas_pagina` únicas del repositorio (GitHub
+  traffic/views, ventana 14 d). NO es CLON. CLON no decide nada en ninguna rama.
+
+  RAMA A — P1 se cumple (>= 15 vistas únicas) y P3 (>= 1 referrer externo) o P4
+  (dev.to >= 50 vistas) se cumple.
+    Hay población y hay puerta. Acto siguiente: EMPAQUETAR el instrumento como
+    GitHub Action. Empaquetar deja de ser una apuesta sobre una audiencia que no
+    existe y pasa a ser una respuesta a una que sí llegó.
+
+  RAMA B — P1 se cumple (>= 15) pero P3 = 0 y P4 < 50.
+    Hay población sin puerta. Acto siguiente: LA PUERTA —un solo destino visible,
+    portada, enlace en la primera pantalla—, no el producto. NO se empaqueta:
+    empaquetar con la puerta rota mide cero otra vez, más caro.
+
+  RAMA C — P1 < 15.
+    No hay población. El acto siguiente NO es escribir más ni empaquetar: es
+    MEDIR EL CANAL con `medir_recepcion.py --canal` (referrers y rutas) y decir
+    en voz alta de dónde vienen las visitas que sí hubo. Si el canal no produce
+    15 vistas en 48 h con la puerta abierta, el cuello es la distribución.
+
+  RAMA D — `vistas_pagina` = NO_MEDIDO.
+    No se decide. Un fallo del instrumento no es un veredicto sobre el objeto: se
+    reejecuta. Declarar «canal muerto» porque la API no respondió sería el mismo
+    defecto que este corpus lleva semanas corrigiendo.
+
+  FALSADOR DE ESTA REGLA: si el 19-11 `vistas_pagina` sube a >= 15 y aun así
+  `referrers` vuelve vacío y `vistas_devto` sigue NO_MEDIDO, entonces hay
+  población sin fuente atribuible y quien falla es el instrumento, no el canal.
+  En ese caso se revisa la regla, no se culpa al objeto.
+
+  NINGUNA RAMA AUTORIZA publicar contenido nuevo antes de que este bloque se
+  escriba: la ventana dejaría de ser atribuible y la regla entera se vuelve letra.
+
+  ESTADO AL SELLAR (medido 2026-11-17T20:57Z, antes del corte):
+    referrers = github.com, 1 visita, 1 único  ->  P3 hoy = 0 referrers externos
+    rutas     = /alexisromtz-lab/auditor-toolkit (1) y /blob/main/cas... (1)
+    vistas_pagina = 2 únicas · LECTOR 2 · DESCARGA 1 · SENAL 0
+
+VENTANA VÁLIDA (sin cambios)
+  inicio 2026-11-17T19:24:53Z   fin 2026-11-19T19:24:53Z

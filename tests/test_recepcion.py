@@ -56,7 +56,7 @@ class TestRecepcion(unittest.TestCase):
             timeout=120,
         )
         self.assertEqual(proceso.returncode, 0, proceso.stdout + proceso.stderr)
-        self.assertIn("SELF-TEST OK: 16/16", proceso.stdout)
+        self.assertIn("SELF-TEST OK: 24/24", proceso.stdout)
 
     def test_tsv_tiene_una_sola_cabecera(self) -> None:
         texto = TSV.read_text(encoding="utf-8")
@@ -138,6 +138,39 @@ class TestRecepcion(unittest.TestCase):
 
     def test_clase_pedida_sin_filas_es_no_medido(self) -> None:
         self.assertIsNone(self.m.totalizar([], {"DESCARGA"})["DESCARGA"])
+
+    def test_la_huella_no_se_vende_como_explicacion_total(self) -> None:
+        """Si el CI explicara el clon, la conclusión "rastreo ajeno" sobraría.
+
+        Medido 17-Nov-2026: 2 x 121 = 242 contra 488 clones. Un instrumento que
+        publicara cobertura cercana a 1 estaría vendiendo una explicación.
+        """
+        github = {
+            "estrellas": 0,
+            "forks": 0,
+            "vistas": 2,
+            "vistas_unicas": 2,
+            "clones": 488,
+            "clones_unicos": 168,
+            "corridas": 121,
+        }
+        filas = self.m.construir_filas([], github)
+        cobertura = self.m.cobertura_huella(
+            self.m._valor_github(filas, "runs_ci"), self.m._valor_github(filas, "clones")
+        )
+        self.assertIsNotNone(cobertura)
+        self.assertGreater(cobertura, 0.0)
+        self.assertLess(cobertura, 0.6, "el CI no explica el conteo de clones")
+
+    def test_canal_exige_repo_y_sale_con_20(self) -> None:
+        """Un argumento malo no es NO_MEDIDO: el contrato reserva 2 para eso."""
+        proceso = subprocess.run(
+            [sys.executable, str(INSTRUMENTO), "--canal"],
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        self.assertEqual(proceso.returncode, 20, proceso.stderr)
 
     def test_devto_no_contamina_lector(self) -> None:
         github = {

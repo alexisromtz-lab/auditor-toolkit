@@ -11,14 +11,24 @@ Reglas que este instrumento NO negocia:
    Medido 17-Nov-2026: 488 clones y 168 unicos frente a 2 vistas en 14 dias
    (ratio 244:1). Ninguna audiencia humana produce eso: es rastreo automatico.
 
-   Y ese rastreo automatico tiene duenno: `architecture-audit.yml` corre en cada
-   push y clona este mismo repositorio dos veces -- una en `actions/checkout` y
-   otra en el `git fetch --depth=1` que baja el motor. Medido 17-Nov-2026 por
-   dia: 63 corridas / 211 clones el 13-Nov, 12 / 56 el 14-Nov, 8 / 53 el 16-Nov.
-   Los clones siguen al numero de corridas, no a ninguna publicacion: los 456 de
-   488 ocurrieron ANTES del tag v0.1.0 y del articulo. Por eso toda fila CLON se
-   publica junto a `runs_ci` (clase HUELLA_PROPIA): sin esa co-variable el conteo
-   de clones mide al observador y se lee como si midiera al sujeto.
+   Parte de ese rastreo es la huella propia: `architecture-audit.yml` clona este
+   repositorio dos veces por corrida (`actions/checkout` mas el `git fetch
+   --depth=1` que baja el motor) y `ci.yml` una por job, con dos jobs. Pero la
+   huella NO explica el conteo, y afirmarlo seria el mismo defecto que este
+   instrumento cura. Medido 17-Nov-2026 sobre 13..16-Nov, donde viven 456 de los
+   488 clones: 87 corridas en total, 54 de los dos flujos que clonan. Maximo
+   razonable 108 clones; contando las 87 como si todas clonaran dos veces, 174.
+   Contra 456 medidos, el CI cubre entre el 24 % y el 38 %. Sobre los 14 dias el
+   techo es 2 x 121 = 242 contra 488, y esa cuenta cruza ventanas: se publica
+   como tope, no como cifra. Y la relacion no es monotona: el 15-Nov, con 4
+   corridas, produjo 136 clones (34 por corrida). Un dato que no encaja se
+   declara, no se absorbe.
+
+   Lo que si queda establecido, y no depende del duenno: los 456 de 488
+   ocurrieron ANTES del tag v0.1.0 y del articulo. Por eso toda fila CLON se
+   publica junto a `runs_ci` -- clase HUELLA_PROPIA, no contable -- y junto a su
+   cobertura (ver `cobertura_huella`). Sin esas dos cifras el conteo de clones se
+   lee como si midiera al sujeto cuando a lo sumo acota al observador.
 
 2. En Zenodo, la clave agregada `downloads` de una version hereda el total del
    concepto. La cifra propia de la version es `version_downloads`. Usar la
@@ -76,6 +86,16 @@ VENTANA_DEVTO = "lifetime"   # reacciones y comentarios son acumulados
 
 MEDIDO = "MEDIDO"
 NO_MEDIDO = "NO_MEDIDO"
+
+RC_ARGUMENTOS = 20  # el contrato del corpus reserva 2 para NO_MEDIDO
+
+
+class _ParserDeContrato(argparse.ArgumentParser):
+    """argparse sale con 2; aqui 2 significa NO_MEDIDO, no "argumento malo"."""
+
+    def error(self, mensaje: str) -> None:  # type: ignore[override]
+        self.print_usage(sys.stderr)
+        self.exit(RC_ARGUMENTOS, f"{self.prog}: error: {mensaje}\n")
 
 
 # ---------------------------------------------------------------- transporte
@@ -139,6 +159,52 @@ def contar_corridas(repo: str) -> int | None:
         return int(crudo)
     except ValueError:
         return None
+
+
+def cobertura_huella(corridas: int | None, clones: int | None) -> float | None:
+    """Fraccion de CLON que el propio CI puede explicar COMO MAXIMO (2 por corrida).
+
+    Es un techo generoso, no una medicion de duenno: la API de trafico no dice
+    quien clono. Y cero clones no es cobertura 1: una poblacion vacia no tiene
+    denominador (regla 8 del self-test).
+    """
+    if corridas is None or clones is None or clones <= 0:
+        return None
+    return round((2 * corridas) / clones, 3)
+
+
+def leer_canal(repo: str) -> dict:
+    """De donde vienen las visitas que SI hubo: referrers y rutas populares.
+
+    Es el lector de la rama C del pre-registro del 19-Nov-2026: cuando no hay
+    poblacion, el acto siguiente no es escribir mas ni empaquetar -- es nombrar
+    el canal. Trafico de los ultimos 14 dias, solo lectura.
+    """
+    referrers = _json_gh(f"{repo}/traffic/popular/referrers")
+    rutas = _json_gh(f"{repo}/traffic/popular/paths")
+    return {
+        "referrers": None if referrers is None else [
+            (f.get("referrer"), f.get("count"), f.get("uniques")) for f in referrers],
+        "rutas": None if rutas is None else [
+            (f.get("path"), f.get("count"), f.get("uniques")) for f in rutas],
+    }
+
+
+def formatear_canal(canal: dict) -> list[str]:
+    """Lineas del canal. Un NO_MEDIDO se imprime como tal; vacio no es cero."""
+    lineas = []
+    for titulo in ("referrers", "rutas"):
+        filas = canal.get(titulo)
+        if filas is None:
+            lineas.append(f"  {titulo.ljust(9)} NO_MEDIDO")
+        elif not filas:
+            lineas.append(f"  {titulo.ljust(9)} (vacio: nadie llego por aqui)")
+        else:
+            for etiqueta, visitas, unicos in filas[:5]:
+                lineas.append(
+                    f"  {titulo.ljust(9)} {str(etiqueta)[:46].ljust(46)} {visitas:>6} {unicos:>6}"
+                )
+    return lineas
 
 
 # ------------------------------------------------------------------ lectura
@@ -332,6 +398,14 @@ def a_tsv(filas: list[dict], momento: str, con_cabecera: bool = True) -> str:
     return "\n".join(lineas) + "\n"
 
 
+def _valor_github(filas: list[dict], metrica: str):
+    """Valor medido de una metrica de github, o None. No totaliza: lee la fila."""
+    for fila in filas:
+        if fila["superficie"] == "github" and fila["metrica"] == metrica:
+            return fila["valor"]
+    return None
+
+
 def imprimir_resumen(filas: list[dict], totales: dict) -> None:
     ancho = max(len(f["superficie"]) for f in filas) + 2
     print(f"{'superficie'.ljust(ancho)}{'metrica'.ljust(18)}{'valor'.rjust(10)}  {'ventana'.ljust(9)}estado")
@@ -353,8 +427,14 @@ def imprimir_resumen(filas: list[dict], totales: dict) -> None:
     print()
     print("  CLON y CLON_UNICO se publican aparte: NO se suman a LECTOR")
     print("  ni entre si (un unico ya esta contenido en el conteo).")
-    print("  HUELLA_PROPIA (runs_ci) acota CLON: cada corrida de CI clona este repo,")
-    print("  asi que CLON no se resta solo; se lee contra esa fila.")
+    print("  HUELLA_PROPIA (runs_ci) es el PISO medido del rastreo propio, no su")
+    print("  explicacion: CLON no se resta solo, se lee contra esa fila y su cobertura.")
+    cobertura = cobertura_huella(_valor_github(filas, "runs_ci"), _valor_github(filas, "clones"))
+    if cobertura is None:
+        print("  cobertura del CI: NO_MEDIDA (falta runs_ci o clones, o no hubo clones).")
+    else:
+        print(f"  cobertura del CI: como maximo {cobertura:.0%} de CLON. El resto NO tiene")
+        print("  duenno medido: la API de trafico no dice quien clono.")
     print("  LECTOR_DEVTO y SENAL_DEVTO son otra superficie y NO se suman a LECTOR/SENAL.")
 
 
@@ -445,14 +525,32 @@ def self_test() -> int:
     comprobar("corrida caida NO_MEDIDO", [f["valor"] for f in construir_filas([], github)
                                           if f["metrica"] == "runs_ci"][0], None)
 
+    # 11. La huella del CI es un TECHO, no una explicacion total, y una poblacion
+    #     vacia no tiene cobertura. Medido 17-Nov-2026: 24..38 % sobre 13..16-Nov.
+    comprobar("cobertura 4 dias", cobertura_huella(87, 456), 0.382)
+    comprobar("cobertura 14 dias", cobertura_huella(121, 488), 0.496)
+    comprobar("cobertura sin corridas", cobertura_huella(None, 456), None)
+    comprobar("cobertura sin clones", cobertura_huella(87, None), None)
+    comprobar("cobertura sin poblacion", cobertura_huella(87, 0), None)
+
+    # 12. El canal se imprime con tres estados distintos: NO_MEDIDO (fallo),
+    #     vacio (nadie llego) y medido. Confundirlos convierte un fallo en un cero.
+    sin_leer = formatear_canal({"referrers": None, "rutas": None})
+    comprobar("canal caido NO_MEDIDO", all(linea.endswith("NO_MEDIDO") for linea in sin_leer), True)
+    comprobar("canal vacio no es cero", "vacio" in formatear_canal({"referrers": [], "rutas": []})[0], True)
+    comprobar("canal medido formatea cifras",
+              formatear_canal({"referrers": [("github.com", 7, 3)], "rutas": []})[0].split()[-2:],
+              ["7", "3"])
+
     if fallos:
         print(f"SELF-TEST FALLA: {len(fallos)} defecto(s)")
         for fallo in fallos:
             print(f"  - {fallo}")
         return 1
-    print("SELF-TEST OK: 16/16 (cero medido, fallo NO_MEDIDO, mixto, clon aislado, clon no aditivo, "
+    print("SELF-TEST OK: 24/24 (cero medido, fallo NO_MEDIDO, mixto, clon aislado, clon no aditivo, "
           "version propia, github caido, devto no contamina, devto caido, devto senal propia, devto publicado, "
-          "clase pedida sin filas, clase no pedida, cabecera unica, cabecera anexada, huella del CI no contable)")
+          "clase pedida sin filas, clase no pedida, cabecera unica, cabecera anexada, huella del CI no contable, "
+          "cobertura como techo, cobertura sin poblacion, canal caido, canal vacio, canal medido)")
     return 0
 
 
@@ -464,18 +562,31 @@ def totales_github_caido(filas: list[dict]) -> int | None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Mide la recepcion de una pieza publicada.")
+    parser = _ParserDeContrato(description="Mide la recepcion de una pieza publicada.")
     parser.add_argument("--recid", type=int, help="recid de Zenodo (el de la version mas reciente)")
     parser.add_argument("--repo", help="repositorio GitHub en forma owner/nombre")
     parser.add_argument("--articulo", type=int, help="id numerico del articulo en dev.to")
     parser.add_argument("--tsv", help="ruta donde anexar las filas")
+    parser.add_argument("--canal", action="store_true",
+                        help="nombra el canal de las visitas que si hubo (referrers y rutas)")
     parser.add_argument("--self-test", action="store_true")
     args = parser.parse_args(argv)
 
     if args.self_test:
         return self_test()
+    if args.canal:
+        if not args.repo:
+            parser.error("--canal exige --repo")
+        canal = leer_canal(args.repo)
+        print(f"  canal de {args.repo} (ultimos 14 dias)")
+        print(f"  {'':9} {'origen / ruta'.ljust(46)} {'visitas':>6} {'unicos':>6}")
+        for linea in formatear_canal(canal):
+            print(linea)
+        if canal.get("referrers") is None and canal.get("rutas") is None:
+            return 2
+        return 0
     if not args.recid and not args.repo and not args.articulo:
-        parser.error("hace falta --recid, --repo, --articulo o --self-test")
+        parser.error("hace falta --recid, --repo, --articulo, --canal o --self-test")
 
     zenodo: list[dict] = []
     if args.recid:
