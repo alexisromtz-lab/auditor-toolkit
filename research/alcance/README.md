@@ -8,10 +8,12 @@ describir un objeto con precisión perfecta y no ofrecer ninguna puerta.
 
 Medido el 17-Nov-2026 sobre el artículo `dev.to/5059635`:
 
-| superficie | huella | estado | detalle | veredicto |
-|---|---|---|---|---|
-| `devto/5059635` (vivo) | `287e6b023274` | `SOLO_TEXTO` | `code_span` | **SIN_ALCANCE** |
-| `archivo:devto-articulo-final.md` (original) | `ab0eff5a1ab9` | `ENLACE` | `markdown` | **ALCANZABLE** |
+| momento | superficie | huella | estado | detalle | veredicto |
+|---|---|---|---|---|---|
+| 19:56 | `devto/5059635` (vivo) | `287e6b023274` | `SOLO_TEXTO` | `code_span` | **SIN_ALCANCE** |
+| 19:56 | `archivo:devto-articulo-final.md` (original) | `ab0eff5a1ab9` | `ENLACE` | `markdown` | **ALCANZABLE** |
+| 20:05 | `devto/5059635` (vivo, corregido) | `868e951fcee2` | `ENLACE` | `markdown` | **ALCANZABLE** |
+| 20:05 | `devto/5059635#render` (lo que la plataforma sirve) | `a1ad5a7718f1` | `ENLACE` | `html` | **ALCANZABLE** |
 
 `ORIGEN_DIVERGE: 1` — el original enlaza el repositorio y la pieza publicada **no**.
 En el cuerpo vivo, `github.com` aparece **0 veces** y el repositorio se nombra una
@@ -20,6 +22,30 @@ sola vez, entre acentos graves: `` `auditor-toolkit` ``.
 El defecto no fue de cifras. El autor había auditado las cifras de esa pieza tres
 veces. Nunca auditó si era alcanzable. **Un instrumento puede medir el objeto con
 precisión y no medir su puerta.**
+
+La tabla es **append-only**: la corrección añade la fila de las 20:05 y no borra la
+de las 19:56. Una fila que se reescribe convierte la historia de la medición en
+una opinión sobre el presente.
+
+## La plataforma es inocente (medido, no supuesto)
+
+Antes de publicar la corrección se midió el render del artículo huérfano:
+
+```bash
+--pieza devto:5059635 --render --origen devto:5059635   # SOLO_TEXTO · sin_divergencia
+```
+
+El `body_html` decía exactamente lo mismo que el `body_markdown`: **la plataforma
+no había borrado ningún enlace, porque nunca hubo ninguno que borrar.** La puerta
+se perdió al pegar el texto, no al servirlo. Sin ese control, el diagnóstico
+habría sido "dev.to sanea enlaces" — falso, y habría mandado a arreglar el sitio
+equivocado.
+
+La plataforma **sí reescribe** algo al guardar: los bloques de código sin lenguaje
+se guardan como ```` ```plaintext ````. El markdown enviado y el almacenado difieren
+en 9 bytes (`ab0eff5a1ab9` → `868e951fcee2`). **La copia no es el objeto**: por eso
+lo que se publica en la tabla es la huella del texto *leído*, y por eso el veredicto
+se toma del render cuando se pide `--render`.
 
 ## Los cuatro estados
 
@@ -36,7 +62,7 @@ corchetes), `code_span`, `fence`, `imagen` (la URL pinta un pixel y no una
 puerta), `referencia_sin_uso` (definida y nunca usada: el lector no la ve),
 `mencion` (solo el nombre).
 
-## Tres trampas que el instrumento no negocia
+## Cuatro trampas que el instrumento no negocia
 
 1. **URL desnuda no es `ENLACE`.** Se reporta `url_desnuda`. Un falso rojo se
    corrige añadiendo corchetes; un falso verde autoriza publicar una pieza
@@ -46,14 +72,25 @@ puerta), `referencia_sin_uso` (definida y nunca usada: el lector no la ve),
 3. **Una imagen no es una puerta.** `![portada](url)` no se pincha hacia el
    objeto, y su URL no la ve el lector. Mismo criterio que `cover_image: None`
    frente a `social_image`: una portada no es un enlace.
+4. **La página servida no es la pieza.** La barra del sitio, el perfil del autor y
+   la barra lateral enlazan a GitHub por su cuenta. Contar `<a href>` en el HTML
+   público daría verde a cualquier artículo, incluso a uno que no menciona el
+   objeto: es un **falso verde de fábrica**. Por eso `--render` lee `body_html` —
+   el cuerpo que la plataforma renderizó— y no el documento completo.
 
 ## Reproducir
 
 ```bash
-# la pieza viva contra su original: aquí vive el RC 1
+# reproducir
 python3 research/alcance/instruments/medir_alcance.py --pieza 5059635 \
   --debe https://github.com/alexisromtz-lab/auditor-toolkit \
   --origen ~/Desktop/devto-articulo-final.md
+
+# el render que sirve la plataforma, contra el markdown que la plataforma guarda:
+# la misma pieza, tres objetos (markdown · body_html · pagina servida)
+python3 research/alcance/instruments/medir_alcance.py --pieza 5059635 --render \
+  --debe https://github.com/alexisromtz-lab/auditor-toolkit \
+  --origen devto:5059635
 
 # control positivo: el original corregido debe dar RC 0
 python3 research/alcance/instruments/medir_alcance.py \
@@ -64,7 +101,7 @@ python3 research/alcance/instruments/medir_alcance.py \
 python3 research/alcance/instruments/medir_alcance.py --pieza 999999999 \
   --debe https://github.com/alexisromtz-lab/auditor-toolkit
 
-# 30 reglas del instrumento, sin red
+# 46 reglas del instrumento, sin red
 python3 research/alcance/instruments/medir_alcance.py --self-test
 ```
 
@@ -77,6 +114,22 @@ habla de un objeto (`ENLACE` · `SOLO_TEXTO` · `HUERFANO` · `NO_MEDIDO`) y
 `veredicto` de la pieza entera (`ALCANZABLE` · `PARCIAL` · `SIN_ALCANCE` ·
 `NO_MEDIDO`). Reutilizar una palabra en los dos fue el error que este instrumento
 cometió en su primer borrador y que solo se vio al escribir su prueba.
+
+## La columna `origen`, y por qué no dice `coincide`
+
+`origen` compara la pieza con el original declarado. Tiene cuatro etiquetas y
+ninguna es "coincide", aunque el caso normal lo parezca: lo que se mide es **"la
+pieza no perdió ninguna puerta que el original tuviera"**, no "las dos dicen lo
+mismo". Si la plataforma *añade* un enlace (autolink de una URL desnuda), el render
+sale `ENLACE` y el markdown `SOLO_TEXTO`: los dos objetos **no** coinciden, y sin
+embargo no se perdió nada. Se llama `sin_divergencia` porque es lo que se midió.
+
+| etiqueta | significado |
+|---|---|
+| `divergente` | el original enlazaba y la pieza no: **se perdió la puerta** |
+| `sin_divergencia` | la pieza no perdió ninguna puerta del original |
+| `sin_origen` | no se declaró original |
+| `origen_ilegible` | se declaró y no se pudo leer |
 
 ## Límites declarados
 

@@ -11,8 +11,10 @@ from __future__ import annotations
 
 import csv
 import importlib.util
+import re
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -32,6 +34,7 @@ COLUMNAS = [
 ]
 ESTADOS = {"ENLACE", "SOLO_TEXTO", "HUERFANO", "NO_MEDIDO"}
 VEREDICTOS = {"ALCANZABLE", "PARCIAL", "SIN_ALCANCE", "NO_MEDIDO"}
+ORIGENES = {"divergente", "sin_divergencia", "sin_origen", "origen_ilegible"}
 NO_MEDIDO = "NO_MEDIDO"
 OBJETO = "https://github.com/alexisromtz-lab/auditor-toolkit"
 
@@ -61,7 +64,13 @@ class TestAlcance(unittest.TestCase):
             timeout=120,
         )
         self.assertEqual(proceso.returncode, 0, proceso.stdout + proceso.stderr)
-        self.assertIn("SELF-TEST OK: 32/32", proceso.stdout)
+        # La forma, no el numero: una regla nueva no puede romper esta prueba,
+        # pero perder una vieja si. Un literal 32/32 se desactualiza en silencio.
+        coincidencia = re.search(r"SELF-TEST OK: (\d+)/(\d+)", proceso.stdout)
+        self.assertIsNotNone(coincidencia, proceso.stdout)
+        aprobadas, totales = (int(grupo) for grupo in coincidencia.groups())
+        self.assertEqual(aprobadas, totales, "una regla del self-test no paso")
+        self.assertGreaterEqual(totales, 32, "se perdieron reglas del self-test")
 
     def test_tsv_tiene_una_sola_cabecera(self) -> None:
         texto = TSV.read_text(encoding="utf-8")
@@ -97,8 +106,10 @@ class TestAlcance(unittest.TestCase):
                     "ausente",
                     "ilegible",
                     "objeto_vacio",
+                    "html",
                 },
             )
+            self.assertIn(fila["origen"], ORIGENES)
 
     def test_nombrar_no_es_enlazar(self) -> None:
         """El defecto medido: el nombre entre acentos graves no abre la puerta."""
@@ -185,6 +196,54 @@ class TestAlcance(unittest.TestCase):
         self.assertTrue(huerfanas, "la fila medida del articulo vivo desaparecio de la tabla")
         self.assertEqual(huerfanas[0]["detalle"], "code_span")
         self.assertEqual(huerfanas[0]["origen"], "divergente")
+
+    def test_la_transicion_queda_anexada(self) -> None:
+        """19:56 huerfano, 20:05 alcanzable: la correccion es una fila nueva."""
+        filas = [
+            f for f in _filas() if f["pieza"] in ("devto/5059635", "devto/5059635#render")
+        ]
+        self.assertEqual({f["estado"] for f in filas}, {"SOLO_TEXTO", "ENLACE"})
+        fechas = [f["fecha_hora"] for f in filas]
+        self.assertEqual(fechas, sorted(fechas), "la tabla dejo de estar ordenada por tiempo")
+
+    def test_el_render_es_un_lector_no_un_buscador(self) -> None:
+        """Buscar `href=` en el HTML crudo da falso verde: dentro de <code> tambien aparece."""
+        self.assertEqual(
+            self.m.clasificar_html('<p><a href="%s">el repo</a></p>' % OBJETO, OBJETO),
+            ("ENLACE", "html"),
+        )
+        escapado = '<p><code>&lt;a href="%s"&gt;x&lt;/a&gt;</code></p>' % OBJETO
+        self.assertEqual(self.m.clasificar_html(escapado, OBJETO), ("SOLO_TEXTO", "code_span"))
+        nombre = "<p>mira <code>auditor-toolkit</code> y ya</p>"
+        self.assertEqual(self.m.clasificar_html(nombre, OBJETO), ("SOLO_TEXTO", "code_span"))
+
+    def test_render_ilegible_es_no_medido(self) -> None:
+        self.assertEqual(self.m.clasificar_html(None, OBJETO), ("NO_MEDIDO", "ilegible"))
+        self.assertEqual(self.m.clasificar_html("<p>x</p>", ""), ("NO_MEDIDO", "objeto_vacio"))
+
+    def test_origenes_es_un_vocabulario_con_lector(self) -> None:
+        """La etiqueta que el instrumento escribe es la que esta prueba declara."""
+        self.assertEqual(set(self.m.ORIGENES), ORIGENES)
+        self.assertEqual(len(set(self.m.ORIGENES)), len(self.m.ORIGENES), "etiquetas repetidas")
+        self.assertFalse(set(self.m.ORIGENES) & set(self.m.ESTADOS), "origen no es estado")
+        ambos = self.m.construir_filas(
+            "devto/1", "[r](%s)" % OBJETO, [OBJETO], origen_texto="[r](%s)" % OBJETO
+        )
+        self.assertEqual(ambos[0]["origen"], "sin_divergencia")
+
+    def test_render_de_punta_a_punta_sobre_archivo(self) -> None:
+        with tempfile.TemporaryDirectory() as carpeta:
+            pieza = Path(carpeta) / "pieza.html"
+            pieza.write_text('<p><a href="%s">repo</a></p>' % OBJETO, encoding="utf-8")
+            proceso = subprocess.run(
+                [sys.executable, str(INSTRUMENTO), "--pieza", str(pieza), "--render", "--debe", OBJETO],
+                capture_output=True,
+                text=True,
+                timeout=120,
+            )
+        self.assertEqual(proceso.returncode, 0, proceso.stdout + proceso.stderr)
+        self.assertIn("#render", proceso.stdout)
+        self.assertIn("ENLACE", proceso.stdout)
 
 
 if __name__ == "__main__":

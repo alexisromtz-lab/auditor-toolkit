@@ -44,9 +44,11 @@ Este lector mide la puerta. Reglas que NO negocia:
    cuando Zenodo no se habia consultado.
 
 8. La copia no es el objeto. `--origen` compara la pieza PUBLICADA contra el
-   original local: si el original enlaza y la publicada no, se publica
-   origen=divergente. Sin `--origen` se publica origen=sin_origen, que no es
-   "coincide".
+   original: si el original enlaza y la publicada no, se publica
+   origen=divergente. La rama contraria NO es "coincide" —las dos fuentes no
+   dicen lo mismo— sino origen=sin_divergencia, que solo afirma lo medido: la
+   pieza no perdio ninguna puerta que el original tuviera. Sin `--origen` se
+   publica origen=sin_origen, que tampoco es "sin_divergencia".
 
 9. Este lector no es un parser CommonMark: mide presencia de URL en posicion de
    enlace. Los enlaces por referencia se resuelven (definicion + uso); una
@@ -72,10 +74,12 @@ import argparse
 import hashlib
 import json
 import os
+import json
 import re
 import sys
 import urllib.request
 from datetime import datetime, timezone
+from html.parser import HTMLParser
 from pathlib import Path
 
 UA = "platino-labs-alcance/1.0"
@@ -89,6 +93,10 @@ VEREDICTOS = ("ALCANZABLE", "PARCIAL", "SIN_ALCANCE", "NO_MEDIDO")
 # De la puerta mas cercana a la mas lejana: una URL desnuda solo necesita
 # corchetes; una mencion ni siquiera tiene la direccion escrita.
 PRIORIDAD_DETALLE = ("url_desnuda", "referencia_sin_uso", "code_span", "imagen", "fence", "mencion")
+
+# La columna `origen` tiene su propio vocabulario, y sin lector se rellenaba. El
+# self-test comprueba que ninguna etiqueta emitida queda fuera de esta tupla.
+ORIGENES = ("divergente", "sin_divergencia", "sin_origen", "origen_ilegible")
 
 RE_FENCE = re.compile(r"^\s{0,3}(```|~~~)")
 # (?<!!) descarta imagenes: `![alt](url)` pinta un pixel, no abre una puerta.
@@ -212,6 +220,98 @@ def clasificar(texto: str | None, objeto: str) -> tuple[str, str]:
     return ("HUERFANO", "ausente")
 
 
+class _LectorHTML(HTMLParser):
+    """Separa lo que un lector PUEDE pulsar de lo que solo PUEDE leer.
+
+    No es un lector de pagina: es el cuerpo servido por la plataforma. El chrome
+    del sitio (menu, perfil del autor, barra lateral) enlaza a GitHub por su
+    cuenta y contarlo seria un falso verde de fabrica.
+    """
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.anclas: list[tuple[str, str]] = []
+        self.codigo: list[str] = []
+        self.imagenes: list[tuple[str, str]] = []
+        self.texto: list[str] = []
+        self._prof_ancla = 0
+        self._prof_codigo = 0
+        self._buf_ancla: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs) -> None:
+        valores = dict(attrs)
+        if tag == "a":
+            self._prof_ancla += 1
+            self._buf_ancla = []
+            self.anclas.append((valores.get("href") or "", ""))
+        elif tag in ("code", "pre"):
+            self._prof_codigo += 1
+        elif tag == "img":
+            self.imagenes.append((valores.get("src") or "", valores.get("alt") or ""))
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag == "a" and self._prof_ancla:
+            self._prof_ancla -= 1
+            href, _ = self.anclas[-1]
+            self.anclas[-1] = (href, " ".join(self._buf_ancla))
+            self._buf_ancla = []
+        elif tag in ("code", "pre") and self._prof_codigo:
+            self._prof_codigo -= 1
+
+    def handle_data(self, data: str) -> None:
+        if self._prof_ancla:
+            self._buf_ancla.append(data)
+        elif self._prof_codigo:
+            self.codigo.append(data)
+        else:
+            self.texto.append(data)
+
+
+def clasificar_html(html_texto: str | None, objeto: str) -> tuple[str, str]:
+    """Igual que `clasificar`, pero sobre el cuerpo RENDERIZADO de la pieza.
+
+    Un `<a href>` que alcanza es la puerta. Todo lo demas nombra sin abrir, con
+    el mismo vocabulario de detalles: la plataforma no inventa causas nuevas.
+    """
+    if html_texto is None:
+        return ("NO_MEDIDO", "ilegible")
+    if not _norm(objeto):
+        return ("NO_MEDIDO", "objeto_vacio")
+
+    lector = _LectorHTML()
+    lector.feed(html_texto)
+    lector.close()
+
+    for href, _texto in lector.anclas:
+        if _alcanza(href, objeto):
+            return ("ENLACE", "html")
+
+    vistas: set[str] = set()
+    for href, texto in lector.anclas:
+        if _menciona(texto, objeto) or _menciona(href, objeto):
+            vistas.add("mencion")
+    if _menciona(" ".join(lector.codigo), objeto):
+        vistas.add("code_span")
+    for src, alt in lector.imagenes:
+        if _alcanza(src, objeto):
+            vistas.add("imagen")
+        if _menciona(alt, objeto):
+            vistas.add("mencion")
+    suelto = " ".join(lector.texto)
+    # El texto suelto se escanea candidato a candidato, igual que en markdown:
+    # `_alcanza` compara desde el principio del candidato, no en cualquier punto.
+    for hallado in RE_BARE_URL.finditer(suelto):
+        if _alcanza(hallado.group(0), objeto):
+            vistas.add("url_desnuda")
+    if _menciona(suelto, objeto):
+        vistas.add("mencion")
+
+    for detalle in PRIORIDAD_DETALLE:
+        if detalle in vistas:
+            return ("SOLO_TEXTO", detalle)
+    return ("HUERFANO", "ausente")
+
+
 def veredicto(estados: list[str]) -> str:
     if not estados or all(e == "NO_MEDIDO" for e in estados):
         return "NO_MEDIDO"
@@ -238,8 +338,21 @@ def construir_filas(
     origen_texto: str | None = None,
     origen_pedido: bool = False,
 ) -> list[dict]:
+    return _filas_desde_estados(
+        pieza, texto, objetos, [clasificar(texto, objeto) for objeto in objetos], origen_texto, origen_pedido
+    )
+
+
+def _filas_desde_estados(
+    pieza: str,
+    texto: str | None,
+    objetos: list[str],
+    medidos: list[tuple[str, str]],
+    origen_texto: str | None = None,
+    origen_pedido: bool = False,
+) -> list[dict]:
+    """Arma las filas a partir de una clasificacion ya hecha: markdown o render."""
     huella = _huella(texto)
-    medidos = [clasificar(texto, objeto) for objeto in objetos]
     juicio = veredicto([estado for estado, _ in medidos])
     origen_medidos = (
         [clasificar(origen_texto, objeto)[0] for objeto in objetos]
@@ -256,7 +369,7 @@ def construir_filas(
         elif origen_medidos[indice] == "ENLACE" and estado != "ENLACE":
             etiqueta = "divergente"
         else:
-            etiqueta = "coincide"
+            etiqueta = "sin_divergencia"
         filas.append(
             {
                 "pieza": pieza,
@@ -329,7 +442,7 @@ def imprimir_resumen(filas: list[dict], momento: str) -> None:
 # -------------------------------------------------------------------- lectura
 
 
-def _texto_devto(articulo: int) -> str | None:
+def _json_devto(articulo: int) -> dict | None:
     peticion = urllib.request.Request(
         f"https://dev.to/api/articles/{articulo}", headers={"User-Agent": UA}
     )
@@ -338,31 +451,53 @@ def _texto_devto(articulo: int) -> str | None:
             datos = json.loads(respuesta.read().decode("utf-8"))
     except Exception:  # ilegible: NO_MEDIDO, no "no enlaza"
         return None
+    return datos if isinstance(datos, dict) else None
+
+
+def _texto_devto(articulo: int) -> str | None:
+    datos = _json_devto(articulo) or {}
     cuerpo = datos.get("body_markdown")
     return cuerpo if isinstance(cuerpo, str) else None
 
 
-def leer_pieza(pieza: str) -> tuple[str, str | None]:
+def _html_devto(articulo: int) -> str | None:
+    """El cuerpo que la plataforma SIRVIO, sin el chrome del sitio."""
+    datos = _json_devto(articulo) or {}
+    cuerpo = datos.get("body_html")
+    return cuerpo if isinstance(cuerpo, str) else None
+
+
+def leer_pieza(pieza: str, render: bool = False) -> tuple[str, str | None]:
     """Devuelve (etiqueta, texto). texto None significa NO_MEDIDO."""
+    sufijo = "#render" if render else ""
     if re.fullmatch(r"\d+", pieza):
-        return (f"devto/{pieza}", _texto_devto(int(pieza)))
+        ident = int(pieza)
+        lector = _html_devto if render else _texto_devto
+        return (f"devto/{ident}{sufijo}", lector(ident))
     if pieza.startswith("devto:"):
         ident = pieza.split(":", 1)[1]
         if not ident.isdigit():
-            return (pieza, None)
-        return (f"devto/{ident}", _texto_devto(int(ident)))
+            return (pieza + sufijo, None)
+        lector = _html_devto if render else _texto_devto
+        return (f"devto/{ident}{sufijo}", lector(int(ident)))
     ruta = Path(pieza).expanduser()
     try:
-        return (f"archivo:{ruta.name}", ruta.read_text(encoding="utf-8"))
+        return (f"archivo:{ruta.name}{sufijo}", ruta.read_text(encoding="utf-8"))
     except OSError:
-        return (f"archivo:{ruta.name}", None)
+        return (f"archivo:{ruta.name}{sufijo}", None)
 
 
-def leer_origen(ruta: str | None) -> str | None:
-    if not ruta:
+def leer_origen(origen: str | None) -> str | None:
+    """El original contra el que se mide divergencia: un .md o el markdown de dev.to."""
+    if not origen:
         return None
+    if re.fullmatch(r"\d+", origen):
+        return _texto_devto(int(origen))
+    if origen.startswith("devto:"):
+        ident = origen.split(":", 1)[1]
+        return _texto_devto(int(ident)) if ident.isdigit() else None
     try:
-        return Path(ruta).expanduser().read_text(encoding="utf-8")
+        return Path(origen).expanduser().read_text(encoding="utf-8")
     except OSError:
         return None
 
@@ -473,13 +608,62 @@ def self_test() -> int:
     filas = construir_filas("devto/1", "[r](%s)" % objeto, [objeto, "https://github.com/alexisromtz-lab/otro"])
     caso("21c alcance parcial", linea_alcance(filas), "ALCANCE: 1/2 objetos alcanzables")
 
+    # 22. el render es otra FUENTE del mismo sujeto: mismo vocabulario de causas
+    caso("22a html ancla", clasificar_html('<p>mira <a href="%s">el repo</a></p>' % objeto, objeto), ("ENLACE", "html"))
+    caso("22b html code span", clasificar_html("<p>era <code>auditor-toolkit</code></p>", objeto), ("SOLO_TEXTO", "code_span"))
+    caso(
+        "22c html nombra sin abrir",
+        clasificar_html('<p><a href="https://example.com">auditor-toolkit</a></p>', objeto),
+        ("SOLO_TEXTO", "mencion"),
+    )
+    caso("22d html url desnuda", clasificar_html("<p>en %s</p>" % objeto, objeto), ("SOLO_TEXTO", "url_desnuda"))
+    caso(
+        "22e html imagen",
+        clasificar_html('<img src="%s/raw/main/portada.png" alt="portada">' % objeto, objeto),
+        ("SOLO_TEXTO", "imagen"),
+    )
+    caso(
+        "22f html entidad",
+        clasificar_html('<a href="%s?utm=x&amp;y=1">repo</a>' % objeto, objeto),
+        ("ENLACE", "html"),
+    )
+    caso("22g html ilegible", clasificar_html(None, objeto), ("NO_MEDIDO", "ilegible"))
+    caso("22h html ajeno", clasificar_html('<a href="https://example.com">nada</a>', objeto), ("HUERFANO", "ausente"))
+    caso(
+        "22i html hermano",
+        clasificar_html('<a href="%s-extra">repo</a>' % objeto, objeto),
+        ("SOLO_TEXTO", "mencion"),
+    )
+    # 23. el veredicto sale del render; la divergencia, del markdown que lo origino
+    md_original = "[el repo](%s)" % objeto
+    html_servido = "<p>el repo</p>"
+    filas = _filas_desde_estados(
+        "devto/1#render", html_servido, [objeto], [clasificar_html(html_servido, objeto)], md_original, True
+    )
+    caso("23a estado del render", (filas[0]["estado"], filas[0]["detalle"]), ("HUERFANO", "ausente"))
+    caso("23b el markdown tenia la puerta", filas[0]["origen"], "divergente")
+    filas = _filas_desde_estados(
+        "devto/1#render", '<a href="%s">r</a>' % objeto, [objeto], [("ENLACE", "html")], "en %s" % objeto, True
+    )
+    caso("23c plataforma anade puerta no es coincidencia", filas[0]["origen"], "sin_divergencia")
+    # 24. la columna origen tiene vocabulario con lector: nada emitido queda fuera
+    emitidas = {
+        construir_filas("p", "x", [objeto])[0]["origen"],
+        construir_filas("p", "x", [objeto], None, origen_pedido=True)[0]["origen"],
+        construir_filas("p", "x", [objeto], md_original)[0]["origen"],
+        construir_filas("p", md_original, [objeto], md_original)[0]["origen"],
+    }
+    caso("24a etiquetas de origen conocidas", emitidas <= set(ORIGENES), True)
+    caso("24b las cuatro se ejercitan", len(emitidas), 4)
+
     fallos = [(nombre, obtenido, esperado) for nombre, obtenido, esperado in pruebas if obtenido != esperado]
     for nombre, obtenido, esperado in fallos:
         print(f"FALLO {nombre}: obtenido {obtenido!r} != esperado {esperado!r}")
     if fallos:
         print(f"SELF-TEST FALLA: {len(fallos)} defecto(s)")
     print(f"SELF-TEST OK: {len(pruebas) - len(fallos)}/{len(pruebas)} (enlace, autolink, code span, fence, "
-          "url desnuda, imagen, subruta, hermano, referencia, ilegible, alcance parcial, origen divergente)")
+          "url desnuda, imagen, subruta, hermano, referencia, ilegible, alcance parcial, origen divergente, "
+          "html servido)")
     return 1 if fallos else 0
 
 
@@ -492,7 +676,12 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--pieza", help="ruta a un .md o id numerico de dev.to")
     parser.add_argument("--debe", action="append", default=[], help="URI que la pieza deberia alcanzar (repetible)")
-    parser.add_argument("--origen", help="copia local del original, para medir divergencia")
+    parser.add_argument("--origen", help="original contra el que medir divergencia: .md o devto:<id>")
+    parser.add_argument(
+        "--render",
+        action="store_true",
+        help="mide el cuerpo RENDERIZADO (body_html) en vez del markdown",
+    )
     parser.add_argument("--tsv", help="ruta donde anexar las filas")
     parser.add_argument("--self-test", action="store_true")
     args = parser.parse_args(argv)
@@ -503,9 +692,15 @@ def main(argv: list[str] | None = None) -> int:
         print("ERROR DE ARGUMENTOS: hacen falta --pieza y al menos un --debe, o --self-test", file=sys.stderr)
         return 20
 
-    pieza, texto = leer_pieza(args.pieza)
+    pieza, texto = leer_pieza(args.pieza, render=args.render)
     origen_texto = leer_origen(args.origen)
-    filas = construir_filas(pieza, texto, args.debe, origen_texto, origen_pedido=bool(args.origen))
+    if args.render:
+        # El render es el objeto; el markdown es el origen. La clasificacion va
+        # sobre lo servido, pero la divergencia se mide contra lo escrito.
+        estados = [clasificar_html(texto, obj) for obj in args.debe]
+        filas = _filas_desde_estados(pieza, texto, args.debe, estados, origen_texto, bool(args.origen))
+    else:
+        filas = construir_filas(pieza, texto, args.debe, origen_texto, origen_pedido=bool(args.origen))
     momento = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     imprimir_resumen(filas, momento)
 
