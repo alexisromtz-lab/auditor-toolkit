@@ -386,6 +386,24 @@ El texto de la insignia se construye con las cifras medidas — `static scan: N 
 - Si encuentras un fallo en este toolkit, adjunta el **`sha256` del mutante** que lo demuestra.
 - Un reporte sin límite declarado se lee como opinión. Un reporte con límite declarado se puede re-auditar — y eso es todo lo que este repo ofrece.
 
+## Licencia
+
+El código de este repositorio está bajo [Apache License 2.0](LICENSE). Es la licencia
+que llevan los depósitos publicados `v0.1.0` y `v0.2.0`, y no se puede revocar para
+ellos.
+
+Apache 2.0 se eligió porque aquí el premio es la adopción: un mantenedor puede leer,
+ejecutar y citar estos instrumentos sin una revisión legal. Si auditas algo con ellos,
+no nos debes nada salvo la medición.
+
+Los productos construidos sobre estos instrumentos —servicios de red, no librerías—
+salen bajo **AGPL-3.0 desde el primer commit**. La regla y las condiciones de
+contribución (DCO, sin CLA) están en [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Divulgación
+
+- [Encontré 2 bugs reales en Django y decidí no reportarlos](https://dev.to/alexisromtz7/encontre-2-bugs-reales-en-django-y-decidi-no-reportarlos-la-razon-es-mas-interesante-que-el-bug-3b7n) — el embudo de tres etapas detrás de [`research/frontera-import/`](research/frontera-import), incluidos los tres instrumentos propios que tuvo que refutar por el camino.
+
 ## Cómo citar
 
 El DOI [`10.5281/zenodo.24293665`](https://doi.org/10.5281/zenodo.24293665) resuelve a la última versión depositada; cada release tiene el suyo. `CITATION.cff` alimenta el botón *Cite this repository* de GitHub.

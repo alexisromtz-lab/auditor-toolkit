@@ -400,6 +400,23 @@ The badge text is built from the measured counts — `static scan: N modules · 
 - If you find a failure in this toolkit, attach the **`sha256` of the mutant** that proves it.
 - A report without a declared limit reads as an opinion. A report with a declared limit can be re-audited — and that is all this repo offers.
 
+## Licence
+
+The code in this repository is [Apache License 2.0](LICENSE). That is the licence the
+published snapshots `v0.1.0` and `v0.2.0` carry, and it cannot be revoked for them.
+
+Apache 2.0 was chosen because the prize here is adoption: a maintainer can read, run
+and cite these instruments without a legal review. If you audit something with them,
+you owe nothing but the measurement.
+
+Products built on these instruments — network services, not libraries — ship under
+**AGPL-3.0 from their first commit**. The rule, and the contribution terms (DCO, no
+CLA), are in [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Writing
+
+- [Encontré 2 bugs reales en Django y decidí no reportarlos](https://dev.to/alexisromtz7/encontre-2-bugs-reales-en-django-y-decidi-no-reportarlos-la-razon-es-mas-interesante-que-el-bug-3b7n) — the three-stage funnel behind [`research/frontera-import/`](research/frontera-import), including the three of my own instruments it had to refute on the way.
+
 ## How to cite
 
 The DOI [`10.5281/zenodo.24293665`](https://doi.org/10.5281/zenodo.24293665) resolves to the latest deposited version; each release carries its own. `CITATION.cff` feeds GitHub's *Cite this repository* button.

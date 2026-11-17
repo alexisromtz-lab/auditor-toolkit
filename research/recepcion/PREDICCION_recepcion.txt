@@ -1,0 +1,90 @@
+PREDICCIÓN PRE-REGISTRADA — recepción de la pieza publicada
+registrada: 2026-11-17T19:30:58Z  (DESPUÉS de publicar: la publicación ocurrió
+           19:24:53Z, 365 s antes. La frase original "la publicación no ha
+           ocurrido" era FALSA; se conserva en la ENMIENDA como defecto medido.)
+terreno declarado: dev.to, tags spanish/python/django/testing, artículo 14 824 B
+sujeto: alexisromtz-lab/auditor-toolkit @ 98432e3 · DOI 10.5281/zenodo.24323318
+
+BASE MEDIDA (2026-11-17T19:30:58Z) — instruments/medir_recepcion.py, controles 7/7 y negativo OK
+  LECTOR (vistas de página GitHub + vistas Zenodo) ........ 2
+  DESCARGA (zip v0.2.0, lifetime) ......................... 0
+  DESCARGA (zip v0.1.0, lifetime) ......................... 1
+  CLON (14 d) ............................................. 488   no aditivo
+  CLON_UNICO (14 d) ....................................... 168   contenido en 488
+
+PREDICCIÓN a 48 h de la publicación (ventana cerrada, mismas superficies)
+  P1  vistas de página GitHub >= 15 únicas ............... cota_error ±50 %
+  P2  descargas del zip v0.2.0 >= 1 ...................... cota_error ±1
+  P3  >= 1 referrer distinto de github.com ............... cota_error ±1
+
+MECANISMO declarado: el feed de dev.to es el único canal disponible sin
+credencial. Un artículo sin tráfico externo no produce descargas ni referrers.
+Si P1 falla y P3 falla, el cuello de botella es el CANAL, no la pieza, y la
+respuesta no es escribir más: es medir el canal.
+
+REFUTARÍA todo el frente: LECTOR sigue en 2 y no aparece ningún referrer
+externo a 48 h. Entonces "construir más instrumentos para ganar presencia"
+queda falsado por ejecución, con la misma forma que el predictor 0/11.
+
+ESTADO: NO_EJERCITADA. Se evalúa a las 48 h con el mismo comando:
+  python3 instruments/medir_recepcion.py --recid 24323318 --repo alexisromtz-lab/auditor-toolkit --tsv RECEPCION.tsv
+
+===========================================================================
+ENMIENDA 2026-11-17T19:41Z — DEFECTO DECLARADO: PRE-REGISTRO TARDÍO (365 s)
+===========================================================================
+
+QUÉ SE MIDIÓ (no lo que se creía)
+  publicado_en_devto   2026-11-17T19:24:53Z   dev.to/api/articles/5059635
+  registrado_aqui      2026-11-17T19:30:58Z   mtime de este archivo
+  base_medida          2026-11-17T19:30:51Z   RECEPCION.tsv, 7 s antes
+  desfase              +365 s  (6 min 05 s)  -> el registro es POSTERIOR
+
+DEFECTO
+  Este archivo afirmaba "la publicación no ha ocurrido". Era falso en el
+  momento de escribirlo. Un pre-registro que certifica su propia validez con
+  una premisa falsa no es un pre-registro: es una predicción post-hoc.
+
+CLASIFICACIÓN HONESTA
+  PRE-REGISTRO TARDÍO. No se borra ni se reescribe la evidencia: la frase
+  original quedó citada arriba, en la cabecera.
+
+QUÉ SE PIERDE
+  La garantía de que los umbrales se fijaron sin poder haber visto tráfico.
+  No hay defensa posible: el autor pudo haber visto la página en esos 365 s.
+
+QUÉ SE CONSERVA (y por qué el frente no se cae)
+  a) Los umbrales quedaron escritos en un archivo con mtime anterior a toda
+     cifra de recepción del artículo. La primera lectura de dev.to es de
+     19:41Z, diez minutos después del registro.
+  b) La base (LECTOR 2 · DESCARGA 1) es anterior al registro (19:30:51Z) y
+     no depende del artículo.
+  c) A las 0.2 h la pieza tenía 0 reacciones y 0 comentarios: el tráfico que
+     el autor habría podido observar en la ventana del defecto era 0.
+
+REGLA QUE SE ADOPTA (para que no vuelva a pasar)
+  Ninguna predicción se registra sin medir antes el estado de la pieza en el
+  mundo. La fila ESTADO_PIEZA (`publicado`, `horas_desde_publicacion`) entra
+  al TSV en el mismo acto: la ventana deja de vivir en la prosa y pasa a ser
+  un dato de la tabla.
+
+VENTANA VÁLIDA
+  inicio 2026-11-17T19:24:53Z (publicado)   fin 2026-11-19T19:24:53Z (48 h)
+
+ENMIENDA 2 — SUPERFICIE QUE LA PREDICCIÓN NO VEÍA
+  Al registrar solo se medían GitHub y Zenodo. El artículo es una cuarta
+  superficie. Si el artículo recibía 500 lectores y el repo seguía en 2, esta
+  predicción habría concluido "falló el canal" cuando lo que falló fue la
+  conversión. Falso negativo en la dirección que mata la estrategia.
+
+  Añadido a instruments/medir_recepcion.py: superficie `devto`, clases
+  LECTOR_DEVTO y SENAL_DEVTO, aisladas de LECTOR/SENAL. Self-test 13/13.
+  `page_views_count` exige llave de autor: sin DEVTO_API_KEY es NO_MEDIDO.
+
+  Predicción complementaria (esta sí registrada antes de su primera lectura):
+  P4  dev.to entrega >= 50 vistas de página a 48 h ......... cota_error ±100 %
+      lectura: requiere DEVTO_API_KEY; sin llave queda NO_MEDIDO, no cero.
+
+CRITERIO DE FALSACIÓN (sin cambios, se sostiene)
+  A 48 h: LECTOR sigue en 2, SENAL_DEVTO en 0 y ningún referrer externo.
+  Entonces el cuello es el CANAL y "construir más instrumentos para ganar
+  presencia" queda falsado por ejecución, igual que el predictor 0/11.
